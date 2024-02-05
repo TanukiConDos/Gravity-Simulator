@@ -9,8 +9,9 @@ namespace Application
 	{
 	public:
 		~Window();
-		Window() = default;
+
 		Window(int width, int height);
+		Window() = default;
 		static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 		GLFWwindow* getWindow();

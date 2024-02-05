@@ -24,6 +24,8 @@
 
 #include "../../Foundation/File.h"
 #include "../../Application/Window.h"
+#include "../../Engine/Physic/PhysicObject.h"
+#include "../Physic/PhysicObject.h"
 
 # define PI          3.141592653589793238462643383279502884L
 
@@ -88,7 +90,7 @@ namespace Engine::Graphic
 	{
 	public:
 		~GPU();
-		GPU(Application::Window* window);
+		GPU(std::shared_ptr<Application::Window> window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> objects, int numObjects);
 		GPU() = default;
 
 		void drawFrame();
@@ -100,9 +102,9 @@ namespace Engine::Graphic
 		VkDevice device;
 		VkQueue graphicsQueue;
 		VkQueue presentQueue;
-		Application::Window* window;
+		std::shared_ptr<Application::Window> window;
 		VkSurfaceKHR surface;
-		VkSwapchainKHR swapChain;
+		VkSwapchainKHR swapChain = nullptr;
 		VkSwapchainKHR oldSwapchain;
 		std::vector<VkImage> swapChainImages;
 		VkFormat swapChainImageFormat;
@@ -142,6 +144,8 @@ namespace Engine::Graphic
 			VK_DYNAMIC_STATE_SCISSOR
 		};
 
+		std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> objects;
+		int numObjects;
 		void initVulkan();
 		void createInstance();
 		void pickPhysicalDevice();
@@ -169,7 +173,7 @@ namespace Engine::Graphic
 		void updateUniformBuffer(uint32_t currentImage);
 		void createDescriptorPool();
 		void createDescriptorSets();
-		void createSphereModel(int sectorCount, int stackCount, float radius);
+		void createSphereModel(int sectorCount, int stackCount, double radius);
 		VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 		VkFormat findDepthFormat();
 		bool hasStencilComponent(VkFormat format);
