@@ -9,20 +9,21 @@ namespace Engine::Physic
 	class PhysicSystem
 	{
 	public:
-		static const double UNIVERSAL_GRAVITATION;
-		void update(double deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects);
 
-		PhysicSystem(std::unique_ptr<Engine::Physic::BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm, std::unique_ptr<Engine::Physic::NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm, std::unique_ptr<Engine::Physic::SolverInterface> solverAlgorithm, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects);
+		static const double UNIVERSAL_GRAVITATION;
+		void update(double deltaTime, std::vector<Engine::Physic::PhysicObject>& objects);
+
+		PhysicSystem(std::unique_ptr<BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm, std::unique_ptr<NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm, std::unique_ptr<SolverInterface> solverAlgorithm);
 		PhysicSystem() = default;
 	private:
 		
 		double systemEnergy = 0;
 		double deltaEnergy = 0;
-		void checkEnergyConservation(std::shared_ptr<std::vector<PhysicObject>> objects,int numObjects);
+		void checkEnergyConservation(std::vector<Engine::Physic::PhysicObject>& objects);
 
-		std::unique_ptr<Engine::Physic::BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm;
-		std::unique_ptr<Engine::Physic::NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm;
-		std::unique_ptr<Engine::Physic::SolverInterface> solverAlgorithm;
+		std::unique_ptr<BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm;
+		std::unique_ptr<NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm;
+		std::unique_ptr<SolverInterface> solverAlgorithm;
 	};
 }
 

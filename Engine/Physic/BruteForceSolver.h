@@ -9,7 +9,8 @@ namespace Engine::Physic
 {
 	class BruteForceSolver: public SolverInterface
 	{
-		void solve(double deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects);
+	public:
+		void solve(double deltaTime,std::vector<PhysicObject>& objects);
 	};
 }
 

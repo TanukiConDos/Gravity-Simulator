@@ -5,6 +5,7 @@
 
 #include "Window.h"
 #include "../Engine/Graphic/GPU.h"
+#include "../Engine/Graphic/Renderer.h"
 #include "../Engine/Physic/PhysicSystem.h"
 #include "../Engine/Physic/bruteForceDetection.h"
 #include "../Engine/Physic/BruteForceSolver.h"
@@ -15,8 +16,8 @@ namespace Application
     {
     public:
 
-        const int WIDTH = 800;
-        const int HEIGHT = 600;
+        const int WIDTH = 1920;
+        const int HEIGHT = 1080;
 
         GravitySimulator();
 
@@ -24,11 +25,11 @@ namespace Application
 
     private:
 
-        std::shared_ptr<Window> window;
-        std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> objects;
-        std::unique_ptr<Engine::Graphic::GPU> gpu;
+        Window window = Window{ WIDTH, HEIGHT };
+        std::vector<Engine::Physic::PhysicObject> objects;
+        std::unique_ptr<Engine::Graphic::Renderer> renderer;
 
-        std::unique_ptr < Engine::Physic::PhysicSystem> physicSystem;
+        Engine::Physic::PhysicSystem physicSystem;
     };
 
 }

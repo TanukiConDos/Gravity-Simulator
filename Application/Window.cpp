@@ -1,5 +1,6 @@
 #include "Window.h"
 
+
 namespace Application
 {
 
@@ -15,7 +16,7 @@ namespace Application
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+       window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
@@ -42,5 +43,11 @@ namespace Application
     {
         width = this->width;
         height = this->height;
+    }
+    void Window::createSurface(VkInstance instace)
+    {
+        if (glfwCreateWindowSurface(instace, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
     }
 }

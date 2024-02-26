@@ -2,16 +2,16 @@
 
 namespace Engine::Physic
 {
-	void bruteForceDetection::narrowDetection(double deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects)
+	void bruteForceDetection::narrowDetection(double deltaTime, std::vector<PhysicObject>& objects)
 	{
-		for (int i = 0; i < numObjects; i++)
+		for (int i = 0; i < objects.size(); i++)
 		{
-			PhysicObject object = objects->at(i);
-			for (int j = 0; j < numObjects; j++)
+			PhysicObject object = objects[i];
+			for (int j = 0; j < objects.size(); j++)
 			{
 				if (i != j)
 				{
-					PhysicObject object2 = objects->at(j);
+					PhysicObject object2 = objects[j];
 					object.collision(object2);
 
 				}

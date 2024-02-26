@@ -3,35 +3,36 @@
 namespace Engine::Physic
 {
 	const double PhysicSystem::UNIVERSAL_GRAVITATION = 6.67430e-11;
-	void PhysicSystem::update(double deltaTime,std::shared_ptr<std::vector<PhysicObject>> objects,int numObjects)
+	void PhysicSystem::update(double deltaTime, std::vector<Engine::Physic::PhysicObject>& objects)
 	{
-		broadCollitionDetectionAlgorithm->broadDetection(objects,numObjects);
-		narrowCollitionDetectionAlgorithm->narrowDetection(deltaTime,objects, numObjects);
-		solverAlgorithm->solve(deltaTime,objects,numObjects);
-		checkEnergyConservation(objects, numObjects);
+		broadCollitionDetectionAlgorithm->broadDetection(objects);
+		narrowCollitionDetectionAlgorithm->narrowDetection(deltaTime,objects);
+		solverAlgorithm->solve(deltaTime,objects);
+		checkEnergyConservation(objects);
 	}
 
-	PhysicSystem::PhysicSystem(std::unique_ptr<Engine::Physic::BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm, std::unique_ptr<Engine::Physic::NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm, std::unique_ptr<Engine::Physic::SolverInterface> solverAlgorithm, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects)
-		
+	PhysicSystem::PhysicSystem(std::unique_ptr<BroadCollisionDetectionInterface> broadCollitionDetectionAlgorithm,
+		std::unique_ptr<NarrowCollisionDetectionInterface> narrowCollitionDetectionAlgorithm,
+		std::unique_ptr<SolverInterface> solverAlgorithm):
+		broadCollitionDetectionAlgorithm(std::move(broadCollitionDetectionAlgorithm)),
+		narrowCollitionDetectionAlgorithm(std::move(narrowCollitionDetectionAlgorithm)),
+		solverAlgorithm(std::move(solverAlgorithm))
 	{
-		this->broadCollitionDetectionAlgorithm = std::move(broadCollitionDetectionAlgorithm);
-		this->narrowCollitionDetectionAlgorithm = std::move(narrowCollitionDetectionAlgorithm);
-		this->solverAlgorithm = std::move(solverAlgorithm);
-		checkEnergyConservation(objects, numObjects);
 	}
-	void PhysicSystem::checkEnergyConservation(std::shared_ptr<std::vector<PhysicObject>> objects,int numObjects)
+
+	void PhysicSystem::checkEnergyConservation(std::vector<Engine::Physic::PhysicObject>& objects)
 	{
 		double totalEnergy = 0.0;
-		for (int i = 0; i < numObjects; i++)
+		for (int i = 0; i < objects.size(); i++)
 		{
-			PhysicObject object = objects->at(i);
+			PhysicObject object = objects[i];
 			double kinetic = 0.5 * object.getMass() * object.getVelocity() * object.getVelocity();
 			double potential = 0;
-			for (int j = 0; j < numObjects; j++)
+			for (int j = 0; j < objects.size(); j++)
 			{
 				if (i != j)
 				{
-					PhysicObject object2 = objects->at(j);
+					PhysicObject object2 = objects[j];
 					if (object.getMass() < object2.getMass())
 					{
 						double auxMass = UNIVERSAL_GRAVITATION * object.getMass() * object2.getMass();

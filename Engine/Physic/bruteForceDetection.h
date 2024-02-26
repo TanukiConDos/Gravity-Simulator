@@ -6,7 +6,7 @@ namespace Engine::Physic
 {
 	class bruteForceDetection : public NarrowCollisionDetectionInterface
 	{
-		void narrowDetection(double deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects, int numObjects);
+		void narrowDetection(double deltaTime,std::vector<PhysicObject>& objects);
 	};
 }
 

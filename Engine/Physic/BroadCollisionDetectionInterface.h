@@ -9,7 +9,7 @@ namespace Engine::Physic
 	class BroadCollisionDetectionInterface
 	{
 	public:
-		virtual void broadDetection(std::shared_ptr<std::vector<PhysicObject>> objects,int numObjects);
+		virtual void broadDetection(std::vector<Engine::Physic::PhysicObject>& objects);
 
 	};
 }

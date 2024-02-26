@@ -1,0 +1,50 @@
+#pragma once
+#include <vulkan/vulkan.hpp>
+
+#include <iostream>
+#include <memory>
+#include "../../Application/Window.h"
+#include "../Physic/PhysicObject.h"
+#include "GPU.h"
+#include "CommandPool.h"
+#include "SwapChain.h"
+#include "Pipeline.h"
+#include "Model.h"
+#include "DescriptorPool.h"
+#include "Camera.h"
+
+namespace Engine
+{
+	namespace Graphic
+	{
+		class Renderer
+		{
+		public:
+
+			Renderer(const Renderer&) = delete;
+			Renderer& operator=(const Renderer&) = delete;
+
+			~Renderer();
+			Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects);
+
+			void drawFrame();
+			void wait() { gpu.wait(); }
+
+		private:
+			Application::Window& window;
+			GPU gpu = GPU{window};
+			CommandPool commandPool = CommandPool{gpu};
+			SwapChain swapChain = SwapChain{gpu,window};
+			Pipeline pipeline = Pipeline{ gpu,swapChain.getRenderPass() };
+			std::vector <Engine::Physic::PhysicObject>& physicObjects;
+			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects.size()};
+			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects.size()) };
+			Model model = Model{30,30,gpu,commandPool};
+			
+			Camera camera = Camera{swapChain};
+			uint32_t currentFrame = 0;
+		};
+	}
+}
+
+

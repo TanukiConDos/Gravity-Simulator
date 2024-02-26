@@ -8,6 +8,6 @@ namespace Engine::Physic
 	class SolverInterface
 	{
 	public:
-		virtual void solve(double deltaTime,std::shared_ptr<std::vector<PhysicObject>> objects,int numObjects);
+		virtual void solve(double deltaTime, std::vector<Engine::Physic::PhysicObject>& objects);
 	};
 }

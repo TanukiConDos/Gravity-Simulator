@@ -8,11 +8,16 @@ namespace Engine::Physic
 
 	void PhysicObject::update(double deltaTime, glm::dvec3 force)
 	{
-		deltaTime = deltaTime / 1000;
+		deltaTime = deltaTime;
 		this->acceleration = force / mass;
 		this->position = position + ((velocity * deltaTime) + 0.5 * acceleration * (deltaTime * deltaTime));
 		this->velocity = velocity + (acceleration * deltaTime);
-		std::cout << "vel: " << velocity[0] << " " << velocity[1] << " " << velocity[2] << std::endl;
+		if (mass == 7.35e25)
+		{
+			std::cout << "acc: " << acceleration[0] / 1000 << " " << acceleration[1] / 1000 << " " << acceleration[2] / 1000 << std::endl;
+			std::cout << "vel: " << velocity[0] / 1000 << " " << velocity[1] / 1000 << " " << velocity[2] / 1000 << std::endl;
+		}
+		
 	}
 	void PhysicObject::collision(PhysicObject object)
 	{
@@ -22,6 +27,8 @@ namespace Engine::Physic
 			glm::dvec3 distanceVec = position - object.position;
 			glm::dvec3 move = glm::normalize(distanceVec) * intersection;
 			position = position + move;
+			acceleration = { 0,0,0 };
+			velocity = { 0,0,0 };
 		}
 	}
 }
