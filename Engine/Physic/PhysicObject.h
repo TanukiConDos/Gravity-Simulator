@@ -10,7 +10,7 @@ namespace Engine::Physic
 		PhysicObject(glm::dvec3 position, glm::dvec3 velocity, glm::dvec3 acceleration, double mass, double radius);
 
 		void update(double deltaTime,glm::dvec3 force);
-		void collision(PhysicObject object);
+		void collision(PhysicObject& object);
 		glm::dvec3 getPosition() { return position; }
 		double getMass() { return mass; }
 		double getVelocity() { return glm::length(velocity); }

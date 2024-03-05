@@ -44,6 +44,7 @@ namespace Engine
 			GPU(Application::Window& window);
 			GPU() = default;
 			void wait();
+			VkInstance getInstance() { return instance; }
 			VkDevice getDevice() { return device; }
 			VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
 			SwapChainSupportDetails querySwapChainSupport() { return querySwapChainSupport(physicalDevice); }

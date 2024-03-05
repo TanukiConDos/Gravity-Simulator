@@ -12,6 +12,7 @@
 #include "Model.h"
 #include "DescriptorPool.h"
 #include "Camera.h"
+#include "imGUIWindow.h"
 
 namespace Engine
 {
@@ -25,7 +26,7 @@ namespace Engine
 			Renderer& operator=(const Renderer&) = delete;
 
 			~Renderer();
-			Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects);
+			Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects,double& frameTime,double& tickTime);
 
 			void drawFrame();
 			void wait() { gpu.wait(); }
@@ -40,6 +41,9 @@ namespace Engine
 			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects.size()};
 			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects.size()) };
 			Model model = Model{30,30,gpu,commandPool};
+			double& frameTime;
+			double& tickTime;
+			ImGUIWindow imGui = ImGUIWindow{ window, gpu, swapChain, pipeline, gpu.getInstance(),frameTime,tickTime};
 			
 			Camera camera = Camera{swapChain};
 			uint32_t currentFrame = 0;

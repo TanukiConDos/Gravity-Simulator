@@ -20,6 +20,7 @@ namespace Engine
 			~DescriptorPool();
 			const VkDescriptorSet* getDescriptorSets(uint32_t currentFrame,uint32_t index) { return &descriptorSets[currentFrame*numObjects+index]; }
 			void updateUniformBuffer(UniformBufferObject ubo, uint32_t currentImage, uint32_t index);
+			VkDescriptorPool getDescriptorPool() { return descriptorPool; }
 		private:
 			GPU& gpu;
 			uint32_t numObjects;

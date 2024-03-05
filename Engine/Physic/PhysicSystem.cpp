@@ -46,6 +46,5 @@ namespace Engine::Physic
 
 		deltaEnergy = glm::abs(systemEnergy - totalEnergy);
 		systemEnergy = totalEnergy;
-		std::cout << "delta: " << deltaEnergy << std::endl;
 	}
 }

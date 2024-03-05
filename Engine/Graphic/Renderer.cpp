@@ -8,7 +8,7 @@ namespace Engine
 		{	
 		}
 
-		Renderer::Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects) : window(window), physicObjects(physicObjects)
+		Renderer::Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects,double& frameTime, double& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
 		{
 			for (int i = 0; i < physicObjects.size(); i++)
 			{
@@ -35,6 +35,7 @@ namespace Engine
 
 			swapChain.beginRenderPass(commandBuffer, currentFrame);
 			pipeline.bind(commandBuffer);
+			imGui.startFrame();
 			for (int i = 0; i < gameObjects.size(); i++)
 			{
 				gameObjects[i].updateModel(physicObjects[i]);
@@ -44,8 +45,9 @@ namespace Engine
 				model.bind(commandBuffer);
 				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model.getIndexSize()), 1, 0, 0, 0);
 			}
-			
+			imGui.draw(commandBuffer);
 			vkCmdEndRenderPass(commandBuffer);
+
 			commandPool.endCommandBuffer(commandBuffer);
 
 			swapChain.queueSubmit(commandBuffer, currentFrame);
