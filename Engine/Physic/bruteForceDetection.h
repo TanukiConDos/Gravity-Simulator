@@ -1,12 +1,12 @@
 #pragma once
-#include "NarrowCollisionDetectionInterface.h"
+#include "CollisionDetectionInterface.h"
 #include <memory>
 #include <vector>
 namespace Engine::Physic
 {
-	class bruteForceDetection : public NarrowCollisionDetectionInterface
+	class bruteForceDetection : public CollisionDetectionInterface
 	{
-		void narrowDetection(double deltaTime,std::vector<PhysicObject>& objects);
+		void detection(double deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
 	};
 }
 

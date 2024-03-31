@@ -8,9 +8,9 @@ namespace Engine
 		{	
 		}
 
-		Renderer::Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects,double& frameTime, double& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
+		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,double& frameTime, double& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
 		{
-			for (int i = 0; i < physicObjects.size(); i++)
+			for (int i = 0; i < physicObjects->size(); i++)
 			{
 				gameObjects[i] = UniformBufferObject{};
 			}
@@ -38,7 +38,7 @@ namespace Engine
 			imGui.startFrame();
 			for (int i = 0; i < gameObjects.size(); i++)
 			{
-				gameObjects[i].updateModel(physicObjects[i]);
+				gameObjects[i].updateModel(*physicObjects->at(i));
 				camera.transform(gameObjects[i]);
 				descriptorPool.updateUniformBuffer(gameObjects[i], currentFrame,i);
 				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipelineLayout(), 0, 1, descriptorPool.getDescriptorSets(currentFrame,i), 0, nullptr);

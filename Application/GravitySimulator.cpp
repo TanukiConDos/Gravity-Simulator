@@ -1,41 +1,37 @@
 #include "GravitySimulator.h"
-#include <thread>
+
 namespace Application
 {
     GravitySimulator::GravitySimulator()
     {
-        for (int i = 0; i < 20; i++)
+        std::random_device rd;
+        std::mt19937::result_type seed = rd() ^ (
+            (std::mt19937::result_type)
+            std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch()
+            ).count() +
+            (std::mt19937::result_type)
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()
+            ).count());
+        std::mt19937 gen(seed);
+        std::uniform_real_distribution distrib(0.0, 1.0);
+        for (int i = 0; i < 1000; i++)
         {
-            switch (i % 6)
-            {
-            case 0:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{i * 1e8 + 1 * 1e8,i,i },glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-                break;
-            case 1:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{i ,i * 1e8 + 1 * 1e8,i },glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-                break;
-            case 2:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{i ,i ,i * 1e8 + 1 * 1e8},glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-            case 3:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{-i * 1e8 - 1 * 1e8,i,i },glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-                break;
-            case 4:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{i ,-i * 1e8 - 1 * 1e8,i },glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-                break;
-            case 5:
-                objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{i ,i ,-i * 1e8 - 1 * 1e8},glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-
-            }
+            double x = distrib(gen) * 2e10 - 1e10;
+            double y = distrib(gen) * 2e10 - 1e10;
+            double z = distrib(gen) * 2e10 - 1e10;
+            objects->push_back(Engine::Physic::PhysicObject::physicObject(glm::dvec3{x,y,z},glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 ));
         }
-        objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{0,0,0},glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 });
-        objects.push_back(Engine::Physic::PhysicObject{ glm::dvec3{0,383400e3,0},glm::dvec3{20e3,0,0},glm::dvec3{0,0,0},7.35e25,6737e3 });
+        objects->push_back(Engine::Physic::PhysicObject::physicObject( glm::dvec3{0,0,0},glm::dvec3{0,0,0},glm::dvec3{0,0,0},6e27,12371e3 ));
+        objects->push_back(Engine::Physic::PhysicObject::physicObject( glm::dvec3{0,383400e3,0},glm::dvec3{20e3,0,0},glm::dvec3{0,0,0},7.35e25,6737e3 ));
         
-        renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects,frameTime,tickTime);
-        std::unique_ptr<Engine::Physic::BroadCollisionDetectionInterface> broadalgorithm = std::make_unique<Engine::Physic::BroadCollisionDetectionInterface>();
-        std::unique_ptr<Engine::Physic::NarrowCollisionDetectionInterface> narrowAlgorithm = std::make_unique<Engine::Physic::bruteForceDetection>();
+        renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, frameTime, tickTime);
+        std::unique_ptr<Engine::Physic::CollisionDetectionInterface> collisionAlgorithm = std::make_unique<Engine::Physic::OctTreeCollisionDetection>(objects);
+        //std::unique_ptr<Engine::Physic::CollisionDetectionInterface> collisionAlgorithm = std::make_unique<Engine::Physic::bruteForceDetection>();
         std::unique_ptr<Engine::Physic::SolverInterface> solverAlgorithm = std::make_unique<Engine::Physic::BruteForceSolver>();
 
-        physicSystem = Engine::Physic::PhysicSystem{ std::move(broadalgorithm), std::move(narrowAlgorithm), std::move(solverAlgorithm)};
+        physicSystem = Engine::Physic::PhysicSystem{ std::move(collisionAlgorithm), std::move(solverAlgorithm)};
     }
     void GravitySimulator::run()
     {
@@ -53,7 +49,7 @@ namespace Application
             auto t_end = std::chrono::high_resolution_clock::now();
             elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
             acc += elapsed_time_ms;
-            if (acc > 500)
+            if (acc > 100)
             {
                 acc = 0;
                 tickTime = std::chrono::duration<double, std::milli>(tick_end - tick_start).count();

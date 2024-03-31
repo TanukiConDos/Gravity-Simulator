@@ -26,7 +26,7 @@ namespace Engine
 			Renderer& operator=(const Renderer&) = delete;
 
 			~Renderer();
-			Renderer(Application::Window& window, std::vector<Engine::Physic::PhysicObject>& physicObjects,double& frameTime,double& tickTime);
+			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,double& frameTime,double& tickTime);
 
 			void drawFrame();
 			void wait() { gpu.wait(); }
@@ -37,9 +37,9 @@ namespace Engine
 			CommandPool commandPool = CommandPool{gpu};
 			SwapChain swapChain = SwapChain{gpu,window};
 			Pipeline pipeline = Pipeline{ gpu,swapChain.getRenderPass() };
-			std::vector <Engine::Physic::PhysicObject>& physicObjects;
-			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects.size()};
-			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects.size()) };
+			std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects;
+			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects->size()};
+			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects->size()) };
 			Model model = Model{30,30,gpu,commandPool};
 			double& frameTime;
 			double& tickTime;
