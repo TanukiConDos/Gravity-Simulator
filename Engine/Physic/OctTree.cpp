@@ -1,5 +1,5 @@
 #include "OctTree.h"
-
+#include <chrono>
 namespace Engine
 {
 	namespace Physic
@@ -7,54 +7,119 @@ namespace Engine
 		OctTree::OctTree(std::shared_ptr<std::vector<PhysicObject*>> objects): objects(objects)
 		{
 			insert();
+			massCalculation();
+		}
+
+		void OctTree::barnesHut(double deltaTime)
+		{
+			for (PhysicObject* object : *objects)
+			{
+				glm::vec3 totalForce = {0,0,0};
+				std::stack<Node*> stack;
+				stack.emplace(root);
+				while (!stack.empty())
+				{
+					Node* current = stack.top();
+					stack.pop();
+					double distance = glm::distance(current->center, object->getPosition());
+					if ( current->width / distance < 0.1 && distance > 0)
+					{
+						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->getMass() * current->mass) / (distance * distance)) * (glm::dvec3)glm::normalize(object->getPosition() - current->center));
+						continue;
+					}
+					if (current->noChilds && current->object != nullptr)
+					{
+						if (current->object == object) continue;
+						distance = glm::distance(current->object->getPosition(), object->getPosition());
+						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->getMass() * current->object->getMass()) / (distance * distance)) * (glm::dvec3)glm::normalize(object->getPosition() - current->object->getPosition()));
+						continue;
+					}
+
+					for (Node* child : current->childs)
+					{
+						if (child->noChilds && child->object == nullptr) continue;
+						stack.emplace(child);
+					}
+				}
+				object->update(deltaTime, totalForce);
+			}
+		}
+
+		void OctTree::massCalculation()
+		{
+			std::stack<Node*> stack, stack2;
+			stack.emplace(root);
+			while (!stack.empty())
+			{
+				Node* current = stack.top();
+				stack.pop();
+				if (current->object != nullptr){
+					current->mass = current->object->getMass();
+					continue;
+				}
+
+				stack2.emplace(current);
+				for (Node* child : current->childs)
+				{
+					if (child->noChilds && child->object == nullptr) continue;
+					stack.emplace(child);
+				}
+			}
+
+			while (!stack2.empty())
+			{
+				Node* current = stack2.top();
+				stack2.pop();
+				for (Node* child : current->childs)
+				{
+					current->mass += child->mass;
+				}
+			}
 		}
 
 		void OctTree::checkCollisions()
 		{
 			for (PhysicObject* object : *objects)
 			{
-				Node* current = &root;
-
-				while (current != nullptr)
+				std::stack<Node*> stack;
+				stack.emplace(root);
+				while (!stack.empty())
 				{
-					for (PhysicObject* object2 : current->objects)
+					Node* current = stack.top();
+					stack.pop();
+					
+					if (current->object != nullptr)
 					{
-						if (object == object2) continue;
-						object->collision(*object2);
+						if (object == current->object) continue;
+						object->collision(*current->object);
 					}
-					glm::dvec3 pos = object->getPosition();
-					double radius = object->getRadius();
-					bool childFound = false;
+					
+
+					glm::vec3 pos = object->getPosition();
+					float radius = object->getRadius();
+					glm::vec3 minPos = pos - radius;
+					glm::vec3 maxPos = pos + radius;
+					if (current->noChilds) continue;
 					for (Node* child: current->childs)
 					{
-						if (child == nullptr) continue;
-						if (child->start[0] < pos[0] - radius
-							|| child->start[1] < pos[1] - radius
-							|| child->start[2] < pos[2] - radius
-							|| child->end[0] > pos[0] + radius
-							|| child->end[1] > pos[1] + radius
-							|| child->end[2] > pos[2] + radius)
+						if (child->noChilds && child->object == nullptr) continue;
+						if (glm::all(glm::lessThanEqual(child->start, maxPos))
+							|| glm::all(glm::greaterThan(child->end, minPos)))
 						{
-							current = child;
-							childFound = true;
-							continue;
+							stack.emplace(child);
 						}
 					}
-					if (!childFound) current = nullptr;
 				}
 			}
 		}
 
 		void OctTree::update()
 		{
-			if (ticks > 100)
+			if (ticks > 500)
 			{
 				ticks = 0;
-				for (Node* child : root.childs)
-				{
-					child = nullptr;
-				}
-				root.objects.clear();
+				root = new Node(glm::vec3{ -1.1e11 , -1.1e11 , -1.1e11 },
+					glm::vec3{ 1.1e11, 1.1e11, 1.1e11 });
 				insert();
 			}
 			ticks++;
@@ -64,116 +129,78 @@ namespace Engine
 		{
 			for (PhysicObject* object : *objects)
 			{
-				std::stack<Node*> stack;
-				stack.emplace(&root);
-				while (!stack.empty())
+				Node* current = root;
+				glm::vec3 pos = object->getPosition();
+				while (true)
 				{
-					Node* current = stack.top();
-					stack.pop();
-					if (current->objects.size() == 0)
-					{
-						current->objects.emplace_back(object);
-						continue;
-					}
-					glm::dvec3 pos = object->getPosition();
-					double radius = object->getRadius();
-					for (Node* child: current->childs)
+					if (current->noChilds) break;
+					for (Node* child : current->childs)
 					{
 						if (child == nullptr) continue;
-						if (child->start[0] < pos[0] - radius
-							|| child->start[1] < pos[1] - radius
-							|| child->start[2] < pos[2] - radius
-							|| child->end[0] > pos[0] + radius
-							|| child->end[1] > pos[1] + radius
-							|| child->end[2] > pos[2] + radius)
+						if (glm::all(glm::lessThanEqual(child->start, pos))
+							&& glm::all(glm::greaterThan(child->end, pos)))
 						{
-							stack.emplace(child);
+							current = child;
+							break;
 						}
 					}
-					if (current->numChilds == 8)
-					{
-						current->objects.emplace_back(object);
-						continue;
-					}
-					glm::dvec3 newEnd = glm::dvec3{ (current->start[0] + current->end[0]) / 2,(current->start[1] + current->end[1]) / 2,(current->start[2] + current->end[2]) / 2 };
-					glm::dvec3 minPos = object->getPosition() - object->getRadius();
-					glm::dvec3 maxPos = object->getPosition() + object->getRadius();
-					if (maxPos[0] < newEnd[0] || maxPos[1] < newEnd[1] || maxPos[2] < newEnd[2])
-					{
-						current->childs[0] = new Node(current->start, newEnd);
-						stack.emplace(current->childs[0]);
-						//checkObjects();
-					}
-					if ((maxPos[0] < newEnd[0] || maxPos[1] < newEnd[1] || minPos[2] > newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[1] = new Node(glm::dvec3{ current->start[0],current->start[1],newEnd[2] }, glm::dvec3{ newEnd[0],newEnd[1],current->end[2] });
-						stack.emplace(current->childs[1]);
-						//checkObjects();
-					}
-					if ((maxPos[0] < newEnd[0] || minPos[1] > newEnd[1] || maxPos[2] < newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[2] = new Node(glm::dvec3{ current->start[0],newEnd[1],current->start[2] }, glm::dvec3{ newEnd[0],current->end[1],newEnd[2] });
-						stack.emplace(current->childs[2]);
-						//checkObjects();
-					}
-					if ((maxPos[0] < newEnd[0] || minPos[1] > newEnd[1] || minPos[2] > newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[3] = new Node(glm::dvec3{ current->start[0],newEnd[1],newEnd[2] }, glm::dvec3{ newEnd[0],current->end[1],current->end[2] });
-						stack.emplace(current->childs[3]);
-						//checkObjects();
-					}
-					if ((minPos[0] > newEnd[0] || maxPos[1] < newEnd[1] || maxPos[2] < newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[4] = new Node(glm::dvec3{ newEnd[0],current->start[1],current->start[2] }, glm::dvec3{ current->end[0],newEnd[1],newEnd[2] });
-						stack.emplace(current->childs[4]);
-						//checkObjects();
-					}
-					if ((minPos[0] > newEnd[0] || maxPos[1] < newEnd[1] || minPos[2] > newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[5] = new Node(glm::dvec3{ newEnd[0],current->start[1],newEnd[2] }, glm::dvec3{ current->end[0],newEnd[1],current->end[2] });
-						stack.emplace(current->childs[5]);
-						//checkObjects();
-					}
-					if ((minPos[0] > newEnd[0] || minPos[1] > newEnd[1] || maxPos[2] < newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[6] = new Node(glm::dvec3{ newEnd[0],newEnd[1],current->start[2] }, glm::dvec3{ current->end[0],current->end[1],newEnd[2] });
-						stack.emplace(current->childs[6]);
-						//checkObjects();
-					}
-					if ((minPos[0] > newEnd[0] || minPos[1] > newEnd[1] || minPos[2] > newEnd[2]) && current->numChilds < 8)
-					{
-						current->childs[7] = new Node(newEnd, current->end);
-						stack.emplace(current->childs[7]);
-						//checkObjects();
-					}
 				}
-			}
-		}
+				if (current->object == nullptr) {
+					current->object = object;
+					continue;
+				}
 
-		OctTree::Node::Node(glm::dvec3 start, glm::dvec3 end): start(start), end(end)
-		{
-			for (Node* child : childs) child = nullptr;
-		}
-
-		void OctTree::Node::checkObjects()
-		{
-			for (PhysicObject* object : objects)
-			{
-				glm::dvec3 pos = object->getPosition();
-				double radius = object->getRadius();
-				for (int i = 0; i < numChilds; i++)
+				current->expand();
+				PhysicObject* object2 = current->object;
+				current->object = nullptr;
+				glm::vec pos2 = object2->getPosition();
+				int bothInserted = 0;
+				while (bothInserted < 2)
 				{
-					if (childs[i]->start[0] < pos[0] - radius
-						&& childs[i]->start[1] < pos[1] - radius
-						&& childs[i]->start[2] < pos[2] - radius
-						&& childs[i]->end[0] > pos[0] + radius
-						&& childs[i]->end[1] > pos[1] + radius
-						&& childs[i]->end[2] > pos[2] + radius)
+					for (Node* child : current->childs)
 					{
-						//childs[i]->addObject(*object);
+						if (glm::all(glm::lessThanEqual(child->start, pos))
+							&& glm::all(glm::greaterThan(child->end, pos)))
+						{
+							if (glm::all(glm::lessThanEqual(child->start, pos2))
+								&& glm::all(glm::greaterThan(child->end, pos2)))
+							{
+								child->expand();
+								current = child;
+								break;
+							}
+							child->object = object;
+							bothInserted++;
+						}
+						if (glm::all(glm::lessThanEqual(child->start, pos2))
+							&& glm::all(glm::greaterThan(child->end, pos2)))
+						{
+							child->object = object2;
+							bothInserted++;
+						}
+						if (bothInserted == 2) break;
 					}
 				}
 			}
+		}
+
+		OctTree::Node::Node(glm::vec3 start, glm::vec3 end): start(start), end(end)
+		{
+			center = glm::vec3{ (start[0] + end[0]) / 2,(start[1] + end[1]) / 2,(start[2] + end[2]) / 2 };
+			width = end[0] - start[0];
+		}
+
+		void OctTree::Node::expand()
+		{
+			this->noChilds = false;
+			childs[0] = new Node(start, center);
+			childs[1] = new Node(glm::vec3{ start[0],start[1],center[2] }, glm::vec3{ center[0], center[1], end[2] });
+			childs[2] = new Node(glm::vec3{ start[0], center[1], start[2] }, glm::vec3{ center[0], end[1], center[2] });
+			childs[3] = new Node(glm::vec3{ start[0], center[1], center[2] }, glm::vec3{ center[0], end[1], end[2] });
+			childs[4] = new Node(glm::vec3{ center[0], start[1], start[2] }, glm::vec3{ end[0], center[1], center[2] });
+			childs[5] = new Node(glm::vec3{ center[0], start[1], center[2] }, glm::vec3{ end[0], center[1], end[2] });
+			childs[6] = new Node(glm::vec3{ center[0], center[1], start[2] }, glm::vec3{ end[0], end[1], center[2] });
+			childs[7] = new Node(center, end);
 		}
 	}
 }

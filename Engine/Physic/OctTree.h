@@ -5,6 +5,8 @@
 #include <memory>
 #include <stack>
 
+#include "PhysicSystem.h"
+
 namespace Engine
 {
 	namespace Physic
@@ -19,6 +21,8 @@ namespace Engine
 			OctTree(std::shared_ptr<std::vector<PhysicObject*>> objects);
 			OctTree() = default;
 
+			void barnesHut(double deltaTime);
+			void massCalculation();
 			void checkCollisions();
 			void update();
 		private:
@@ -27,26 +31,26 @@ namespace Engine
 			class Node
 			{
 			public:
-
 				Node(const Node&) = delete;
 				Node& operator= (const Node&) = delete;
 
-				Node(glm::dvec3 start, glm::dvec3 end);
+				Node(glm::vec3 start, glm::vec3 end);
 				Node() = default;
-				//void addObject(PhysicObject& objects, std::stack<Node>& stack);
 
-				
-				int numChilds = 0;
+				float width;
+				double mass = 0;
+				bool noChilds = true;
 				Node* childs[8];
-				std::vector<PhysicObject*> objects = std::vector<PhysicObject*>();
-				glm::dvec3 start;
-				glm::dvec3 end;
-
-				void checkObjects();
+				PhysicObject* object;
+				glm::vec3 start;
+				glm::vec3 end;
+				glm::vec3 center;
 				
+
+				void expand();
 			};
-			Node root = Node(glm::dvec3{ std::numeric_limits<double>::lowest() , std::numeric_limits<double>::lowest() , std::numeric_limits<double>::lowest() },
-				glm::dvec3{ std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max() });
+			Node* root = new Node(glm::vec3{ -1.1e11 , -1.1e11 , -1.1e11 },
+				glm::vec3{ 1.1e11, 1.1e11, 1.1e11 });
 			void insert();
 		};
 	}

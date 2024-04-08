@@ -26,7 +26,7 @@ namespace Engine
 			Renderer& operator=(const Renderer&) = delete;
 
 			~Renderer();
-			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,double& frameTime,double& tickTime);
+			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float& frameTime,float& tickTime);
 
 			void drawFrame();
 			void wait() { gpu.wait(); }
@@ -41,8 +41,8 @@ namespace Engine
 			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects->size()};
 			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects->size()) };
 			Model model = Model{30,30,gpu,commandPool};
-			double& frameTime;
-			double& tickTime;
+			float& frameTime;
+			float& tickTime;
 			ImGUIWindow imGui = ImGUIWindow{ window, gpu, swapChain, pipeline, gpu.getInstance(),frameTime,tickTime};
 			
 			Camera camera = Camera{swapChain};

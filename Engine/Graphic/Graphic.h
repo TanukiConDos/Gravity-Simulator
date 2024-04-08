@@ -33,7 +33,7 @@ namespace Engine
 
 			void updateModel(Physic::PhysicObject& object)
 			{
-				this->model = glm::translate(glm::mat4(1.0f), (glm::vec3)(object.getPosition() * 0.00001)) * glm::scale(glm::mat4(1.0f), glm::vec3(object.getRadius()* 0.00001, object.getRadius()* 0.00001, object.getRadius()* 0.00001));
+				this->model = glm::translate(glm::mat4(1.0f), (glm::vec3)(object.getPosition() * 0.00001f)) * glm::scale(glm::mat4(1.0f), glm::vec3(object.getRadius()* 0.00001f, object.getRadius()* 0.00001f, object.getRadius()* 0.00001f));
 			}
 		};
 

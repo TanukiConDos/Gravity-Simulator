@@ -1,8 +1,9 @@
 #include "bruteForceDetection.h"
-
+#include <chrono>
+#include <iostream>
 namespace Engine::Physic
 {
-	void bruteForceDetection::detection(double deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects)
+	void bruteForceDetection::detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects)
 	{
 		for (int i = 0; i < objects->size(); i++)
 		{
@@ -13,7 +14,6 @@ namespace Engine::Physic
 				{
 					PhysicObject* object2 = objects->at(j);
 					object->collision(*object2);
-
 				}
 			}
 		}

@@ -3,7 +3,7 @@
 #include "../Physic/PhysicObject.h"
 #include "CommandPool.h"
 #include "Buffer.h"
-#define PI          3.141592653589793238462643383279502884L
+#define PI          3.141592653589793238462643383279502884f
 
 namespace Engine
 {

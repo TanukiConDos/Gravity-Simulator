@@ -8,7 +8,7 @@ namespace Engine
 		{	
 		}
 
-		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,double& frameTime, double& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
+		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float& frameTime, float& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
 		{
 			for (int i = 0; i < physicObjects->size(); i++)
 			{

@@ -17,15 +17,15 @@ namespace Engine
 		public:
 			ImGUIWindow(const ImGUIWindow&) = delete;
 			ImGUIWindow& operator=(const ImGUIWindow&) = delete;
-			ImGUIWindow(Application::Window& window,GPU& gpu,SwapChain& swapChain,Pipeline& pipeline, VkInstance instance, double& frameTime, double& tickTime);
+			ImGUIWindow(Application::Window& window,GPU& gpu,SwapChain& swapChain,Pipeline& pipeline, VkInstance instance, float& frameTime, float& tickTime);
 			~ImGUIWindow();
 			void startFrame();
 			void draw(VkCommandBuffer commandBuffer);
-			void setTimers(double& frameTime, double& tickTime) { frameTime = frameTime; tickTime = tickTime; }
+			void setTimers(float& frameTime, float& tickTime) { frameTime = frameTime; tickTime = tickTime; }
 		private:
 			VkDescriptorPool imguiPool;
-			double& frameTime;
-			double& tickTime;
+			float& frameTime;
+			float& tickTime;
 		};
 	}
 }

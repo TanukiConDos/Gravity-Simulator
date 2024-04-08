@@ -35,7 +35,7 @@ namespace Application
         std::unique_ptr<Engine::Graphic::Renderer> renderer;
 
         Engine::Physic::PhysicSystem physicSystem;
-        double frameTime = 0, tickTime = 0,acc=0;
+        float frameTime = 0, tickTime = 0,acc=0;
     };
 
 }

@@ -6,7 +6,7 @@ namespace Engine::Physic
 {
 	class bruteForceDetection : public CollisionDetectionInterface
 	{
-		void detection(double deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
+		void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
 	};
 }
 

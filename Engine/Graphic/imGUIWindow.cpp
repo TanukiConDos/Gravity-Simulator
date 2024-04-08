@@ -4,7 +4,7 @@ namespace Engine
 {
 	namespace Graphic
 	{
-		ImGUIWindow::ImGUIWindow(Application::Window& window, GPU& gpu,SwapChain& swapChain, Pipeline& pipeline,VkInstance instance,double& frameTime, double& tickTime): frameTime(frameTime),tickTime(tickTime)
+		ImGUIWindow::ImGUIWindow(Application::Window& window, GPU& gpu,SwapChain& swapChain, Pipeline& pipeline,VkInstance instance,float& frameTime, float& tickTime): frameTime(frameTime),tickTime(tickTime)
 		{
 
             VkDescriptorPoolSize pool_sizes[] = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
