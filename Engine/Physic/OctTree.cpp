@@ -21,17 +21,17 @@ namespace Engine
 				{
 					Node* current = stack.top();
 					stack.pop();
-					double distance = glm::distance(current->center, object->getPosition());
+					double distance = glm::distance(current->center, object->position);
 					if ( current->width / distance < 0.1 && distance > 0)
 					{
-						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->getMass() * current->mass) / (distance * distance)) * (glm::dvec3)glm::normalize(object->getPosition() - current->center));
+						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->mass * current->mass) / (distance * distance)) * (glm::dvec3)glm::normalize(object->position - current->center));
 						continue;
 					}
 					if (current->noChilds && current->object != nullptr)
 					{
 						if (current->object == object) continue;
-						distance = glm::distance(current->object->getPosition(), object->getPosition());
-						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->getMass() * current->object->getMass()) / (distance * distance)) * (glm::dvec3)glm::normalize(object->getPosition() - current->object->getPosition()));
+						distance = glm::distance(current->object->position, object->position);
+						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->mass * current->object->mass) / (distance * distance)) * (glm::dvec3)glm::normalize(object->position - current->object->position));
 						continue;
 					}
 
@@ -54,7 +54,7 @@ namespace Engine
 				Node* current = stack.top();
 				stack.pop();
 				if (current->object != nullptr){
-					current->mass = current->object->getMass();
+					current->mass = current->object->mass;
 					continue;
 				}
 
@@ -95,8 +95,8 @@ namespace Engine
 					}
 					
 
-					glm::vec3 pos = object->getPosition();
-					float radius = object->getRadius();
+					glm::vec3 pos = object->position;
+					float radius = object->radius;
 					glm::vec3 minPos = pos - radius;
 					glm::vec3 maxPos = pos + radius;
 					if (current->noChilds) continue;
@@ -130,7 +130,7 @@ namespace Engine
 			for (PhysicObject* object : *objects)
 			{
 				Node* current = root;
-				glm::vec3 pos = object->getPosition();
+				glm::vec3 pos = object->position;
 				while (true)
 				{
 					if (current->noChilds) break;
@@ -153,7 +153,7 @@ namespace Engine
 				current->expand();
 				PhysicObject* object2 = current->object;
 				current->object = nullptr;
-				glm::vec pos2 = object2->getPosition();
+				glm::vec pos2 = object2->position;
 				int bothInserted = 0;
 				while (bothInserted < 2)
 				{

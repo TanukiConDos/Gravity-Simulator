@@ -3,12 +3,19 @@
 
 namespace Foundation
 {
-	File::File(std::string filename)
+	File::File(std::string filename,bool isShader)
 	{
-		file.open(filename, std::ios::ate | std::ios::binary);
-
+		if (isShader) file.open(filename, std::ios::in | std::ios::ate | std::ios::binary);
+		else file.open(filename, std::ios::out | std::ios::in | std::ios::ate);
 		if (!file.is_open()) {
-			throw std::runtime_error("failed to open file!");
+			if(isShader) throw std::runtime_error("failed to open file!");
+			std::ofstream outfile(filename);
+
+			outfile << "";
+
+			outfile.close();
+			file.open(filename, std::ios::out | std::ios::in | std::ios::ate);
+			if (!file.is_open()) throw std::runtime_error("failed to open file!");
 		}
 
 		size = (size_t)file.tellg();
@@ -25,6 +32,11 @@ namespace Foundation
 		file.read(buffer.data(), size);
 		file.seekg(0);
 		return buffer;
+	}
+	void File::write(std::string data)
+	{
+		file.clear();
+		file.write(data.c_str(),data.size());
 	}
 }
 

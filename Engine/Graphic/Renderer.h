@@ -27,7 +27,7 @@ namespace Engine
 
 			~Renderer();
 			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float& frameTime,float& tickTime);
-
+			void updateObjects();
 			void drawFrame();
 			void wait() { gpu.wait(); }
 
@@ -39,7 +39,7 @@ namespace Engine
 			Pipeline pipeline = Pipeline{ gpu,swapChain.getRenderPass() };
 			std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects;
 			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects->size()};
-			DescriptorPool descriptorPool = DescriptorPool{ gpu, pipeline, static_cast<uint32_t>(physicObjects->size()) };
+			DescriptorPool* descriptorPool = new DescriptorPool(gpu, pipeline, static_cast<uint32_t>(physicObjects->size()));
 			Model model = Model{30,30,gpu,commandPool};
 			float& frameTime;
 			float& tickTime;

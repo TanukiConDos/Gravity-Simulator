@@ -16,10 +16,10 @@ namespace Engine::Physic
 				if (i != j)
 				{
 					PhysicObject* object2 = objects->at(j);
-					double distance = glm::distance(object->getPosition(), object2->getPosition());
-					if (distance > object->getRadius() + object2->getRadius() + 1000)
+					double distance = glm::distance(object->position, object2->position);
+					if (distance > object->radius + object2->radius + 1000)
 					{
-						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->getMass() * object2->getMass()) / (distance * distance)) * (glm::dvec3) glm::normalize(object->getPosition() - object2->getPosition()));
+						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->mass * object2->mass) / (distance * distance)) * (glm::dvec3) glm::normalize(object->position - object2->position));
 					}
 				}
 			}

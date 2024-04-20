@@ -30,15 +30,12 @@ namespace Engine
             if (vkCreateDescriptorPool(gpu.getDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create descriptor pool!");
             }
-
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
-            ImGuiIO& io = ImGui::GetIO(); (void)io;
-            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
             ImGui::StyleColorsDark();
 
-            ImGui_ImplGlfw_InitForVulkan(window.getWindow(), false);
+            ImGui_ImplGlfw_InitForVulkan(window.getWindow(), true);
             ImGui_ImplVulkan_InitInfo init_info = {};
             init_info.Instance = instance;
             init_info.PhysicalDevice = gpu.getPhysicalDevice();
@@ -67,20 +64,8 @@ namespace Engine
         {
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
-            std::string frameTimeStr = "Frametime: ";
-            frameTimeStr += std::to_string(frameTime);
-            frameTimeStr += "ms";
-            std::string tickTimeStr = "Ticktime: ";
-            tickTimeStr += std::to_string(tickTime);
-            tickTimeStr += "ms";
-
             ImGui::NewFrame();
-            ImGui::Begin("Debug");
-            ImGui::SetWindowPos(ImVec2{ 0,0 });
-            ImGui::SetWindowSize("Debug", ImVec2{ 200,75 });
-            ImGui::Text(frameTimeStr.c_str());
-            ImGui::Text(tickTimeStr.c_str());
-            ImGui::End();
+            stateMachine->frame();
             ImGui::Render();
         }
 

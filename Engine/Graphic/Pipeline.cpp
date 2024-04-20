@@ -4,8 +4,8 @@ namespace Engine::Graphic
 {
 	Pipeline::Pipeline(GPU& gpu, VkRenderPass renderPass):gpu(gpu)
 	{
-		Foundation::File vertexShader{ "./Engine/Graphic/shader/vert.spv" };
-		Foundation::File fragmentShader{ "./Engine/Graphic/shader/frag.spv" };
+		Foundation::File vertexShader{ "./Engine/Graphic/shader/vert.spv"};
+		Foundation::File fragmentShader{ "./Engine/Graphic/shader/frag.spv"};
 
 		std::vector<char> vertexShaderCode = vertexShader.read();
 		std::vector<char> fragmentShaderCode = fragmentShader.read();

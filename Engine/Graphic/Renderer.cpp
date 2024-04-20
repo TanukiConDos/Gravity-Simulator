@@ -16,6 +16,17 @@ namespace Engine
 			}
 		}
 
+		void Renderer::updateObjects()
+		{
+			descriptorPool->~DescriptorPool();
+			descriptorPool = new DescriptorPool(gpu, pipeline, physicObjects->size());
+			gameObjects.resize(physicObjects->size());
+			for (int i = 0; i < physicObjects->size(); i++)
+			{
+				gameObjects[i] = UniformBufferObject{};
+			}
+		}
+
 		void Renderer::drawFrame()
 		{
 			VkResult result = swapChain.adquireNextImage(currentFrame);
@@ -40,8 +51,8 @@ namespace Engine
 			{
 				gameObjects[i].updateModel(*physicObjects->at(i));
 				camera.transform(gameObjects[i]);
-				descriptorPool.updateUniformBuffer(gameObjects[i], currentFrame,i);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipelineLayout(), 0, 1, descriptorPool.getDescriptorSets(currentFrame,i), 0, nullptr);
+				descriptorPool->updateUniformBuffer(gameObjects[i], currentFrame,i);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipelineLayout(), 0, 1, descriptorPool->getDescriptorSets(currentFrame,i), 0, nullptr);
 				model.bind(commandBuffer);
 				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model.getIndexSize()), 1, 0, 0, 0);
 			}

@@ -3,6 +3,7 @@
 #include "../../External/imgui/imgui_impl_glfw.h"
 #include "../../External/imgui/imgui_impl_vulkan.h"
 #include "../../Application/Window.h"
+#include "../../Application/State.h"
 #include "GPU.h"
 #include "Pipeline.h"
 #include "DescriptorPool.h"
@@ -19,13 +20,16 @@ namespace Engine
 			ImGUIWindow& operator=(const ImGUIWindow&) = delete;
 			ImGUIWindow(Application::Window& window,GPU& gpu,SwapChain& swapChain,Pipeline& pipeline, VkInstance instance, float& frameTime, float& tickTime);
 			~ImGUIWindow();
+
+			float& frameTime;
+			float& tickTime;
 			void startFrame();
 			void draw(VkCommandBuffer commandBuffer);
 			void setTimers(float& frameTime, float& tickTime) { frameTime = frameTime; tickTime = tickTime; }
 		private:
+			Application::StateMachine* stateMachine = Application::StateMachine::getStateMachine();
 			VkDescriptorPool imguiPool;
-			float& frameTime;
-			float& tickTime;
+			
 		};
 	}
 }
