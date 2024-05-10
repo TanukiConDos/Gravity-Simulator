@@ -8,7 +8,7 @@ namespace Application
     {
         
         renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, frameTime, tickTime);
-        stateMachine->subscribe(this);
+        stateMachine->sub = this;
     }
 
     void GravitySimulator::initSimulation()
@@ -63,7 +63,7 @@ namespace Application
             break;
         }
         }
-        
+        stateMachine->objects = objects;
         std::unique_ptr<Engine::Physic::CollisionDetectionInterface> collisionAlgorithm;
         Engine::Physic::OctTree* tree = nullptr;
         switch(config->collisionAlgorithm)

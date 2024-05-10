@@ -22,10 +22,10 @@ namespace Foundation
 		Config(const Config&) = delete;
 		Config& operator=(const Config&) = delete;
 		static Config* getConfig();
-		Mode systemCreationMode = Mode::RANDOM;
+		Mode systemCreationMode = Mode::FILE;
 		int numObjects = 998;
 		float time = 1000;
-		char fichero[100];
+		char fichero[100] = "tierra.json";
 		Algorithm collisionAlgorithm = Algorithm::BRUTE_FORCE;
 		Algorithm SolverAlgorithm = Algorithm::BRUTE_FORCE;
 	private:

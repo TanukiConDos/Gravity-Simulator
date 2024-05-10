@@ -21,13 +21,12 @@ namespace Engine
 			float getVelocity() { return glm::length(velocity); }
 			glm::vec3 position;
 			glm::vec3 velocity;
+			glm::vec3 acceleration = glm::vec3(0.0, 0.0, 0.0);
 			double mass;
 			float radius;
 
 		private:
-			
-			glm::vec3 acceleration = glm::vec3(0.0,0.0,0.0);
-			
+
 		};
 		void to_json(nlohmann::json& j, const PhysicObject& o);
 

@@ -42,8 +42,8 @@ namespace Application
         switch (action)
         {
         case Action::BEGIN_SIMULATION:
-            context->getSub()->initSimulation();
-            context->changeState(new Debug(context, new State(context)));
+            context->sub->initSimulation();
+            context->changeState(new Debug(context, new ObjectSelected(context,new State(context))));
             break;
 
         case Action::CONFIGURATION:
@@ -144,8 +144,51 @@ namespace Application
         }
     }
 
+    ObjectSelected::ObjectSelected(StateMachine* context, State* state) : State(context), state(state)
+    {
+        pos[0] = &context->objects->at(objectId)->position[0];
+        pos[1] = &context->objects->at(objectId)->position[1];
+        pos[2] = &context->objects->at(objectId)->position[2];
+        vel[0] = &context->objects->at(objectId)->velocity[0];
+        vel[1] = &context->objects->at(objectId)->velocity[1];
+        vel[2] = &context->objects->at(objectId)->velocity[2];
+        acc[0] = &context->objects->at(objectId)->acceleration[0];
+        acc[1] = &context->objects->at(objectId)->acceleration[1];
+        acc[2] = &context->objects->at(objectId)->acceleration[2];
+        mass = &context->objects->at(objectId)->mass;
+        radius = &context->objects->at(objectId)->radius;
+    }
+
     void ObjectSelected::frame()
     {
+        if (oldId != objectId && objectId >= 0 && objectId < context->objects->size());
+        {
+            pos[0] = &context->objects->at(objectId)->position[0];
+            pos[1] = &context->objects->at(objectId)->position[1];
+            pos[2] = &context->objects->at(objectId)->position[2];
+            vel[0] = &context->objects->at(objectId)->velocity[0];
+            vel[1] = &context->objects->at(objectId)->velocity[1];
+            vel[2] = &context->objects->at(objectId)->velocity[2];
+            acc[0] = &context->objects->at(objectId)->acceleration[0];
+            acc[1] = &context->objects->at(objectId)->acceleration[1];
+            acc[2] = &context->objects->at(objectId)->acceleration[2];
+            mass = &context->objects->at(objectId)->mass;
+            radius = &context->objects->at(objectId)->radius;
+        }
+
+        ImGui::Begin("ItemSelected", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+
+        ImGui::InputInt("Id",&objectId);
+        
+        
+        ImGui::InputFloat3("posicion",*pos);
+        ImGui::InputFloat3("velocidad", *vel);
+        ImGui::InputFloat3("acceleracion", *acc);
+
+        ImGui::InputDouble("masa", mass);
+        ImGui::InputFloat("radio", radius);
+
+        ImGui::End();
     }
 
     void ObjectSelected::changeState(Action action)

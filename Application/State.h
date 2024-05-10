@@ -3,6 +3,7 @@
 #include<string>
 #include<functional>
 #include "../External/imgui/imgui.h"
+#include "../Engine/Physic/PhysicObject.h"
 
 namespace Engine::Graphic
 {
@@ -33,11 +34,10 @@ namespace Application
 		static StateMachine* getStateMachine();
 		void frame();
 		void changeState(State* state) { this->state = state; }
-		void subscribe(GravitySimulator* sub) { this->sub = sub; }
-		GravitySimulator* getSub() { return sub; }
+		std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>> objects;
+		GravitySimulator* sub;
 	private:
 		State* state;
-		GravitySimulator* sub;
 		StateMachine() = default;
 
 	};
@@ -83,12 +83,19 @@ namespace Application
 	class ObjectSelected : public State
 	{
 	public:
-		ObjectSelected(StateMachine* context, State* state) : State(context), state(state) { }
+		ObjectSelected(StateMachine* context, State* state);
 		void frame();
 		void changeState(Action action);
 
 
 	private:
 		State* state;
+		int objectId = 0;
+		int oldId = 9999999;
+		float* pos[3];
+		float* vel[3];
+		float* acc[3];
+		double* mass;
+		float* radius;
 	};
 }
