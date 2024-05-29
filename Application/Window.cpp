@@ -3,6 +3,48 @@
 
 namespace Application
 {
+    void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        if (action == GLFW_RELEASE) return;
+        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        switch (key)
+        {
+        case GLFW_KEY_W:
+            app->inputEvent.submit(InputAction::MOVE_FORWARD);
+            break;
+        case GLFW_KEY_A:
+            app->inputEvent.submit(InputAction::MOVE_LEFT_SIDE);
+            break;
+        case GLFW_KEY_S:
+            app->inputEvent.submit(InputAction::MOVE_BACKWARD);
+            break;
+        case GLFW_KEY_D:
+            app->inputEvent.submit(InputAction::MOVE_RIGHT_SIDE);
+            break;
+        case GLFW_KEY_Q:
+            app->inputEvent.submit(InputAction::MOVE_DOWN);
+            break;
+
+        case GLFW_KEY_E:
+            app->inputEvent.submit(InputAction::MOVE_UP);
+            break;
+        case GLFW_KEY_UP:
+            app->inputEvent.submit(InputAction::ROTATE_UP);
+            break;
+        case GLFW_KEY_DOWN:
+            app->inputEvent.submit(InputAction::ROTATE_DOWN);
+            break;
+        case GLFW_KEY_LEFT:
+            app->inputEvent.submit(InputAction::ROTATE_LEFT);
+            break;
+        case GLFW_KEY_RIGHT:
+            app->inputEvent.submit(InputAction::ROTATE_RIGHT);
+            break;
+        default:
+
+            break;
+        }
+    }
 
     Window::~Window()
     {
@@ -20,6 +62,7 @@ namespace Application
 
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetKeyCallback(window, key_callback);
     }
 
     void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -27,6 +70,7 @@ namespace Application
         auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
     }
+
     GLFWwindow* Window::getWindow()
     {
         return window;

@@ -42,7 +42,7 @@ namespace Engine
 
 			~GPU();
 			GPU(Application::Window& window);
-			GPU() = default;
+
 			void wait();
 			VkInstance getInstance() { return instance; }
 			VkDevice getDevice() { return device; }

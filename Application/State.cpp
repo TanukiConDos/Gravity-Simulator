@@ -28,7 +28,8 @@ namespace Application
 	{
         ImGui::Begin("MainMenu",0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         ImVec2 size = ImGui::GetMainViewport()->Size;
-        ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - 300,(size[1] / 2) - 100 });
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
         ImGui::SetWindowSize("MainMenu", ImVec2{300,100});
         ImGui::Text("SIMULADOR DE FUERZA GRAVITATORIA");
         if (ImGui::Button("Iniciar Simulacion")) changeState(Action::BEGIN_SIMULATION);
@@ -80,7 +81,9 @@ namespace Application
     {
         Foundation::Config* config = Foundation::Config::getConfig();
         ImGui::Begin("Config",0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
-
+        ImVec2 size = ImGui::GetMainViewport()->Size;
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
         ImGui::InputFloat("Multiplicador paso del tiempo", &config->time);
 
         if (ImGui::BeginCombo("Modo de creación de la escena", toString(config->systemCreationMode)))
@@ -157,11 +160,12 @@ namespace Application
         acc[2] = &context->objects->at(objectId)->acceleration[2];
         mass = &context->objects->at(objectId)->mass;
         radius = &context->objects->at(objectId)->radius;
+        context->objects->at(objectId)->selected = true;
     }
 
     void ObjectSelected::frame()
     {
-        if (oldId != objectId && objectId >= 0 && objectId < context->objects->size());
+        if (oldId != objectId && objectId < context->objects->size() && objectId > -1)
         {
             pos[0] = &context->objects->at(objectId)->position[0];
             pos[1] = &context->objects->at(objectId)->position[1];
@@ -174,21 +178,27 @@ namespace Application
             acc[2] = &context->objects->at(objectId)->acceleration[2];
             mass = &context->objects->at(objectId)->mass;
             radius = &context->objects->at(objectId)->radius;
+            context->objects->at(objectId)->selected = true;
+            if(oldId != -1) context->objects->at(oldId)->selected = false;
         }
-
+        oldId = objectId;
         ImGui::Begin("ItemSelected", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+        ImVec2 size = ImGui::GetMainViewport()->Size;
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGui::SetWindowPos(ImVec2{ size[0] - windowSize[0],0});
 
         ImGui::InputInt("Id",&objectId);
         
         
-        ImGui::InputFloat3("posicion",*pos);
-        ImGui::InputFloat3("velocidad", *vel);
-        ImGui::InputFloat3("acceleracion", *acc);
+        ImGui::InputFloat3("posicion",*pos, "%.0f%m");
+        ImGui::InputFloat3("velocidad", *vel,"%.2f%m/s");
+        ImGui::InputFloat3("acceleracion", *acc,"%.2f%m/s^2");
 
-        ImGui::InputDouble("masa", mass);
-        ImGui::InputFloat("radio", radius);
+        ImGui::InputDouble("masa", mass, 0.0, 0.0, "%e%m");
+        ImGui::InputFloat("radio", radius, 0.0, 0.0, "%.0f%m");
 
         ImGui::End();
+        
     }
 
     void ObjectSelected::changeState(Action action)

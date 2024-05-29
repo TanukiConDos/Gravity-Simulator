@@ -24,7 +24,7 @@ namespace Engine
 			glm::vec3 acceleration = glm::vec3(0.0, 0.0, 0.0);
 			double mass;
 			float radius;
-
+			bool selected = false;
 		private:
 
 		};

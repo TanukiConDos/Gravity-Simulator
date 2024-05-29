@@ -91,7 +91,7 @@ namespace Application
 	private:
 		State* state;
 		int objectId = 0;
-		int oldId = 9999999;
+		int oldId = -1;
 		float* pos[3];
 		float* vel[3];
 		float* acc[3];

@@ -30,6 +30,7 @@ namespace Engine
 			void updateObjects();
 			void drawFrame();
 			void wait() { gpu.wait(); }
+			Camera* getCamera() { return &camera; }
 
 		private:
 			Application::Window& window;

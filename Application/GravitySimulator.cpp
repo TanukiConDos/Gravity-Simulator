@@ -2,6 +2,11 @@
 #include "../Engine/Physic/OctTreeSolver.h"
 #include "../Foundation/Config.h"
 #include "../Foundation/Timers.h"
+#include "../Engine/Physic/bruteForceDetection.h"
+#include "../Engine/Physic/BruteForceSolver.h"
+#include "../Engine/Physic/OctTreeCollisionDetection.h"
+#include "../Engine/Physic/OctTree.h"
+
 namespace Application
 {
     GravitySimulator::GravitySimulator()
@@ -9,6 +14,7 @@ namespace Application
         
         renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, frameTime, tickTime);
         stateMachine->sub = this;
+        window.attachCameraToEvent(renderer->getCamera());
     }
 
     void GravitySimulator::initSimulation()
