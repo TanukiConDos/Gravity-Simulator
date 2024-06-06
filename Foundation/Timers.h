@@ -5,7 +5,8 @@ namespace Foundation
 	enum Timer
 	{
 		TICK,
-		FRAME
+		FRAME,
+		DEBUG
 	};
 
 	class Timers
@@ -21,6 +22,7 @@ namespace Foundation
 		Timers() = default;
 		std::chrono::steady_clock::time_point tick[2] = {};
 		std::chrono::steady_clock::time_point frame[2] = {};
+		std::chrono::steady_clock::time_point debug[2] = {};
 	};
 
 }

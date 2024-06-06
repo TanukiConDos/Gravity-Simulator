@@ -12,7 +12,7 @@ namespace Application
     GravitySimulator::GravitySimulator()
     {
         
-        renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, frameTime, tickTime);
+        renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, &frameTime, &tickTime);
         stateMachine->sub = this;
         window.attachCameraToEvent(renderer->getCamera());
     }
@@ -37,16 +37,18 @@ namespace Application
             std::mt19937 gen(seed);
             std::uniform_real_distribution distrib(0.0f, 1.0f);
             nlohmann::json j = nlohmann::json{ };
+
+            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
+            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f));
             for (int i = 0; i < config->numObjects; i++)
             {
-                float x = distrib(gen) * 2e11f - 1e11f;
-                float y = distrib(gen) * 2e11f - 1e11f;
-                float z = distrib(gen) * 2e11f - 1e11f;
+                float x = distrib(gen) * 2e10f - 1e10f;
+                float y = distrib(gen) * 2e10f - 1e10f;
+                float z = distrib(gen) * 2e10f - 1e10f;
                 objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ x,y,z }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
                 j.emplace_back(*objects->back());
             }
-            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
-            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f));
+            
             std::string data = j.dump();
             Foundation::File file = Foundation::File{ "./scenes/last.json", false};
             file.write(data);
@@ -92,7 +94,7 @@ namespace Application
             break;
         case Foundation::OCTREE:
             if(tree == nullptr) tree = new Engine::Physic::OctTree(objects);
-            solverAlgorithm = std::make_unique<Engine::Physic::OctTreeSolver>(*tree, 200.0);
+            solverAlgorithm = std::make_unique<Engine::Physic::OctTreeSolver>(*tree, 200.0f);
             break;
         }
 
@@ -108,14 +110,19 @@ namespace Application
         float elapsed_time_ms = 0;
         while (!glfwWindowShouldClose(window.getWindow())) {
             glfwPollEvents();
+            timers->setTimer(Foundation::DEBUG, true);
             timers->setTimer(Foundation::TICK, true);
             physicSystem.update(elapsed_time_ms,objects);
             timers->setTimer(Foundation::TICK, false);
+
             timers->setTimer(Foundation::FRAME, true);
             renderer->drawFrame();
             timers->setTimer(Foundation::FRAME, false);
+            timers->setTimer(Foundation::DEBUG, false);
 
-            elapsed_time_ms = timers->getElapsedTime(Foundation::TICK) + timers->getElapsedTime(Foundation::FRAME);
+            frameTime = timers->getElapsedTime(Foundation::FRAME);
+            tickTime = timers->getElapsedTime(Foundation::TICK);
+            elapsed_time_ms = frameTime + tickTime;
         }
 
         renderer->wait();

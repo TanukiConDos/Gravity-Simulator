@@ -59,12 +59,12 @@ namespace Application
 	void Debug::frame()
 	{
         state->frame();
-        Foundation::Timers* timers = Foundation::Timers::getTimers();
+
         std::string frameTimeStr = "Frametime: ";
-        frameTimeStr += std::to_string(timers->getElapsedTime(Foundation::FRAME));
+        frameTimeStr += std::to_string(*context->frameTime);
         frameTimeStr += "ms";
         std::string tickTimeStr = "Ticktime: ";
-        tickTimeStr += std::to_string(timers->getElapsedTime(Foundation::TICK));
+        tickTimeStr += std::to_string(*context->tickTime);
         tickTimeStr += "ms";
 
         
@@ -188,14 +188,21 @@ namespace Application
         ImGui::SetWindowPos(ImVec2{ size[0] - windowSize[0],0});
 
         ImGui::InputInt("Id",&objectId);
-        
-        
-        ImGui::InputFloat3("posicion",*pos, "%.0f%m");
-        ImGui::InputFloat3("velocidad", *vel,"%.2f%m/s");
-        ImGui::InputFloat3("acceleracion", *acc,"%.2f%m/s^2");
 
-        ImGui::InputDouble("masa", mass, 0.0, 0.0, "%e%m");
-        ImGui::InputFloat("radio", radius, 0.0, 0.0, "%.0f%m");
+        float posAux[3];
+        for (int i = 0; i < 3; i++)
+        {
+            posAux[i] = *pos[i] / 1000;
+        }
+        double massAux = *mass / 1000;
+        float radiusAux = *radius / 1000;
+
+        if (ImGui::InputFloat3("posicion", posAux, "%.0f %km"), ImGuiInputTextFlags_EnterReturnsTrue) *pos = posAux;
+        ImGui::InputFloat3("velocidad", *vel,"%.2f %m/s", ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::InputFloat3("acceleracion", *acc,"%.2f %m/s^2", ImGuiInputTextFlags_EnterReturnsTrue);
+
+        if(ImGui::InputDouble("masa", &massAux, 0.0, 0.0, "%.3e %kg", ImGuiInputTextFlags_EnterReturnsTrue) && massAux > 0) *mass = massAux;
+        if(ImGui::InputFloat("radio", &radiusAux, 0.0, 0.0, "%.0f %km", ImGuiInputTextFlags_EnterReturnsTrue)) *radius = radiusAux;
 
         ImGui::End();
         

@@ -18,11 +18,9 @@ namespace Engine
 		public:
 			ImGUIWindow(const ImGUIWindow&) = delete;
 			ImGUIWindow& operator=(const ImGUIWindow&) = delete;
-			ImGUIWindow(Application::Window& window,GPU& gpu,SwapChain& swapChain,Pipeline& pipeline, VkInstance instance, float& frameTime, float& tickTime);
+			ImGUIWindow(Application::Window& window,GPU& gpu,SwapChain& swapChain,Pipeline& pipeline, VkInstance instance, float* frameTime, float* tickTime);
 			~ImGUIWindow();
 
-			float& frameTime;
-			float& tickTime;
 			void startFrame();
 			void draw(VkCommandBuffer commandBuffer);
 			void setTimers(float& frameTime, float& tickTime) { frameTime = frameTime; tickTime = tickTime; }

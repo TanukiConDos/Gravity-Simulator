@@ -32,7 +32,7 @@ namespace Application
 
         Engine::Physic::PhysicSystem physicSystem;
         StateMachine* stateMachine = StateMachine::getStateMachine();
-        float frameTime = 0, tickTime = 0,acc=0;
+        float frameTime = 0, tickTime = 0;
     };
 
 }

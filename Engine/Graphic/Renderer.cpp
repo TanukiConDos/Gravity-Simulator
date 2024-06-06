@@ -8,7 +8,7 @@ namespace Engine
 		{	
 		}
 
-		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float& frameTime, float& tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
+		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float* frameTime, float* tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
 		{
 			for (int i = 0; i < physicObjects->size(); i++)
 			{
@@ -19,7 +19,7 @@ namespace Engine
 		void Renderer::updateObjects()
 		{
 			descriptorPool->~DescriptorPool();
-			descriptorPool = new DescriptorPool(gpu, pipeline, physicObjects->size());
+			descriptorPool = new DescriptorPool(gpu, pipeline, static_cast<uint32_t>(physicObjects->size()));
 			gameObjects.resize(physicObjects->size());
 			for (int i = 0; i < physicObjects->size(); i++)
 			{

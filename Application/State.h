@@ -34,10 +34,13 @@ namespace Application
 		static StateMachine* getStateMachine();
 		void frame();
 		void changeState(State* state) { this->state = state; }
+
 		std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>> objects;
 		GravitySimulator* sub;
+		float* frameTime, *tickTime;
 	private:
 		State* state;
+		
 		StateMachine() = default;
 
 	};
