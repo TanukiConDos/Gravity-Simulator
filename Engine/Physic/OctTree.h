@@ -20,7 +20,7 @@ namespace Engine
 			OctTree(const OctTree&) = delete;
 			OctTree& operator=(const OctTree&) = delete;
 
-			OctTree(std::shared_ptr<std::vector<PhysicObject*>> objects);
+			OctTree(std::shared_ptr<std::vector<PhysicObject>> objects);
 			OctTree() = default;
 
 			void barnesHut(float deltaTime);
@@ -28,33 +28,33 @@ namespace Engine
 			void checkCollisions();
 			void update();
 		private:
-			std::shared_ptr<std::vector<PhysicObject*>> objects;
-			int ticks = 0;
+			std::shared_ptr<std::vector<PhysicObject>> _objects;
+			int _ticks = 0;
 
 			struct ObjectStruct {
 			public:
-				ObjectStruct* next = nullptr;
-				PhysicObject* _object = nullptr;
+				ObjectStruct* _next = nullptr;
+				int _object = -1;
 
-				void append(PhysicObject* object, Foundation::Arena<ObjectStruct>& arena)
+				void append(int object, Foundation::Arena<ObjectStruct>& arena)
 				{
-					if (_object == nullptr)
+					if (_object == -1)
 					{
 						_object = object;
 						return;
 					}
-					if (next == nullptr) {
-						next = arena.alloc(1);
-						*next = ObjectStruct();
+					if (_next == nullptr) {
+						_next = arena.alloc(1);
+						*_next = ObjectStruct();
 					}
-					next->append(object,arena);
+					_next->append(object,arena);
 				}
 
-				void get(std::vector<PhysicObject*>& objects)
+				void get(std::vector<int>& objects)
 				{
-					if (next != nullptr)
+					if (_next != nullptr)
 					{
-						next->get(objects);
+						_next->get(objects);
 					}
 					objects.emplace_back(_object);
 				}
@@ -65,25 +65,22 @@ namespace Engine
 			public:
 				Node(glm::vec3 start, glm::vec3 end);
 
-				float width;
-				double mass = 0;
-				bool noChilds = true;
-				Node* childs = nullptr;
-				ObjectStruct* objects = nullptr;
-				int depth = -1;
-				glm::vec3 start;
-				glm::vec3 end;
-				glm::vec3 center;
+				float _width = 0.0f;
+				double _mass = 0.0;
+				bool _noChilds = true;
+				Node* _childs = nullptr;
+				ObjectStruct* _objects = nullptr;
+				int _depth = -1;
+				glm::vec3 _start;
+				glm::vec3 _end;
+				glm::vec3 _center;
 			};
-			Node* root;
-			Foundation::Arena<Node> arenaNode = Foundation::Arena<Node>(40000);
-			Foundation::Arena<ObjectStruct> arenaObject = Foundation::Arena<ObjectStruct>(2000000);
+			Node* _root;
+			Foundation::Arena<Node> _arenaNode = Foundation::Arena<Node>(10000);
+			Foundation::Arena<ObjectStruct> _arenaObject = Foundation::Arena<ObjectStruct>(40000);
 			void insert();
 			bool expand(Node* node,int depth);
 		};
 	}
-	
-
-	
 }
 

@@ -8,6 +8,6 @@ namespace Engine::Physic
 	class CollisionDetectionInterface
 	{
 	public:
-		virtual void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
+		virtual void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
 	};
 }

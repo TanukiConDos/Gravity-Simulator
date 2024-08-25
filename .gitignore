@@ -1,7 +1,4 @@
 .vs
 lib
-TFG.vcxproj
-TFG.vcxproj.filters
-TFG.vcxproj.user
-TFG.sln
 x64
+TFG

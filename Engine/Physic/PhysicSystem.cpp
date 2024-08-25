@@ -3,7 +3,7 @@
 namespace Engine::Physic
 {
 	const float PhysicSystem::UNIVERSAL_GRAVITATION = 6.6743e-11f;
-	void PhysicSystem::update(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects)
+	void PhysicSystem::update(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects)
 	{
 		if (collitionDetectionAlgorithm == nullptr && solverAlgorithm == nullptr) return;
 		collitionDetectionAlgorithm->detection(deltaTime,objects);

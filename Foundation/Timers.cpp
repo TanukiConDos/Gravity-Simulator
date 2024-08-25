@@ -12,16 +12,16 @@ namespace Foundation
 		switch (timer)
 		{
 		case Timer::FRAME:
-			if (start) frame[0] = std::chrono::high_resolution_clock::now();
-			else frame[1] = std::chrono::high_resolution_clock::now();
+			if (start) _frame[0] = std::chrono::high_resolution_clock::now();
+			else _frame[1] = std::chrono::high_resolution_clock::now();
 			break;
 		case Timer::TICK:
-			if (start) tick[0] = std::chrono::high_resolution_clock::now();
-			else tick[1] = std::chrono::high_resolution_clock::now();
+			if (start) _tick[0] = std::chrono::high_resolution_clock::now();
+			else _tick[1] = std::chrono::high_resolution_clock::now();
 			break;
 		case Timer::DEBUG:
-			if (start) debug[0] = std::chrono::high_resolution_clock::now();
-			else debug[1] = std::chrono::high_resolution_clock::now();
+			if (start) _debug[0] = std::chrono::high_resolution_clock::now();
+			else _debug[1] = std::chrono::high_resolution_clock::now();
 			break;
 		}
 	}
@@ -31,13 +31,13 @@ namespace Foundation
 		switch (timer)
 		{
 		case Timer::FRAME:
-			elapsedTime = std::chrono::duration<float, std::milli>(frame[1] - frame[0]).count();
+			elapsedTime = std::chrono::duration<float, std::milli>(_frame[1] - _frame[0]).count();
 			break;
 		case Timer::TICK:
-			elapsedTime = std::chrono::duration<float, std::milli>(tick[1] - tick[0]).count();
+			elapsedTime = std::chrono::duration<float, std::milli>(_tick[1] - _tick[0]).count();
 			break;
 		case Timer::DEBUG:
-			elapsedTime = std::chrono::duration<float, std::milli>(debug[1] - debug[0]).count();
+			elapsedTime = std::chrono::duration<float, std::milli>(_debug[1] - _debug[0]).count();
 			break;
 		}
 

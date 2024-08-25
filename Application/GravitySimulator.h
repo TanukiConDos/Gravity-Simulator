@@ -22,17 +22,18 @@ namespace Application
         GravitySimulator();
 
         void initSimulation();
-
+        void endSimulation();
         void run();
 
     private:
-        Window window = Window{ WIDTH, HEIGHT };
-        std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>> objects = std::make_shared<std::vector<Engine::Physic::PhysicObject*>>();
-        std::unique_ptr<Engine::Graphic::Renderer> renderer;
+        Window _window = Window{ WIDTH, HEIGHT };
+        std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> _objects = std::make_shared<std::vector<Engine::Physic::PhysicObject>>();
+        std::unique_ptr<Engine::Graphic::Renderer> _renderer;
 
-        Engine::Physic::PhysicSystem physicSystem;
-        StateMachine* stateMachine = StateMachine::getStateMachine();
-        float frameTime = 0, tickTime = 0;
+        Engine::Physic::PhysicSystem _physicSystem;
+        std::shared_ptr<StateMachine> _stateMachine = StateMachine::getStateMachine();
+        float _frameTime = 0;
+        float _tickTime = 0;
     };
 
 }

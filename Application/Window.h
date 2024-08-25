@@ -18,20 +18,21 @@ namespace Application
 		Window& operator=(const Window&) = delete;
 		static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 		static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		VkSurfaceKHR getSurface() { return surface; }
+		VkSurfaceKHR getSurface() { return _surface; }
 
 		GLFWwindow* getWindow();
-		bool getFramebufferResized() { return framebufferResized; }
-		void setFramebufferResized() { framebufferResized = false; }
+		bool getFramebufferResized() { return _framebufferResized; }
+		void setFramebufferResized() { _framebufferResized = false; }
 		void checkMinimized();
 		void getSize(int& width, int& height);
 		void createSurface(VkInstance instance);
-		void attachCameraToEvent(Engine::Graphic::Camera* camera) { inputEvent.subscribe(camera); }
+		void attachCameraToEvent(Engine::Graphic::Camera* camera) { _inputEvent.subscribe(camera); }
 	private:
-		GLFWwindow* window;
-		bool framebufferResized = false;
-		int width, height;
-		VkSurfaceKHR surface;
-		InputEvent inputEvent{};
+		GLFWwindow* _window;
+		bool _framebufferResized = false;
+		int _width;
+		int _height;
+		VkSurfaceKHR _surface;
+		InputEvent _inputEvent{};
 	};
 }

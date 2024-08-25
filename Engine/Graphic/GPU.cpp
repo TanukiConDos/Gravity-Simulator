@@ -4,15 +4,15 @@ namespace Engine::Graphic
 {
 	GPU::~GPU()
 	{
-		vkDestroyDevice(device, nullptr);
-		vkDestroySurfaceKHR(instance, window.getSurface(), nullptr);
-		vkDestroyInstance(instance, nullptr);
+		vkDestroyDevice(_device, nullptr);
+		vkDestroySurfaceKHR(_instance, _window.getSurface(), nullptr);
+		vkDestroyInstance(_instance, nullptr);
 		
 	}
-	GPU::GPU(Application::Window& window): window(window)
+	GPU::GPU(Application::Window& window): _window(window)
 	{
 		createInstance();
-		window.createSurface(instance);
+		window.createSurface(_instance);
 		pickPhysicalDevice();
 		createLogicalDevice();
 	}
@@ -65,7 +65,7 @@ namespace Engine::Graphic
 			std::cout << '\t' << extension.extensionName << '\n';
 		}
 
-		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+		if (vkCreateInstance(&createInfo, nullptr, &_instance) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create instance!");
 		}
 	}
@@ -73,14 +73,14 @@ namespace Engine::Graphic
 	void GPU::pickPhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+		vkEnumeratePhysicalDevices(_instance, &deviceCount, nullptr);
 
 		if (deviceCount == 0) {
 			throw std::runtime_error("failed to find GPUs with Vulkan support!");
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+		vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
 
 		std::multimap<int, VkPhysicalDevice> candidates;
 
@@ -92,20 +92,20 @@ namespace Engine::Graphic
 		// Check if the best candidate is suitable at all
 		std::multimap<int, VkPhysicalDevice>::iterator i = candidates.begin();
 		if (i->first > 0) {
-			physicalDevice = i->second;
+			_physicalDevice = i->second;
 		}
 		else {
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
 
 		VkPhysicalDeviceProperties prop;
-		vkGetPhysicalDeviceProperties(physicalDevice, &prop);
+		vkGetPhysicalDeviceProperties(_physicalDevice, &prop);
 		std::cout << prop.deviceName << std::endl;
 	}
 
 	void GPU::createLogicalDevice()
 	{
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+		QueueFamilyIndices indices = findQueueFamilies(_physicalDevice);
 
 		VkDeviceQueueCreateInfo queueCreateInfo{};
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -136,20 +136,20 @@ namespace Engine::Graphic
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 		createInfo.enabledLayerCount = 0;
 
-		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+		if (vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create logical device!");
 		}
 
 		
 
-		vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-		vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+		vkGetDeviceQueue(_device, indices.graphicsFamily.value(), 0, &_graphicsQueue);
+		vkGetDeviceQueue(_device, indices.presentFamily.value(), 0, &_presentQueue);
 	}
 
 	uint32_t GPU::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+		vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &memProperties);
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 			if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
 				return i;
@@ -167,23 +167,23 @@ namespace Engine::Graphic
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		if (vkCreateBuffer(_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create buffer!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+		vkGetBufferMemoryRequirements(_device, buffer, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+		if (vkAllocateMemory(_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate buffer memory!");
 		}
 
-		vkBindBufferMemory(device, buffer, bufferMemory, 0);
+		vkBindBufferMemory(_device, buffer, bufferMemory, 0);
 
 	}
 
@@ -199,7 +199,7 @@ namespace Engine::Graphic
 		
 	void GPU::wait()
 	{
-		vkDeviceWaitIdle(device);
+		vkDeviceWaitIdle(_device);
 	}
 
 	bool GPU::checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -223,22 +223,22 @@ namespace Engine::Graphic
 	{
 		SwapChainSupportDetails details;
 
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, window.getSurface(), &details.capabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, _window.getSurface(), &details.capabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, window.getSurface(), &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, _window.getSurface(), &formatCount, nullptr);
 
 		if (formatCount != 0) {
 			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, window.getSurface(), &formatCount, details.formats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, _window.getSurface(), &formatCount, details.formats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, window.getSurface(), &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, _window.getSurface(), &presentModeCount, nullptr);
 
 		if (presentModeCount != 0) {
 			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, window.getSurface(), &presentModeCount, details.presentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, _window.getSurface(), &presentModeCount, details.presentModes.data());
 		}
 
 		return details;
@@ -302,7 +302,7 @@ namespace Engine::Graphic
 			}
 
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, window.getSurface(), &presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, _window.getSurface(), &presentSupport);
 			if (presentSupport) {
 				indices.presentFamily = i;
 			}

@@ -19,13 +19,13 @@ namespace Engine
 			VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 			void writeData(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-			VkBuffer getBuffer() const { return buffer; }
+			VkBuffer getBuffer() const { return _buffer; }
 		private:
-			GPU& gpu;
-			VkBuffer buffer = VK_NULL_HANDLE;
-			VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
-			VkDeviceSize bufferSize;
-			void* mappedData = nullptr;
+			GPU& _gpu;
+			VkBuffer _buffer = VK_NULL_HANDLE;
+			VkDeviceMemory _bufferMemory = VK_NULL_HANDLE;
+			VkDeviceSize _bufferSize;
+			void* _mappedData = nullptr;
 		};
 	}
 }

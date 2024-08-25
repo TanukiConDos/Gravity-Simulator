@@ -2,7 +2,7 @@
 
 namespace Engine::Graphic
 {
-	Pipeline::Pipeline(GPU& gpu, VkRenderPass renderPass):gpu(gpu)
+	Pipeline::Pipeline(GPU& gpu, VkRenderPass renderPass):_gpu(gpu)
 	{
 		Foundation::File vertexShader{ "./Engine/Graphic/shader/vert.spv"};
 		Foundation::File fragmentShader{ "./Engine/Graphic/shader/frag.spv"};
@@ -44,8 +44,8 @@ namespace Engine::Graphic
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-		dynamicState.pDynamicStates = dynamicStates.data();
+		dynamicState.dynamicStateCount = static_cast<uint32_t>(_dynamicStates.size());
+		dynamicState.pDynamicStates = _dynamicStates.data();
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -110,11 +110,11 @@ namespace Engine::Graphic
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-		if (vkCreatePipelineLayout(gpu.getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(gpu.getDevice(), &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -130,12 +130,12 @@ namespace Engine::Graphic
 		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicState;
-		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.layout = _pipelineLayout;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 		pipelineInfo.renderPass = renderPass;
 
-		if (vkCreateGraphicsPipelines(gpu.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(gpu.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
@@ -145,13 +145,13 @@ namespace Engine::Graphic
 
 	Pipeline::~Pipeline()
 	{
-		vkDestroyPipeline(gpu.getDevice(), graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(gpu.getDevice(), pipelineLayout, nullptr);
+		vkDestroyPipeline(_gpu.getDevice(), _graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(_gpu.getDevice(), _pipelineLayout, nullptr);
 	}
 
 	void Pipeline::bind(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 	}
 
 	VkShaderModule Pipeline::createShaderModule(const std::vector<char>& code)
@@ -162,7 +162,7 @@ namespace Engine::Graphic
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(gpu.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		if (vkCreateShaderModule(_gpu.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 
@@ -182,7 +182,7 @@ namespace Engine::Graphic
 		layoutInfo.bindingCount = 1;
 		layoutInfo.pBindings = &uboLayoutBinding;
 
-		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}

@@ -10,11 +10,11 @@ namespace Engine
 		{
 		public:
 
-			OctTreeCollisionDetection(OctTree& tree): tree(&tree) {}
+			OctTreeCollisionDetection(std::shared_ptr<OctTree> tree): _tree(tree) {}
 
-			void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
+			void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
 		private:
-			OctTree* tree;
+			std::shared_ptr<OctTree> _tree;
 
 		};
 

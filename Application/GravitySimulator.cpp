@@ -12,9 +12,9 @@ namespace Application
     GravitySimulator::GravitySimulator()
     {
         
-        renderer = std::make_unique<Engine::Graphic::Renderer>(window, objects, &frameTime, &tickTime);
-        stateMachine->sub = this;
-        window.attachCameraToEvent(renderer->getCamera());
+        _renderer = std::make_unique<Engine::Graphic::Renderer>(_window, _objects, &_frameTime, &_tickTime);
+        _stateMachine->_sub = this;
+        _window.attachCameraToEvent(_renderer->getCamera());
     }
 
     void GravitySimulator::initSimulation()
@@ -38,15 +38,15 @@ namespace Application
             std::uniform_real_distribution distrib(0.0f, 1.0f);
             nlohmann::json j = nlohmann::json{ };
 
-            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
-            objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f));
+            _objects->emplace_back(Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
+            _objects->emplace_back(Engine::Physic::PhysicObject(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f));
             for (int i = 0; i < config->numObjects; i++)
             {
                 float x = distrib(gen) * 2e10f - 1e10f;
                 float y = distrib(gen) * 2e10f - 1e10f;
                 float z = distrib(gen) * 2e10f - 1e10f;
-                objects->emplace_back(new Engine::Physic::PhysicObject(glm::vec3{ x,y,z }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
-                j.emplace_back(*objects->back());
+                _objects->emplace_back(Engine::Physic::PhysicObject(glm::vec3{ x,y,z }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f));
+                j.emplace_back(_objects->back());
             }
             
             std::string data = j.dump();
@@ -64,24 +64,24 @@ namespace Application
             nlohmann::json j = nlohmann::json::parse(data);
             for (auto object : j)
             {
-                Engine::Physic::PhysicObject* aux = new Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 0.0f, 0.0f);
-                Engine::Physic::from_json(object, *aux);
-                objects->emplace_back(aux);
+                Engine::Physic::PhysicObject aux = Engine::Physic::PhysicObject(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 0.0f, 0.0f);
+                Engine::Physic::from_json(object, aux);
+                _objects->emplace_back(aux);
             }
             break;
         }
         }
-        stateMachine->objects = objects;
+        _stateMachine->_objects = _objects;
         std::unique_ptr<Engine::Physic::CollisionDetectionInterface> collisionAlgorithm;
-        Engine::Physic::OctTree* tree = nullptr;
+        std::shared_ptr<Engine::Physic::OctTree> tree = nullptr;
         switch(config->collisionAlgorithm)
         {
         case Foundation::BRUTE_FORCE:
             collisionAlgorithm = std::make_unique<Engine::Physic::bruteForceDetection>();
             break;
         case Foundation::OCTREE:
-            tree = new Engine::Physic::OctTree(objects);
-            collisionAlgorithm = std::make_unique<Engine::Physic::OctTreeCollisionDetection>(*tree);
+            tree = std::make_shared<Engine::Physic::OctTree>(_objects);
+            collisionAlgorithm = std::make_unique<Engine::Physic::OctTreeCollisionDetection>(tree);
             break;
         }
 
@@ -93,14 +93,20 @@ namespace Application
             solverAlgorithm = std::make_unique<Engine::Physic::BruteForceSolver>();
             break;
         case Foundation::OCTREE:
-            if(tree == nullptr) tree = new Engine::Physic::OctTree(objects);
-            solverAlgorithm = std::make_unique<Engine::Physic::OctTreeSolver>(*tree, 200.0f);
+            if(tree == nullptr) tree = std::make_shared<Engine::Physic::OctTree>(_objects);
+            solverAlgorithm = std::make_unique<Engine::Physic::OctTreeSolver>(tree);
             break;
         }
 
 
-        physicSystem = Engine::Physic::PhysicSystem{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };
-        renderer->updateObjects();
+        _physicSystem = Engine::Physic::PhysicSystem{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };
+        _renderer->updateObjects();
+    }
+
+    void GravitySimulator::endSimulation()
+    {
+        _objects->clear();
+        _renderer->updateObjects();
     }
 
 
@@ -108,24 +114,24 @@ namespace Application
     {
         Foundation::Timers* timers = Foundation::Timers::getTimers();
         float elapsed_time_ms = 0;
-        while (!glfwWindowShouldClose(window.getWindow())) {
+        while (!glfwWindowShouldClose(_window.getWindow())) {
             glfwPollEvents();
             timers->setTimer(Foundation::DEBUG, true);
             timers->setTimer(Foundation::TICK, true);
-            physicSystem.update(elapsed_time_ms,objects);
+            _physicSystem.update(elapsed_time_ms,_objects);
             timers->setTimer(Foundation::TICK, false);
 
             timers->setTimer(Foundation::FRAME, true);
-            renderer->drawFrame();
+            _renderer->drawFrame();
             timers->setTimer(Foundation::FRAME, false);
             timers->setTimer(Foundation::DEBUG, false);
 
-            frameTime = timers->getElapsedTime(Foundation::FRAME);
-            tickTime = timers->getElapsedTime(Foundation::TICK);
-            elapsed_time_ms = frameTime + tickTime;
+            _frameTime = timers->getElapsedTime(Foundation::FRAME);
+            _tickTime = timers->getElapsedTime(Foundation::TICK);
+            elapsed_time_ms = _frameTime + _tickTime;
         }
 
-        renderer->wait();
+        _renderer->wait();
     }
     
 }

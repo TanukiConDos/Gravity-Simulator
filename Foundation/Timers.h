@@ -20,9 +20,9 @@ namespace Foundation
 		float getElapsedTime(Timer timer);
 	private:
 		Timers() = default;
-		std::chrono::steady_clock::time_point tick[2] = {};
-		std::chrono::steady_clock::time_point frame[2] = {};
-		std::chrono::steady_clock::time_point debug[2] = {};
+		std::chrono::steady_clock::time_point _tick[2] = {};
+		std::chrono::steady_clock::time_point _frame[2] = {};
+		std::chrono::steady_clock::time_point _debug[2] = {};
 	};
 
 }

@@ -10,16 +10,11 @@ namespace Engine::Physic
 	public:
 
 		static const float UNIVERSAL_GRAVITATION;
-		void update(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
+		void update(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
 
 		PhysicSystem(std::unique_ptr<CollisionDetectionInterface> narrowCollitionDetectionAlgorithm, std::unique_ptr<SolverInterface> solverAlgorithm);
 		PhysicSystem() = default;
 	private:
-		
-		float systemEnergy = 0;
-		float deltaEnergy = 0;
-		//void checkEnergyConservation(std::shared_ptr<std::vector<PhysicObject*>> objects);
-
 		std::unique_ptr<CollisionDetectionInterface> collitionDetectionAlgorithm;
 		std::unique_ptr<SolverInterface> solverAlgorithm;
 	};

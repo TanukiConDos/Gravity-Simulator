@@ -34,8 +34,8 @@ namespace Engine
 
 			void updateModel(Physic::PhysicObject& object)
 			{
-				this->model = glm::translate(glm::mat4(1.0f), (glm::vec3)(object.position * 0.00001f)) * glm::scale(glm::mat4(1.0f), glm::vec3(object.radius* 0.00001f, object.radius* 0.00001f, object.radius* 0.00001f));
-				this->selected = object.selected;
+				this->model = glm::translate(glm::mat4(1.0f), (glm::vec3)(object._position * 0.00001f)) * glm::scale(glm::mat4(1.0f), glm::vec3(object._radius* 0.00001f, object._radius* 0.00001f, object._radius* 0.00001f));
+				this->selected = object._selected;
 			}
 		};
 

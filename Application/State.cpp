@@ -26,7 +26,7 @@ namespace Application
 
 	void MainMenu::frame()
 	{
-        ImGui::Begin("MainMenu",0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("MainMenu",nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         ImVec2 size = ImGui::GetMainViewport()->Size;
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
@@ -43,12 +43,22 @@ namespace Application
         switch (action)
         {
         case Action::BEGIN_SIMULATION:
-            context->sub->initSimulation();
-            context->changeState(new Debug(context, new ObjectSelected(context,new State(context))));
+        {
+            _context->_sub->initSimulation();
+            std::unique_ptr<State> state = std::make_unique<State>(_context);
+            std::unique_ptr <State> debug = std::make_unique<Debug>(_context, std::move(state));
+            std::unique_ptr<State> objectSelected = std::make_unique<ObjectSelected>(_context, std::move(debug));
+            
+            _context->changeState(std::move(objectSelected));
+        }
+           
             break;
 
         case Action::CONFIGURATION:
-            context->changeState(new Config(context));
+        {
+            std::unique_ptr<State> config = std::make_unique<Config>(_context);
+            _context->changeState(std::move(config));
+        }
             break;
 
         default:
@@ -58,29 +68,27 @@ namespace Application
 
 	void Debug::frame()
 	{
-        state->frame();
-
         std::string frameTimeStr = "Frametime: ";
-        frameTimeStr += std::to_string(*context->frameTime);
+        frameTimeStr += std::to_string(*_context->_frameTime);
         frameTimeStr += "ms";
         std::string tickTimeStr = "Ticktime: ";
-        tickTimeStr += std::to_string(*context->tickTime);
+        tickTimeStr += std::to_string(*_context->_tickTime);
         tickTimeStr += "ms";
 
         
-        ImGui::Begin("Debug",0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
-        ImGui::Text(frameTimeStr.c_str());
-        ImGui::Text(tickTimeStr.c_str());
+        ImGui::Begin("Debug",nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("%s",frameTimeStr.c_str());
+        ImGui::Text("%s",tickTimeStr.c_str());
         ImGui::End();
 	}
     void Debug::changeState(Action action)
     {
-        context->changeState(state);
+        _context->changeState(std::move(_state));
     }
     void Config::frame()
     {
         Foundation::Config* config = Foundation::Config::getConfig();
-        ImGui::Begin("Config",0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Config",nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         ImVec2 size = ImGui::GetMainViewport()->Size;
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
@@ -137,72 +145,72 @@ namespace Application
 
     void Config::changeState(Action action)
     {
-        switch (action)
+        if (action == Action::SAVE)
         {
-        case Action::SAVE:
-            context->changeState(new MainMenu(context));
-            break;
-        default:
-            break;
+            std::unique_ptr<State> mainMenu = std::make_unique<MainMenu>(_context);
+            _context->changeState(std::move(mainMenu));
         }
     }
 
-    ObjectSelected::ObjectSelected(StateMachine* context, State* state) : State(context), state(state)
+    ObjectSelected::ObjectSelected(std::shared_ptr<StateMachine> context, std::unique_ptr<State> state) : State(context), _state(std::move(state))
     {
-        pos[0] = &context->objects->at(objectId)->position[0];
-        pos[1] = &context->objects->at(objectId)->position[1];
-        pos[2] = &context->objects->at(objectId)->position[2];
-        vel[0] = &context->objects->at(objectId)->velocity[0];
-        vel[1] = &context->objects->at(objectId)->velocity[1];
-        vel[2] = &context->objects->at(objectId)->velocity[2];
-        acc[0] = &context->objects->at(objectId)->acceleration[0];
-        acc[1] = &context->objects->at(objectId)->acceleration[1];
-        acc[2] = &context->objects->at(objectId)->acceleration[2];
-        mass = &context->objects->at(objectId)->mass;
-        radius = &context->objects->at(objectId)->radius;
-        context->objects->at(objectId)->selected = true;
+        _pos[0] = &context->_objects->at(_objectId)._position[0];
+        _pos[1] = &context->_objects->at(_objectId)._position[1];
+        _pos[2] = &context->_objects->at(_objectId)._position[2];
+        _vel[0] = &context->_objects->at(_objectId)._velocity[0];
+        _vel[1] = &context->_objects->at(_objectId)._velocity[1];
+        _vel[2] = &context->_objects->at(_objectId)._velocity[2];
+        _acc[0] = &context->_objects->at(_objectId)._acceleration[0];
+        _acc[1] = &context->_objects->at(_objectId)._acceleration[1];
+        _acc[2] = &context->_objects->at(_objectId)._acceleration[2];
+        _mass = &context->_objects->at(_objectId)._mass;
+        _radius = &context->_objects->at(_objectId)._radius;
+        context->_objects->at(_objectId)._selected = true;
     }
 
     void ObjectSelected::frame()
     {
-        if (oldId != objectId && objectId < context->objects->size() && objectId > -1)
+        _state->frame();
+        if (_oldId != _objectId && _objectId < _context->_objects->size() && _objectId > -1)
         {
-            pos[0] = &context->objects->at(objectId)->position[0];
-            pos[1] = &context->objects->at(objectId)->position[1];
-            pos[2] = &context->objects->at(objectId)->position[2];
-            vel[0] = &context->objects->at(objectId)->velocity[0];
-            vel[1] = &context->objects->at(objectId)->velocity[1];
-            vel[2] = &context->objects->at(objectId)->velocity[2];
-            acc[0] = &context->objects->at(objectId)->acceleration[0];
-            acc[1] = &context->objects->at(objectId)->acceleration[1];
-            acc[2] = &context->objects->at(objectId)->acceleration[2];
-            mass = &context->objects->at(objectId)->mass;
-            radius = &context->objects->at(objectId)->radius;
-            context->objects->at(objectId)->selected = true;
-            if(oldId != -1) context->objects->at(oldId)->selected = false;
+            _pos[0] = &_context->_objects->at(_objectId)._position[0];
+            _pos[1] = &_context->_objects->at(_objectId)._position[1];
+            _pos[2] = &_context->_objects->at(_objectId)._position[2];
+            _vel[0] = &_context->_objects->at(_objectId)._velocity[0];
+            _vel[1] = &_context->_objects->at(_objectId)._velocity[1];
+            _vel[2] = &_context->_objects->at(_objectId)._velocity[2];
+            _acc[0] = &_context->_objects->at(_objectId)._acceleration[0];
+            _acc[1] = &_context->_objects->at(_objectId)._acceleration[1];
+            _acc[2] = &_context->_objects->at(_objectId)._acceleration[2];
+            _mass = &_context->_objects->at(_objectId)._mass;
+            _radius = &_context->_objects->at(_objectId)._radius;
+            _context->_objects->at(_objectId)._selected = true;
+            if(_oldId != -1) _context->_objects->at(_oldId)._selected = false;
         }
-        oldId = objectId;
-        ImGui::Begin("ItemSelected", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+        _oldId = _objectId;
+        ImGui::Begin("ItemSelected", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         ImVec2 size = ImGui::GetMainViewport()->Size;
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImGui::SetWindowPos(ImVec2{ size[0] - windowSize[0],0});
 
-        ImGui::InputInt("Id",&objectId);
+        ImGui::InputInt("Id",&_objectId);
 
-        float posAux[3];
+        std::array<float,3> posAux;
         for (int i = 0; i < 3; i++)
         {
-            posAux[i] = *pos[i] / 1000;
+            posAux[i] = *_pos[i] / 1000;
         }
-        double massAux = *mass / 1000;
-        float radiusAux = *radius / 1000;
+        double massAux = *_mass / 1000;
+        float radiusAux = *_radius / 1000;
 
-        if (ImGui::InputFloat3("posicion", posAux, "%.0f %km"), ImGuiInputTextFlags_EnterReturnsTrue) *pos = posAux;
-        ImGui::InputFloat3("velocidad", *vel,"%.2f %m/s", ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::InputFloat3("acceleracion", *acc,"%.2f %m/s^2", ImGuiInputTextFlags_EnterReturnsTrue);
+        if (ImGui::InputFloat3("posicion", posAux.data(), "%.0f %km"), ImGuiInputTextFlags_EnterReturnsTrue) *_pos = posAux.data();
+        ImGui::InputFloat3("velocidad", *_vel,"%.2f %m/s", ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::InputFloat3("acceleracion", *_acc,"%.2f %m/s^2", ImGuiInputTextFlags_EnterReturnsTrue);
 
-        if(ImGui::InputDouble("masa", &massAux, 0.0, 0.0, "%.3e %kg", ImGuiInputTextFlags_EnterReturnsTrue) && massAux > 0) *mass = massAux;
-        if(ImGui::InputFloat("radio", &radiusAux, 0.0, 0.0, "%.0f %km", ImGuiInputTextFlags_EnterReturnsTrue)) *radius = radiusAux;
+        if(ImGui::InputDouble("masa", &massAux, 0.0, 0.0, "%.3e %kg", ImGuiInputTextFlags_EnterReturnsTrue) && massAux > 0) *_mass = massAux;
+        if(ImGui::InputFloat("radio", &radiusAux, 0.0, 0.0, "%.0f %km", ImGuiInputTextFlags_EnterReturnsTrue)) *_radius = radiusAux;
+
+        if (ImGui::Button("finalizar simulación")) changeState(Action::EXIT);
 
         ImGui::End();
         
@@ -210,16 +218,25 @@ namespace Application
 
     void ObjectSelected::changeState(Action action)
     {
+        if (action == Action::EXIT)
+        {
+            _context->_sub->endSimulation();
+            std::unique_ptr<State> mainMenu = std::make_unique<MainMenu>(_context);
+            _context->changeState(std::move(mainMenu));
+        }
     }
 
-    StateMachine* StateMachine::getStateMachine()
+    std::shared_ptr<StateMachine> StateMachine::getStateMachine()
     {
-        static StateMachine instance;
-        instance.state = new MainMenu(&instance);
-        return &instance;
+        if (g_stateMachine == nullptr)
+        {
+            g_stateMachine = std::make_shared<StateMachine>();
+        }
+        g_stateMachine->_state = std::make_unique<MainMenu>(g_stateMachine);
+        return g_stateMachine;
     }
     void StateMachine::frame()
     {
-        state->frame();
+        _state->frame();
     }
 }

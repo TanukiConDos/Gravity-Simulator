@@ -26,28 +26,28 @@ namespace Engine
 			Renderer& operator=(const Renderer&) = delete;
 
 			~Renderer();
-			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float* frameTime,float* tickTime);
+			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> physicObjects,float* frameTime,float* tickTime);
 			void updateObjects();
 			void drawFrame();
-			void wait() { gpu.wait(); }
-			Camera* getCamera() { return &camera; }
+			void wait() { _gpu.wait(); }
+			Camera* getCamera() { return &_camera; }
 
 		private:
-			Application::Window& window;
-			GPU gpu = GPU{window};
-			CommandPool commandPool = CommandPool{gpu};
-			SwapChain swapChain = SwapChain{gpu,window};
-			Pipeline pipeline = Pipeline{ gpu,swapChain.getRenderPass() };
-			std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects;
-			std::vector<UniformBufferObject> gameObjects = std::vector<UniformBufferObject>{physicObjects->size()};
-			DescriptorPool* descriptorPool = new DescriptorPool(gpu, pipeline, static_cast<uint32_t>(physicObjects->size()));
-			Model model = Model{30,30,gpu,commandPool};
-			float* frameTime;
-			float* tickTime;
-			ImGUIWindow imGui = ImGUIWindow{ window, gpu, swapChain, pipeline, gpu.getInstance(),frameTime,tickTime};
+			Application::Window& _window;
+			GPU _gpu = GPU{_window};
+			CommandPool _commandPool = CommandPool{_gpu};
+			SwapChain _swapChain = SwapChain{_gpu,_window};
+			Pipeline _pipeline = Pipeline{ _gpu,_swapChain.getRenderPass() };
+			std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> _physicObjects;
+			std::vector<UniformBufferObject> _gameObjects = std::vector<UniformBufferObject>{_physicObjects->size()};
+			std::unique_ptr<DescriptorPool> _descriptorPool =  std::make_unique<DescriptorPool>(_gpu, _pipeline, static_cast<uint32_t>(_physicObjects->size()));
+			Model _model = Model{30,30,_gpu,_commandPool};
+			float* _frameTime;
+			float* _tickTime;
+			ImGUIWindow _imGui = ImGUIWindow{ _window, _gpu, _swapChain, _pipeline, _gpu.getInstance(),_frameTime,_tickTime};
 			
-			Camera camera = Camera{swapChain};
-			uint32_t currentFrame = 0;
+			Camera _camera = Camera{_swapChain};
+			uint32_t _currentFrame = 0;
 		};
 	}
 }

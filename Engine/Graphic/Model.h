@@ -20,10 +20,10 @@ namespace Engine
 			void bind(VkCommandBuffer commandBuffer);
 			size_t getIndexSize();
 		private:
-			std::vector<Vertex> modelVertex = std::vector<Vertex>{};
-			std::vector<int> index = std::vector<int>{};
-			GPU& gpu;
-			std::unique_ptr<Buffer> buffer;
+			std::vector<Vertex> _modelVertex = std::vector<Vertex>{};
+			std::vector<int> _index = std::vector<int>{};
+			GPU& _gpu;
+			std::unique_ptr<Buffer> _buffer;
 		};
 	}
 }

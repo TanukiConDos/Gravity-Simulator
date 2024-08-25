@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{f9bf339b-d123-4481-8be9-c5c9e65a8293}</ProjectGuid>
+    <RootNamespace>TFG</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.268.0\Include;C:\VulkanSDK\glfw-3.3.8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\glfw-3.3.8\lib-vc2022;C:\VulkanSDK\1.3.268.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.268.0\Include;C:\VulkanSDK\glfw-3.3.8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\glfw-3.3.8\lib-vc2022;C:\VulkanSDK\1.3.268.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Application\GravitySimulator.cpp" />
+    <ClCompile Include="Application\Window.cpp" />
+    <ClCompile Include="Foundation\Arena.cpp" />
+    <ClCompile Include="Foundation\Config.cpp" />
+    <ClCompile Include="Engine\Graphic\Buffer.cpp" />
+    <ClCompile Include="Engine\Graphic\Camera.cpp" />
+    <ClCompile Include="Engine\Graphic\DescriptorPool.cpp" />
+    <ClCompile Include="Engine\Graphic\CommandPool.cpp" />
+    <ClCompile Include="Engine\Physic\BruteForceSolver.cpp" />
+    <ClCompile Include="Engine\Physic\bruteForceDetection.cpp" />
+    <ClCompile Include="Engine\Graphic\GPU.cpp" />
+    <ClCompile Include="Engine\Physic\CollisionDetectionInterface.cpp" />
+    <ClCompile Include="Engine\Physic\SolverInterface.cpp" />
+    <ClCompile Include="External\imgui\imgui.cpp" />
+    <ClCompile Include="External\imgui\imgui_demo.cpp" />
+    <ClCompile Include="External\imgui\imgui_draw.cpp" />
+    <ClCompile Include="External\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="External\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="External\imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="External\imgui\imgui_tables.cpp" />
+    <ClCompile Include="External\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Foundation\File.cpp" />
+    <ClCompile Include="Engine\Graphic\imGUIWindow.cpp" />
+    <ClCompile Include="Application\input.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Engine\Physic\PhysicSystem.cpp" />
+    <ClCompile Include="Engine\Physic\PhysicObject.cpp" />
+    <ClCompile Include="Engine\Graphic\SwapChain.cpp" />
+    <ClCompile Include="Engine\Graphic\Model.cpp" />
+    <ClCompile Include="Engine\Graphic\Pipeline.cpp" />
+    <ClCompile Include="Engine\Graphic\Renderer.cpp" />
+    <ClCompile Include="Engine\Physic\OctTree.cpp" />
+    <ClCompile Include="Engine\Physic\OctTreeCollisionDetection.cpp" />
+    <ClCompile Include="Engine\Physic\OctTreeSolver.cpp" />
+    <ClCompile Include="Application\State.cpp" />
+    <ClCompile Include="Foundation\Timers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application\GravitySimulator.h" />
+    <ClInclude Include="Application\Window.h" />
+    <ClInclude Include="Foundation\Arena.h" />
+    <ClInclude Include="External\json\json.hpp" />
+    <ClInclude Include="Foundation\Config.h" />
+    <ClInclude Include="Engine\Graphic\Buffer.h" />
+    <ClInclude Include="Engine\Graphic\Camera.h" />
+    <ClInclude Include="Engine\Graphic\DescriptorPool.h" />
+    <ClInclude Include="Engine\Graphic\CommandPool.h" />
+    <ClInclude Include="Engine\Graphic\Graphic.h" />
+    <ClInclude Include="Engine\Physic\BruteForceSolver.h" />
+    <ClInclude Include="Engine\Physic\bruteForceDetection.h" />
+    <ClInclude Include="Engine\Graphic\GPU.h" />
+    <ClInclude Include="Engine\Physic\CollisionDetectionInterface.h" />
+    <ClInclude Include="External\imgui\imconfig.h" />
+    <ClInclude Include="External\imgui\imgui.h" />
+    <ClInclude Include="External\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="External\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="External\imgui\imgui_internal.h" />
+    <ClInclude Include="External\imgui\imgui_stdlib.h" />
+    <ClInclude Include="External\imgui\imstb_rectpack.h" />
+    <ClInclude Include="External\imgui\imstb_textedit.h" />
+    <ClInclude Include="External\imgui\imstb_truetype.h" />
+    <ClInclude Include="Foundation\File.h" />
+    <ClInclude Include="Engine\Physic\PhysicSystem.h" />
+    <ClInclude Include="Engine\Physic\SolverInterface.h" />
+    <ClInclude Include="Engine\Physic\PhysicObject.h" />
+    <ClInclude Include="Engine\Graphic\SwapChain.h" />
+    <ClInclude Include="Engine\Graphic\Model.h" />
+    <ClInclude Include="Engine\Graphic\Pipeline.h" />
+    <ClInclude Include="Engine\Graphic\Renderer.h" />
+    <ClInclude Include="Engine\Graphic\imGUIWindow.h" />
+    <ClInclude Include="Engine\Physic\OctTree.h" />
+    <ClInclude Include="Engine\Physic\OctTreeCollisionDetection.h" />
+    <ClInclude Include="Engine\Physic\OctTreeSolver.h" />
+    <ClInclude Include="Application\State.h" />
+    <ClInclude Include="Foundation\Timers.h" />
+    <ClInclude Include="Application\input.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
+    <None Include="Engine\Graphic\shader\frag.spv" />
+    <None Include="Engine\Graphic\shader\fragmentShader.frag" />
+    <None Include="Engine\Graphic\shader\vert.spv" />
+    <None Include="Engine\Graphic\shader\vertexShader.vert" />
+    <None Include="imgui.ini" />
+    <None Include="README.md" />
+    <None Include="scenes\tierra.json" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

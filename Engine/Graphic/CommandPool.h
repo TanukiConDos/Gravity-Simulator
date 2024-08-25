@@ -26,9 +26,9 @@ namespace Engine
 			void endTemporalCommandBuffer(VkCommandBuffer commandBuffer);
 			
 		private:
-			GPU& gpu;
-			VkCommandPool commandPool;
-			std::vector<VkCommandBuffer> commandBuffers;
+			GPU& _gpu;
+			VkCommandPool _commandPool;
+			std::vector<VkCommandBuffer> _commandBuffers;
 
 			void createCommandBuffer();
 			void createCommandPool();

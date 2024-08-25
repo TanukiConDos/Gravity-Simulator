@@ -1,7 +1,7 @@
 #include "Model.h"
 namespace Engine::Graphic
 {
-	Model::Model(int sectorCount, int stackCount,GPU& gpu,CommandPool& commandPool): gpu(gpu)
+	Model::Model(int sectorCount, int stackCount,GPU& gpu,CommandPool& commandPool): _gpu(gpu)
 	{
 		float x, y, z, xy;                              // vertex position
 		float radius = 1.0f;
@@ -26,7 +26,7 @@ namespace Engine::Graphic
 				y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
 				glm::vec3 color;
 				color = glm::vec3{ x,y,z };
-				modelVertex.push_back(Vertex{ glm::vec3{x,y,z},color });
+				_modelVertex.push_back(Vertex{ glm::vec3{x,y,z},color });
 			}
 		}
 		// generate CCW index list of sphere triangles
@@ -46,25 +46,25 @@ namespace Engine::Graphic
 				// k1 => k2 => k1+1
 				if (i != 0)
 				{
-					index.push_back(k1);
-					index.push_back(k2);
-					index.push_back(k1 + 1);
+					_index.push_back(k1);
+					_index.push_back(k2);
+					_index.push_back(k1 + 1);
 				}
 
 				// k1+1 => k2 => k2+1
 				if (i != (stackCount - 1))
 				{
-					index.push_back(k1 + 1);
-					index.push_back(k2);
-					index.push_back(k2 + 1);
+					_index.push_back(k1 + 1);
+					_index.push_back(k2);
+					_index.push_back(k2 + 1);
 				}
 			}
 		}
-		VkDeviceSize vertexSize = sizeof(modelVertex[0]) * static_cast<uint32_t>(modelVertex.size());
-		VkDeviceSize indexSize = sizeof(index[0]) * static_cast<uint32_t>(index.size());
+		VkDeviceSize vertexSize = sizeof(_modelVertex[0]) * static_cast<uint32_t>(_modelVertex.size());
+		VkDeviceSize indexSize = sizeof(_index[0]) * static_cast<uint32_t>(_index.size());
 		VkDeviceSize bufferSize = vertexSize + indexSize;
 
-		buffer = std::make_unique<Buffer>(gpu,
+		_buffer = std::make_unique<Buffer>(gpu,
 			bufferSize,
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -75,11 +75,11 @@ namespace Engine::Graphic
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
 
 		stagingBuffer.map();
-		stagingBuffer.writeData((void*)modelVertex.data(), vertexSize);
-		stagingBuffer.writeData((void*)index.data(), indexSize, vertexSize);
+		stagingBuffer.writeData((void*)_modelVertex.data(), vertexSize);
+		stagingBuffer.writeData((void*)_index.data(), indexSize, vertexSize);
 
 		VkCommandBuffer commandBuffer = commandPool.createTemporalCommandBuffer();
-		gpu.copyBuffer(stagingBuffer.getBuffer(), buffer->getBuffer(), bufferSize, commandBuffer);
+		gpu.copyBuffer(stagingBuffer.getBuffer(), _buffer->getBuffer(), bufferSize, commandBuffer);
 		commandPool.endTemporalCommandBuffer(commandBuffer);
 	}
 
@@ -89,15 +89,15 @@ namespace Engine::Graphic
 
 	void Model::bind(VkCommandBuffer commandBuffer)
 	{
-		VkBuffer vertexBuffers[] = { buffer->getBuffer()};
+		VkBuffer vertexBuffers[] = { _buffer->getBuffer()};
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, buffer->getBuffer(), sizeof(modelVertex[0]) * modelVertex.size() , VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(commandBuffer, _buffer->getBuffer(), sizeof(_modelVertex[0]) * _modelVertex.size() , VK_INDEX_TYPE_UINT32);
 	}
 
 	size_t Model::getIndexSize()
 	{
-		return index.size();
+		return _index.size();
 	}
 
 }

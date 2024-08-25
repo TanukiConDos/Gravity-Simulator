@@ -18,14 +18,14 @@ namespace Engine
 			Pipeline(GPU& gpu, VkRenderPass renderPass);
 			~Pipeline();
 			void bind(VkCommandBuffer commandBuffer);
-			VkDescriptorSetLayout getDescriptorSetLayout() { return descriptorSetLayout; }
-			VkPipelineLayout getPipelineLayout() { return pipelineLayout; }
+			VkDescriptorSetLayout getDescriptorSetLayout() { return _descriptorSetLayout; }
+			VkPipelineLayout getPipelineLayout() { return _pipelineLayout; }
 		private:
-			GPU& gpu;
-			VkPipelineLayout pipelineLayout;
-			VkPipeline graphicsPipeline;
-			VkDescriptorSetLayout descriptorSetLayout;
-			std::vector<VkDynamicState> dynamicStates = {
+			GPU& _gpu;
+			VkPipelineLayout _pipelineLayout;
+			VkPipeline _graphicsPipeline;
+			VkDescriptorSetLayout _descriptorSetLayout;
+			const std::vector<VkDynamicState> _dynamicStates = {
 				VK_DYNAMIC_STATE_VIEWPORT,
 				VK_DYNAMIC_STATE_SCISSOR
 			};

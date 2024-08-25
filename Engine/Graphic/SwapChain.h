@@ -21,26 +21,26 @@ namespace Engine
 			VkResult adquireNextImage(uint32_t imageIndex);
 			void resetFences(uint32_t currentFrame);
 			void beginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-			VkExtent2D getExtent() { return swapChainExtent; }
+			VkExtent2D getExtent() { return _swapChainExtent; }
 			VkResult queueSubmit(VkCommandBuffer commandBuffer, uint32_t currentFrame);
-			VkRenderPass getRenderPass() { return renderPass; }
+			VkRenderPass getRenderPass() { return _renderPass; }
 		private:
-			GPU& gpu;
-			Application::Window& window;
-			VkSwapchainKHR swapChain = VK_NULL_HANDLE;
-			VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
-			std::vector<VkImage> swapChainImages;
-			VkFormat swapChainImageFormat;
-			VkExtent2D swapChainExtent;
-			std::vector<VkImageView> swapChainImageViews;
-			VkRenderPass renderPass;
-			std::vector<VkFramebuffer> swapChainFramebuffers;
-			VkImage depthImage;
-			VkDeviceMemory depthImageMemory;
-			VkImageView depthImageView;
-			std::vector<VkSemaphore> imageAvailableSemaphores;
-			std::vector<VkSemaphore> renderFinishedSemaphores;
-			std::vector<VkFence> inFlightFences;
+			GPU& _gpu;
+			Application::Window& _window;
+			VkSwapchainKHR _swapChain = VK_NULL_HANDLE;
+			VkSwapchainKHR _oldSwapchain = VK_NULL_HANDLE;
+			std::vector<VkImage> _swapChainImages;
+			VkFormat _swapChainImageFormat;
+			VkExtent2D _swapChainExtent;
+			std::vector<VkImageView> _swapChainImageViews;
+			VkRenderPass _renderPass;
+			std::vector<VkFramebuffer> _swapChainFramebuffers;
+			VkImage _depthImage;
+			VkDeviceMemory _depthImageMemory;
+			VkImageView _depthImageView;
+			std::vector<VkSemaphore> _imageAvailableSemaphores;
+			std::vector<VkSemaphore> _renderFinishedSemaphores;
+			std::vector<VkFence> _inFlightFences;
 
 			VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 			VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

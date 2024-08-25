@@ -3,7 +3,7 @@ namespace Engine
 {
 	namespace Graphic
 	{
-		SwapChain::SwapChain(GPU& gpu, Application::Window& window) : gpu(gpu), window(window)
+		SwapChain::SwapChain(GPU& gpu, Application::Window& window) : _gpu(gpu), _window(window)
 		{
 			createSwapChain();
 			createImageViews();
@@ -16,7 +16,7 @@ namespace Engine
 
 		void SwapChain::createSwapChain()
 		{
-			SwapChainSupportDetails swapChainSupport = gpu.querySwapChainSupport();
+			SwapChainSupportDetails swapChainSupport = _gpu.querySwapChainSupport();
 
 			VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 			VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -30,7 +30,7 @@ namespace Engine
 
 			VkSwapchainCreateInfoKHR createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-			createInfo.surface = window.getSurface();
+			createInfo.surface = _window.getSurface();
 
 			createInfo.minImageCount = imageCount;
 			createInfo.imageFormat = surfaceFormat.format;
@@ -39,7 +39,7 @@ namespace Engine
 			createInfo.imageArrayLayers = 1;
 			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-			QueueFamilyIndices indices = gpu.findQueueFamilies();
+			QueueFamilyIndices indices = _gpu.findQueueFamilies();
 			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 			if (indices.graphicsFamily != indices.presentFamily) {
@@ -57,29 +57,29 @@ namespace Engine
 			createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 			createInfo.presentMode = presentMode;
 			createInfo.clipped = VK_TRUE;
-			createInfo.oldSwapchain = swapChain != VK_NULL_HANDLE ? swapChain : VK_NULL_HANDLE;
+			createInfo.oldSwapchain = _swapChain != VK_NULL_HANDLE ? _swapChain : VK_NULL_HANDLE;
 
-			if (vkCreateSwapchainKHR(gpu.getDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+			if (vkCreateSwapchainKHR(_gpu.getDevice(), &createInfo, nullptr, &_swapChain) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create swap chain!");
 			}
 
-			vkGetSwapchainImagesKHR(gpu.getDevice(), swapChain, &imageCount, nullptr);
-			swapChainImages.resize(imageCount);
-			vkGetSwapchainImagesKHR(gpu.getDevice(), swapChain, &imageCount, swapChainImages.data());
+			vkGetSwapchainImagesKHR(_gpu.getDevice(), _swapChain, &imageCount, nullptr);
+			_swapChainImages.resize(imageCount);
+			vkGetSwapchainImagesKHR(_gpu.getDevice(), _swapChain, &imageCount, _swapChainImages.data());
 
-			swapChainImageFormat = surfaceFormat.format;
-			swapChainExtent = extent;
+			_swapChainImageFormat = surfaceFormat.format;
+			_swapChainExtent = extent;
 		}
 
 		SwapChain::~SwapChain()
 		{
 			cleanupSwapChain();
 
-			vkDestroyRenderPass(gpu.getDevice(), renderPass, nullptr);
+			vkDestroyRenderPass(_gpu.getDevice(), _renderPass, nullptr);
 			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				vkDestroySemaphore(gpu.getDevice(), renderFinishedSemaphores[i], nullptr);
-				vkDestroySemaphore(gpu.getDevice(), imageAvailableSemaphores[i], nullptr);
-				vkDestroyFence(gpu.getDevice(), inFlightFences[i], nullptr);
+				vkDestroySemaphore(_gpu.getDevice(), _renderFinishedSemaphores[i], nullptr);
+				vkDestroySemaphore(_gpu.getDevice(), _imageAvailableSemaphores[i], nullptr);
+				vkDestroyFence(_gpu.getDevice(), _inFlightFences[i], nullptr);
 			}
 		}
 
@@ -90,7 +90,7 @@ namespace Engine
 			}
 			else {
 				int width, height;
-				window.getSize(width, height);
+				_window.getSize(width, height);
 
 				VkExtent2D actualExtent = {
 					static_cast<uint32_t>(width),
@@ -127,17 +127,17 @@ namespace Engine
 
 		void SwapChain::createImageViews()
 		{
-			swapChainImageViews.resize(swapChainImages.size());
+			_swapChainImageViews.resize(_swapChainImages.size());
 
-			for (size_t i = 0; i < swapChainImages.size(); i++) {
-				swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+			for (size_t i = 0; i < _swapChainImages.size(); i++) {
+				_swapChainImageViews[i] = createImageView(_swapChainImages[i], _swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 			}
 		}
 
 		void SwapChain::createRenderPass()
 		{
 			VkAttachmentDescription colorAttachment{};
-			colorAttachment.format = swapChainImageFormat;
+			colorAttachment.format = _swapChainImageFormat;
 			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -188,30 +188,30 @@ namespace Engine
 			renderPassInfo.dependencyCount = 1;
 			renderPassInfo.pDependencies = &dependency;
 
-			if (vkCreateRenderPass(gpu.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+			if (vkCreateRenderPass(_gpu.getDevice(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create render pass!");
 			}
 		}
 
 		void SwapChain::createFramebuffers()
 		{
-			swapChainFramebuffers.resize(swapChainImageViews.size());
-			for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+			_swapChainFramebuffers.resize(_swapChainImageViews.size());
+			for (size_t i = 0; i < _swapChainImageViews.size(); i++) {
 				std::array<VkImageView, 2> attachments = {
-					swapChainImageViews[i],
-					depthImageView
+					_swapChainImageViews[i],
+					_depthImageView
 				};
 
 				VkFramebufferCreateInfo framebufferInfo{};
 				framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-				framebufferInfo.renderPass = renderPass;
+				framebufferInfo.renderPass = _renderPass;
 				framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 				framebufferInfo.pAttachments = attachments.data();
-				framebufferInfo.width = swapChainExtent.width;
-				framebufferInfo.height = swapChainExtent.height;
+				framebufferInfo.width = _swapChainExtent.width;
+				framebufferInfo.height = _swapChainExtent.height;
 				framebufferInfo.layers = 1;
 
-				if (vkCreateFramebuffer(gpu.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+				if (vkCreateFramebuffer(_gpu.getDevice(), &framebufferInfo, nullptr, &_swapChainFramebuffers[i]) != VK_SUCCESS) {
 					throw std::runtime_error("failed to create framebuffer!");
 				}
 			}
@@ -234,9 +234,9 @@ namespace Engine
 
 		void SwapChain::createSyncObjects()
 		{
-			imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-			renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-			inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+			_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+			_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+			_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 			VkSemaphoreCreateInfo semaphoreInfo{};
 			semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -246,9 +246,9 @@ namespace Engine
 			fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-				if (vkCreateSemaphore(gpu.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-					vkCreateSemaphore(gpu.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-					vkCreateFence(gpu.getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+				if (vkCreateSemaphore(_gpu.getDevice(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS ||
+					vkCreateSemaphore(_gpu.getDevice(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+					vkCreateFence(_gpu.getDevice(), &fenceInfo, nullptr, &_inFlightFences[i]) != VK_SUCCESS) {
 
 					throw std::runtime_error("failed to create synchronization objects for a frame!");
 				}
@@ -257,8 +257,8 @@ namespace Engine
 
 		void SwapChain::recreateSwapChain()
 		{
-			window.checkMinimized();
-			vkDeviceWaitIdle(gpu.getDevice());
+			_window.checkMinimized();
+			vkDeviceWaitIdle(_gpu.getDevice());
 
 			cleanupSwapChain();
 
@@ -271,25 +271,25 @@ namespace Engine
 
 		VkResult SwapChain::adquireNextImage(uint32_t imageIndex)
 		{
-			vkWaitForFences(gpu.getDevice(), 1, &inFlightFences[imageIndex], VK_TRUE, UINT64_MAX);
+			vkWaitForFences(_gpu.getDevice(), 1, &_inFlightFences[imageIndex], VK_TRUE, UINT64_MAX);
 
-			VkResult result = vkAcquireNextImageKHR(gpu.getDevice(), swapChain, UINT64_MAX, imageAvailableSemaphores[imageIndex], VK_NULL_HANDLE, &imageIndex);
+			VkResult result = vkAcquireNextImageKHR(_gpu.getDevice(), _swapChain, UINT64_MAX, _imageAvailableSemaphores[imageIndex], VK_NULL_HANDLE, &imageIndex);
 			return result;
 		}
 
 		void SwapChain::resetFences(uint32_t currentFrame)
 		{
-			vkResetFences(gpu.getDevice(), 1, &inFlightFences[currentFrame]);
+			vkResetFences(_gpu.getDevice(), 1, &_inFlightFences[currentFrame]);
 		}
 
 		void SwapChain::beginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 		{
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+			renderPassInfo.renderPass = _renderPass;
+			renderPassInfo.framebuffer = _swapChainFramebuffers[imageIndex];
 			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = swapChainExtent;
+			renderPassInfo.renderArea.extent = _swapChainExtent;
 
 			std::array<VkClearValue, 2> clearValues{};
 			clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -303,29 +303,29 @@ namespace Engine
 			VkViewport viewport{};
 			viewport.x = 0.0f;
 			viewport.y = 0.0f;
-			viewport.width = static_cast<float>(swapChainExtent.width);
-			viewport.height = static_cast<float>(swapChainExtent.height);
+			viewport.width = static_cast<float>(_swapChainExtent.width);
+			viewport.height = static_cast<float>(_swapChainExtent.height);
 			viewport.minDepth = 0.0f;
 			viewport.maxDepth = 1.0f;
 			vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 			VkRect2D scissor{};
 			scissor.offset = { 0, 0 };
-			scissor.extent = swapChainExtent;
+			scissor.extent = _swapChainExtent;
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 		}
 
 		void SwapChain::cleanupSwapChain()
 		{
-			for (auto framebuffer : swapChainFramebuffers) {
-				vkDestroyFramebuffer(gpu.getDevice(), framebuffer, nullptr);
+			for (auto framebuffer : _swapChainFramebuffers) {
+				vkDestroyFramebuffer(_gpu.getDevice(), framebuffer, nullptr);
 			}
 
-			for (auto imageView : swapChainImageViews) {
-				vkDestroyImageView(gpu.getDevice(), imageView, nullptr);
+			for (auto imageView : _swapChainImageViews) {
+				vkDestroyImageView(_gpu.getDevice(), imageView, nullptr);
 			}
 
-			vkDestroySwapchainKHR(gpu.getDevice(), swapChain, nullptr);
+			vkDestroySwapchainKHR(_gpu.getDevice(), _swapChain, nullptr);
 		}
 
 		VkImageView SwapChain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
@@ -342,7 +342,7 @@ namespace Engine
 			viewInfo.subresourceRange.layerCount = 1;
 
 			VkImageView imageView;
-			if (vkCreateImageView(gpu.getDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+			if (vkCreateImageView(_gpu.getDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create image view!");
 			}
 
@@ -366,30 +366,30 @@ namespace Engine
 			imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-			if (vkCreateImage(gpu.getDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+			if (vkCreateImage(_gpu.getDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create image!");
 			}
 
 			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(gpu.getDevice(), image, &memRequirements);
+			vkGetImageMemoryRequirements(_gpu.getDevice(), image, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = gpu.findMemoryType(memRequirements.memoryTypeBits, properties);
+			allocInfo.memoryTypeIndex = _gpu.findMemoryType(memRequirements.memoryTypeBits, properties);
 
-			if (vkAllocateMemory(gpu.getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+			if (vkAllocateMemory(_gpu.getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 				throw std::runtime_error("failed to allocate image memory!");
 			}
 
-			vkBindImageMemory(gpu.getDevice(), image, imageMemory, 0);
+			vkBindImageMemory(_gpu.getDevice(), image, imageMemory, 0);
 		}
 
 		VkFormat SwapChain::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 		{
 			for (VkFormat format : candidates) {
 				VkFormatProperties props;
-				vkGetPhysicalDeviceFormatProperties(gpu.getPhysicalDevice(), format, &props);
+				vkGetPhysicalDeviceFormatProperties(_gpu.getPhysicalDevice(), format, &props);
 
 				if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
 					return format;
@@ -404,15 +404,15 @@ namespace Engine
 		void SwapChain::createDepthResources()
 		{
 			VkFormat depthFormat = findDepthFormat();
-			createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-			depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+			createImage(_swapChainExtent.width, _swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depthImage, _depthImageMemory);
+			_depthImageView = createImageView(_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 		}
 
 		VkResult SwapChain::queueSubmit(VkCommandBuffer commandBuffer, uint32_t currentFrame)
 		{
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+			VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
 			VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 			submitInfo.waitSemaphoreCount = 1;
 			submitInfo.pWaitSemaphores = waitSemaphores;
@@ -420,11 +420,11 @@ namespace Engine
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &commandBuffer;
 
-			VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+			VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
 			submitInfo.signalSemaphoreCount = 1;
 			submitInfo.pSignalSemaphores = signalSemaphores;
 
-			if (vkQueueSubmit(gpu.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+			if (vkQueueSubmit(_gpu.getGraphicsQueue(), 1, &submitInfo, _inFlightFences[currentFrame]) != VK_SUCCESS) {
 				throw std::runtime_error("failed to submit draw command buffer!");
 			}
 
@@ -434,13 +434,13 @@ namespace Engine
 			presentInfo.waitSemaphoreCount = 1;
 			presentInfo.pWaitSemaphores = signalSemaphores;
 
-			VkSwapchainKHR swapChains[] = { swapChain };
+			VkSwapchainKHR swapChains[] = { _swapChain };
 			presentInfo.swapchainCount = 1;
 			presentInfo.pSwapchains = swapChains;
 			presentInfo.pImageIndices = &currentFrame;
 			presentInfo.pResults = nullptr; // Optional
 
-			VkResult result = vkQueuePresentKHR(gpu.getPresentQueue(), &presentInfo);
+			VkResult result = vkQueuePresentKHR(_gpu.getPresentQueue(), &presentInfo);
 			return result;
 		}
 	}

@@ -9,22 +9,17 @@ namespace Engine
 		{
 		public:
 
-			PhysicObject(const PhysicObject&) = delete;
-			PhysicObject& operator=(const PhysicObject&) = delete;
-
-			static PhysicObject* physicObject(glm::vec3 position, glm::vec3 velocity, float mass, float radius) { return new PhysicObject(position, velocity, mass, radius); }
-
 			PhysicObject(glm::vec3 position, glm::vec3 velocity, float mass, float radius);
 
 			void update(float deltaTime, glm::vec3 force);
 			void collision(PhysicObject& object);
-			float getVelocity() { return glm::length(velocity); }
-			glm::vec3 position;
-			glm::vec3 velocity;
-			glm::vec3 acceleration = glm::vec3(0.0, 0.0, 0.0);
-			double mass;
-			float radius;
-			bool selected = false;
+			float getVelocity() { return glm::length(_velocity); }
+			glm::vec3 _position;
+			glm::vec3 _velocity;
+			glm::vec3 _acceleration = glm::vec3(0.0, 0.0, 0.0);
+			double _mass;
+			float _radius;
+			bool _selected = false;
 		private:
 
 		};

@@ -6,8 +6,8 @@ namespace Engine
 	{
 		ImGUIWindow::ImGUIWindow(Application::Window& window, GPU& gpu,SwapChain& swapChain, Pipeline& pipeline,VkInstance instance,float* frameTime, float* tickTime)
 		{
-            stateMachine->frameTime = frameTime;
-            stateMachine->tickTime = tickTime;
+            _stateMachine->_frameTime = frameTime;
+            _stateMachine->_tickTime = tickTime;
 
             VkDescriptorPoolSize pool_sizes[] = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -29,7 +29,7 @@ namespace Engine
             pool_info.pPoolSizes = pool_sizes;
 
             
-            if (vkCreateDescriptorPool(gpu.getDevice(), &pool_info, nullptr, &imguiPool) != VK_SUCCESS) {
+            if (vkCreateDescriptorPool(gpu.getDevice(), &pool_info, nullptr, &_imguiPool) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create descriptor pool!");
             }
             IMGUI_CHECKVERSION();
@@ -45,7 +45,7 @@ namespace Engine
             init_info.QueueFamily = 0;
             init_info.Queue = gpu.getGraphicsQueue();
             init_info.PipelineCache = VK_NULL_HANDLE;
-            init_info.DescriptorPool = imguiPool;
+            init_info.DescriptorPool = _imguiPool;
             init_info.RenderPass = swapChain.getRenderPass();
             init_info.Subpass = 0;
             init_info.MinImageCount = 3;
@@ -67,7 +67,7 @@ namespace Engine
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            stateMachine->frame();
+            _stateMachine->frame();
             ImGui::Render();
         }
 

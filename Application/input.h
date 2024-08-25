@@ -31,9 +31,9 @@ namespace Application
 
 		InputEvent() = default;
 
-		void subscribe(Engine::Graphic::Camera* camera) { this->camera = camera;}
+		void subscribe(Engine::Graphic::Camera* camera) { this->_camera = camera;}
 		void submit(InputAction action);
 	private:
-		Engine::Graphic::Camera* camera;
+		Engine::Graphic::Camera* _camera;
 	};
 }

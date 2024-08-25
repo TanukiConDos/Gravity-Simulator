@@ -44,23 +44,23 @@ namespace Engine
 			GPU(Application::Window& window);
 
 			void wait();
-			VkInstance getInstance() { return instance; }
-			VkDevice getDevice() { return device; }
-			VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
-			SwapChainSupportDetails querySwapChainSupport() { return querySwapChainSupport(physicalDevice); }
-			QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(physicalDevice); }
+			VkInstance getInstance() { return _instance; }
+			VkDevice getDevice() { return _device; }
+			VkPhysicalDevice getPhysicalDevice() { return _physicalDevice; }
+			SwapChainSupportDetails querySwapChainSupport() { return querySwapChainSupport(_physicalDevice); }
+			QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(_physicalDevice); }
 			void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 			void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandBuffer commandBuffer);
-			VkQueue getGraphicsQueue() { return graphicsQueue; }
-			VkQueue getPresentQueue() { return presentQueue; }
+			VkQueue getGraphicsQueue() { return _graphicsQueue; }
+			VkQueue getPresentQueue() { return _presentQueue; }
 			uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		private:
-			VkInstance instance;
-			VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-			VkDevice device;
-			VkQueue graphicsQueue;
-			VkQueue presentQueue;
-			Application::Window& window;
+			VkInstance _instance;
+			VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+			VkDevice _device;
+			VkQueue _graphicsQueue;
+			VkQueue _presentQueue;
+			Application::Window& _window;
 
 			void createInstance();
 			void pickPhysicalDevice();

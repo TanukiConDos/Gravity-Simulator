@@ -1,5 +1,5 @@
 #pragma once
-
+#include<memory>
 namespace Foundation
 {
 	template <typename T>
@@ -12,7 +12,7 @@ namespace Foundation
 
 		Arena(size_t capacity);
 
-		~Arena() { free(first); }
+		~Arena() { _first.freeBlock(); }
 
 
 		T* alloc(int num);
@@ -21,32 +21,68 @@ namespace Foundation
 		void clear();
 
 	private:
-		size_t capacity;
-		T* first;
-		T* last;
+		
+		struct Block
+		{
+			size_t _capacity = 0;
+			size_t _count = 0;
+			T* _first = nullptr;
+			T* _last = _first;
+			std::unique_ptr<Block> _next = nullptr;
+
+			T* alloc(int num)
+			{
+				if (_count == _capacity)
+				{
+					if (_next == nullptr)
+					{
+						_next = std::make_unique<Block>();
+						_next->_capacity = _capacity;
+						_next->_first = (T*)malloc(sizeof(T) * _capacity);
+						_next->_last = _first;
+					}
+					return _next->alloc(num);
+				}
+				T* aux = _last;
+				_last += num;
+				_count++;
+				return aux;
+			}
+			void clear()
+			{
+				_last = _first;
+				_count = 0;
+				if (_next != nullptr) _next->clear();
+			}
+
+			void freeBlock()
+			{
+				if(_next != nullptr) _next->freeBlock();
+				free(_first);
+			}
+		} _first;
 
 	};
 
 	template<typename T>
-	Arena<T>::Arena(size_t capacity) : capacity(capacity)
+	Arena<T>::Arena(size_t capacity)
 	{
-		first = (T*)malloc(sizeof(T) * capacity);
-		last = first;
+		_first = Block();
+		_first._capacity = capacity;
+		_first._first = (T*)malloc(sizeof(T) * capacity);
+		_first._last = _first._first;
 	}
 
 	template<typename T>
 	T* Arena<T>::alloc(int num)
 	{
-		if (last + num >= first + capacity) return nullptr;
-		T* aux = last;
-		last += num;
-		return aux;
+		return _first.alloc(num);
 	}
 
 	template<typename T>
 	void Arena<T>::clear()
 	{
-		last = first;
+		_first.clear();
 	}
 
 

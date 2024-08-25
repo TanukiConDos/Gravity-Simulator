@@ -2,7 +2,7 @@
 
 namespace Engine::Graphic
 {
-	CommandPool::CommandPool(GPU& gpu): gpu(gpu)
+	CommandPool::CommandPool(GPU& gpu): _gpu(gpu)
 	{
 		createCommandPool();
 		createCommandBuffer();
@@ -10,7 +10,7 @@ namespace Engine::Graphic
 
 	CommandPool::~CommandPool()
 	{
-		vkDestroyCommandPool(gpu.getDevice(), commandPool, nullptr);
+		vkDestroyCommandPool(_gpu.getDevice(), _commandPool, nullptr);
 	}
 
 	VkCommandBuffer CommandPool::beginCommandBuffer(uint32_t imageIndex)
@@ -20,10 +20,10 @@ namespace Engine::Graphic
 		beginInfo.flags = 0; // Optional
 		beginInfo.pInheritanceInfo = nullptr; // Optional
 
-		if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
+		if (vkBeginCommandBuffer(_commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
-		return commandBuffers[imageIndex];
+		return _commandBuffers[imageIndex];
 	}
 
 	void CommandPool::endCommandBuffer(VkCommandBuffer commandBuffer)
@@ -36,34 +36,34 @@ namespace Engine::Graphic
 
 	void CommandPool::resetCommandBuffer(uint32_t currentFrame)
 	{
-		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+		vkResetCommandBuffer(_commandBuffers[currentFrame], 0);
 	}
 
 	void CommandPool::createCommandBuffer()
 	{
-		commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = commandPool;
+		allocInfo.commandPool = _commandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+		allocInfo.commandBufferCount = (uint32_t)_commandBuffers.size();
 
-		if (vkAllocateCommandBuffers(gpu.getDevice() , &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(_gpu.getDevice() , &allocInfo, _commandBuffers.data()) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
 	}
 
 	void CommandPool::createCommandPool()
 	{
-		QueueFamilyIndices queueFamilyIndices = gpu.findQueueFamilies();
+		QueueFamilyIndices queueFamilyIndices = _gpu.findQueueFamilies();
 
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(gpu.getDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(_gpu.getDevice(), &poolInfo, nullptr, &_commandPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create command pool!");
 		}
 	}
@@ -73,11 +73,11 @@ namespace Engine::Graphic
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = commandPool;
+		allocInfo.commandPool = _commandPool;
 		allocInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(gpu.getDevice(), &allocInfo, &commandBuffer);
+		vkAllocateCommandBuffers(_gpu.getDevice(), &allocInfo, &commandBuffer);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -96,9 +96,9 @@ namespace Engine::Graphic
 		submitInfo.pCommandBuffers = &commandBuffer;
 
 
-		vkQueueSubmit(gpu.getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(gpu.getGraphicsQueue());
-		vkFreeCommandBuffers(gpu.getDevice(), commandPool, 1, &commandBuffer);
+		vkQueueSubmit(_gpu.getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(_gpu.getGraphicsQueue());
+		vkFreeCommandBuffers(_gpu.getDevice(), _commandPool, 1, &commandBuffer);
 	}
 }
 

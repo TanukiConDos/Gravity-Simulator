@@ -8,30 +8,29 @@ namespace Engine
 		{	
 		}
 
-		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject*>>& physicObjects,float* frameTime, float* tickTime) : window(window), physicObjects(physicObjects), frameTime(frameTime),tickTime(tickTime)
+		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> physicObjects,float* frameTime, float* tickTime) : _window(window), _physicObjects(physicObjects), _frameTime(frameTime),_tickTime(tickTime)
 		{
 			for (int i = 0; i < physicObjects->size(); i++)
 			{
-				gameObjects[i] = UniformBufferObject{};
+				_gameObjects[i] = UniformBufferObject{};
 			}
 		}
 
 		void Renderer::updateObjects()
 		{
-			descriptorPool->~DescriptorPool();
-			descriptorPool = new DescriptorPool(gpu, pipeline, static_cast<uint32_t>(physicObjects->size()));
-			gameObjects.resize(physicObjects->size());
-			for (int i = 0; i < physicObjects->size(); i++)
+			_descriptorPool = std::make_unique<DescriptorPool>(_gpu, _pipeline, static_cast<uint32_t>(_physicObjects->size()));
+			_gameObjects.resize(_physicObjects->size());
+			for (int i = 0; i < _physicObjects->size(); i++)
 			{
-				gameObjects[i] = UniformBufferObject{};
+				_gameObjects[i] = UniformBufferObject{};
 			}
 		}
 
 		void Renderer::drawFrame()
 		{
-			VkResult result = swapChain.adquireNextImage(currentFrame);
+			VkResult result = _swapChain.adquireNextImage(_currentFrame);
 			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-				swapChain.recreateSwapChain();
+				_swapChain.recreateSwapChain();
 				return;
 			}
 			else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -39,41 +38,41 @@ namespace Engine
 			}
 
 
-			swapChain.resetFences(currentFrame);
+			_swapChain.resetFences(_currentFrame);
 
-			commandPool.resetCommandBuffer(currentFrame);
-			VkCommandBuffer commandBuffer = commandPool.beginCommandBuffer(currentFrame);
+			_commandPool.resetCommandBuffer(_currentFrame);
+			VkCommandBuffer commandBuffer = _commandPool.beginCommandBuffer(_currentFrame);
 
-			swapChain.beginRenderPass(commandBuffer, currentFrame);
-			pipeline.bind(commandBuffer);
-			imGui.startFrame();
-			for (int i = 0; i < gameObjects.size(); i++)
+			_swapChain.beginRenderPass(commandBuffer, _currentFrame);
+			_pipeline.bind(commandBuffer);
+			_imGui.startFrame();
+			for (int i = 0; i < _gameObjects.size(); i++)
 			{
-				gameObjects[i].updateModel(*physicObjects->at(i));
-				camera.transform(gameObjects[i]);
-				descriptorPool->updateUniformBuffer(gameObjects[i], currentFrame,i);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipelineLayout(), 0, 1, descriptorPool->getDescriptorSets(currentFrame,i), 0, nullptr);
-				model.bind(commandBuffer);
-				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model.getIndexSize()), 1, 0, 0, 0);
+				_gameObjects[i].updateModel(_physicObjects->at(i));
+				_camera.transform(_gameObjects[i]);
+				_descriptorPool->updateUniformBuffer(_gameObjects[i], _currentFrame,i);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline.getPipelineLayout(), 0, 1, _descriptorPool->getDescriptorSets(_currentFrame,i), 0, nullptr);
+				_model.bind(commandBuffer);
+				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(_model.getIndexSize()), 1, 0, 0, 0);
 			}
-			imGui.draw(commandBuffer);
+			_imGui.draw(commandBuffer);
 			vkCmdEndRenderPass(commandBuffer);
 
-			commandPool.endCommandBuffer(commandBuffer);
+			_commandPool.endCommandBuffer(commandBuffer);
 
-			swapChain.queueSubmit(commandBuffer, currentFrame);
+			_swapChain.queueSubmit(commandBuffer, _currentFrame);
 
 
-			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.getFramebufferResized()) {
-				window.setFramebufferResized();
-				swapChain.recreateSwapChain();
+			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || _window.getFramebufferResized()) {
+				_window.setFramebufferResized();
+				_swapChain.recreateSwapChain();
 				return;
 			}
 			else if (result != VK_SUCCESS) {
 				throw std::runtime_error("failed to present swap chain image!");
 			}
 
-			currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+			_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 		}
 	}
 }

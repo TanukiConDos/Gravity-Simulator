@@ -10,13 +10,12 @@ namespace Engine
         {
         public:
 
-            OctTreeSolver(OctTree& tree, float accuracy) : tree(&tree), accuracy(accuracy) {}
+            OctTreeSolver(std::shared_ptr<OctTree> tree) : _tree(tree) {}
 
-            void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject*>> objects);
+            void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
 
         private:
-            OctTree* tree;
-            float accuracy;
+            std::shared_ptr<OctTree> _tree;
         };
     }
 }
