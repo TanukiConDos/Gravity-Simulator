@@ -21,7 +21,7 @@ namespace Application
 		VkSurfaceKHR getSurface() { return _surface; }
 
 		GLFWwindow* getWindow();
-		bool getFramebufferResized() { return _framebufferResized; }
+		bool getFramebufferResized() const { return _framebufferResized; }
 		void setFramebufferResized() { _framebufferResized = false; }
 		void checkMinimized();
 		void getSize(int& width, int& height);

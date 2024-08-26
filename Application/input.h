@@ -8,7 +8,7 @@ namespace Engine::Graphic
 namespace Application
 {
 
-	enum InputAction
+	enum class InputAction
 	{
 		MOVE_FORWARD,
 		MOVE_BACKWARD,

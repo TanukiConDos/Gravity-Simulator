@@ -21,9 +21,9 @@ namespace Engine
 			VkResult adquireNextImage(uint32_t imageIndex);
 			void resetFences(uint32_t currentFrame);
 			void beginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-			VkExtent2D getExtent() { return _swapChainExtent; }
+			VkExtent2D getExtent() const { return _swapChainExtent; }
 			VkResult queueSubmit(VkCommandBuffer commandBuffer, uint32_t currentFrame);
-			VkRenderPass getRenderPass() { return _renderPass; }
+			VkRenderPass getRenderPass() const { return _renderPass; }
 		private:
 			GPU& _gpu;
 			Application::Window& _window;

@@ -16,11 +16,11 @@ namespace Engine
 			CommandPool(const CommandPool&) = delete;
 			CommandPool& operator=(const CommandPool&) = delete;
 
-			CommandPool(GPU& gpu);
+			explicit CommandPool(GPU& gpu);
 			~CommandPool();
 
 			VkCommandBuffer beginCommandBuffer(uint32_t imageIndex);
-			void endCommandBuffer(VkCommandBuffer commandBuffer);
+			void endCommandBuffer(VkCommandBuffer commandBuffer) const;
 			void resetCommandBuffer(uint32_t currentFrame);
 			VkCommandBuffer createTemporalCommandBuffer();
 			void endTemporalCommandBuffer(VkCommandBuffer commandBuffer);

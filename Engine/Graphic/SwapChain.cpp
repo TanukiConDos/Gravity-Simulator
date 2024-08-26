@@ -40,12 +40,12 @@ namespace Engine
 			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 			QueueFamilyIndices indices = _gpu.findQueueFamilies();
-			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+			std::array<uint32_t,2> queueFamilyIndices = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 			if (indices.graphicsFamily != indices.presentFamily) {
 				createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 				createInfo.queueFamilyIndexCount = 2;
-				createInfo.pQueueFamilyIndices = queueFamilyIndices;
+				createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 			}
 			else {
 				createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -89,7 +89,8 @@ namespace Engine
 				return capabilities.currentExtent;
 			}
 			else {
-				int width, height;
+				int width;
+				int height;
 				_window.getSize(width, height);
 
 				VkExtent2D actualExtent = {
@@ -412,17 +413,17 @@ namespace Engine
 		{
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
+			std::array<VkSemaphore,1> waitSemaphores = { _imageAvailableSemaphores[currentFrame] };
 			VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores = waitSemaphores;
+			submitInfo.pWaitSemaphores = waitSemaphores.data();
 			submitInfo.pWaitDstStageMask = waitStages;
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &commandBuffer;
 
-			VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
+			std::array<VkSemaphore,1> signalSemaphores = { _renderFinishedSemaphores[currentFrame] };
 			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores = signalSemaphores;
+			submitInfo.pSignalSemaphores = signalSemaphores.data();
 
 			if (vkQueueSubmit(_gpu.getGraphicsQueue(), 1, &submitInfo, _inFlightFences[currentFrame]) != VK_SUCCESS) {
 				throw std::runtime_error("failed to submit draw command buffer!");
@@ -432,11 +433,11 @@ namespace Engine
 			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 			presentInfo.waitSemaphoreCount = 1;
-			presentInfo.pWaitSemaphores = signalSemaphores;
+			presentInfo.pWaitSemaphores = signalSemaphores.data();
 
-			VkSwapchainKHR swapChains[] = { _swapChain };
+			std::array<VkSwapchainKHR,1> swapChains = { _swapChain };
 			presentInfo.swapchainCount = 1;
-			presentInfo.pSwapchains = swapChains;
+			presentInfo.pSwapchains = swapChains.data();
 			presentInfo.pImageIndices = &currentFrame;
 			presentInfo.pResults = nullptr; // Optional
 

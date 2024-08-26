@@ -10,9 +10,9 @@ namespace Engine
         {
         public:
 
-            OctTreeSolver(std::shared_ptr<OctTree> tree) : _tree(tree) {}
+            explicit OctTreeSolver(std::shared_ptr<OctTree> tree) : _tree(tree) {}
 
-            void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
+            void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects) final;
 
         private:
             std::shared_ptr<OctTree> _tree;

@@ -19,7 +19,7 @@ namespace Application
 
 	class GravitySimulator;
 
-	enum Action
+	enum class Action
 	{
 		DEFAULT,
 		BEGIN_SIMULATION,
@@ -35,6 +35,12 @@ namespace Application
 	class StateMachine
 	{
 	public:
+		std::unique_ptr<State> _state;
+		std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> _objects;
+		GravitySimulator* _sub;
+		float* _frameTime;
+		float* _tickTime;
+
 		StateMachine(StateMachine const&) = delete;
 		StateMachine operator=(StateMachine const&) = delete;
 
@@ -42,13 +48,8 @@ namespace Application
 		static std::shared_ptr<StateMachine> getStateMachine();
 		void frame();
 		void changeState(std::unique_ptr<State> state) { _state = std::move(state); }
-
-		std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> _objects;
-		GravitySimulator* _sub;
-		float* _frameTime;
-		float* _tickTime;
 	private:
-		std::unique_ptr<State> _state;
+		
 
 	};
 
@@ -66,16 +67,16 @@ namespace Application
 	{
 	public:
 		explicit MainMenu(std::shared_ptr<StateMachine> context) : State(context) {}
-		void frame();
-		void changeState(Action action);
+		void frame() final;
+		void changeState(Action action) final;
 	};
 
 	class Debug : public State
 	{
 	public:
 		Debug(std::shared_ptr<StateMachine> context, std::unique_ptr<State> state) : State(context), _state(std::move(state)) {}
-		void frame();
-		void changeState(Action action);
+		void frame() final;
+		void changeState(Action action) final;
 
 
 	private:
@@ -86,25 +87,25 @@ namespace Application
 	{
 	public:
 		explicit Config(std::shared_ptr<StateMachine> context) : State(context) {}
-		void frame();
-		void changeState(Action action);
+		void frame() final;
+		void changeState(Action action) final;
 	};
 
 	class ObjectSelected : public State
 	{
 	public:
 		ObjectSelected(std::shared_ptr<StateMachine> context, std::unique_ptr<State> state);
-		void frame();
-		void changeState(Action action);
+		void frame() final;
+		void changeState(Action action) final;
 
 
 	private:
 		std::unique_ptr<State> _state;
 		int _objectId = 0;
 		int _oldId = -1;
-		float* _pos[3];
-		float* _vel[3];
-		float* _acc[3];
+		std::array<float*,3> _pos;
+		std::array<float*, 3> _vel;
+		std::array<float*, 3> _acc;
 		double* _mass;
 		float* _radius;
 	};

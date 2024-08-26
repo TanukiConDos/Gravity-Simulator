@@ -8,7 +8,7 @@ namespace Engine::Graphic
 		VkExtent2D extent = swapchain.getExtent();
 		_projection = glm::perspective(glm::radians(70.0f), extent.width / (float)extent.height, 0.1f, std::numeric_limits<float>::max());
 	}
-	void Camera::transform(UniformBufferObject& ubo)
+	void Camera::transform(UniformBufferObject& ubo) const
 	{
 		ubo.view = _view;
 		ubo.proj = _projection;

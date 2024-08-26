@@ -4,10 +4,6 @@ namespace Engine
 {
 	namespace Graphic
 	{
-		Renderer::~Renderer()
-		{	
-		}
-
 		Renderer::Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> physicObjects,float* frameTime, float* tickTime) : _window(window), _physicObjects(physicObjects), _frameTime(frameTime),_tickTime(tickTime)
 		{
 			for (int i = 0; i < physicObjects->size(); i++)

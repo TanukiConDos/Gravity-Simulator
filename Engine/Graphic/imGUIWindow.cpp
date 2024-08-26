@@ -9,7 +9,7 @@ namespace Engine
             _stateMachine->_frameTime = frameTime;
             _stateMachine->_tickTime = tickTime;
 
-            VkDescriptorPoolSize pool_sizes[] = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            std::array<VkDescriptorPoolSize,11> pool_sizes = { VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
                 { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
                 { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
@@ -26,7 +26,7 @@ namespace Engine
             pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
             pool_info.maxSets = 1000;
             pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
-            pool_info.pPoolSizes = pool_sizes;
+            pool_info.pPoolSizes = pool_sizes.data();
 
             
             if (vkCreateDescriptorPool(gpu.getDevice(), &pool_info, nullptr, &_imguiPool) != VK_SUCCESS) {

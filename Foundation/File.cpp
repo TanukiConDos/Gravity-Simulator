@@ -3,7 +3,7 @@
 
 namespace Foundation
 {
-	File::File(std::string filename,bool isShader)
+	File::File(std::string const &filename,bool isShader)
 	{
 		if (isShader) file.open(filename, std::ios::in | std::ios::ate | std::ios::binary);
 		else file.open(filename, std::ios::out | std::ios::in | std::ios::ate);
@@ -33,7 +33,7 @@ namespace Foundation
 		file.seekg(0);
 		return buffer;
 	}
-	void File::write(std::string data)
+	void File::write(std::string const & data)
 	{
 		file.clear();
 		file.write(data.c_str(),data.size());

@@ -120,9 +120,6 @@
     <ClCompile Include="Application\input.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
-    <ClCompile Include="Foundation\Arena.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\GravitySimulator.h">
@@ -259,5 +256,6 @@
     <None Include="Engine\Graphic\shader\frag.spv">
       <Filter>Archivos de recursos</Filter>
     </None>
+    <None Include="scenes\colision.json" />
   </ItemGroup>
 </Project>

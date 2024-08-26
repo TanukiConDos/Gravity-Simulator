@@ -10,7 +10,7 @@ namespace Foundation
 		Arena(const Arena&) = delete;
 		Arena& operator=(const Arena&) = delete;
 
-		Arena(size_t capacity);
+		explicit Arena(size_t capacity);
 
 		~Arena() { _first.freeBlock(); }
 
@@ -57,17 +57,17 @@ namespace Foundation
 
 			void freeBlock()
 			{
-				if(_next != nullptr) _next->freeBlock();
+				if (_next != nullptr) _next->freeBlock();
 				free(_first);
 			}
-		} _first;
-
+		};
+		
+		Block _first{};
 	};
 
 	template<typename T>
 	Arena<T>::Arena(size_t capacity)
 	{
-		_first = Block();
 		_first._capacity = capacity;
 		_first._first = (T*)malloc(sizeof(T) * capacity);
 		_first._last = _first._first;

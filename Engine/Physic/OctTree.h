@@ -20,7 +20,7 @@ namespace Engine
 			OctTree(const OctTree&) = delete;
 			OctTree& operator=(const OctTree&) = delete;
 
-			OctTree(std::shared_ptr<std::vector<PhysicObject>> objects);
+			explicit OctTree(std::shared_ptr<std::vector<PhysicObject>> objects);
 			OctTree() = default;
 
 			void barnesHut(float deltaTime);

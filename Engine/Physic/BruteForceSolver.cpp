@@ -15,9 +15,9 @@ namespace Engine::Physic
 			{
 				if (i != j)
 				{
-					PhysicObject* object2 = &objects->at(j);
+					const PhysicObject* object2 = &objects->at(j);
 					double distance = glm::distance(object->_position, object2->_position);
-					if (distance > object->_radius + object2->_radius + 1000)
+					if (distance > object->_radius + object2->_radius)
 					{
 						totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->_mass * object2->_mass) / (distance * distance)) * (glm::dvec3) glm::normalize(object->_position - object2->_position));
 					}

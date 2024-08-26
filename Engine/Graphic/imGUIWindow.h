@@ -23,7 +23,6 @@ namespace Engine
 
 			void startFrame();
 			void draw(VkCommandBuffer commandBuffer);
-			void setTimers(float& frameTime, float& tickTime) { frameTime = frameTime; tickTime = tickTime; }
 		private:
 			std::shared_ptr<Application::StateMachine> _stateMachine = Application::StateMachine::getStateMachine();
 			VkDescriptorPool _imguiPool;

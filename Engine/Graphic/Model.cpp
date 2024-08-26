@@ -3,11 +3,15 @@ namespace Engine::Graphic
 {
 	Model::Model(int sectorCount, int stackCount,GPU& gpu,CommandPool& commandPool): _gpu(gpu)
 	{
-		float x, y, z, xy;                              // vertex position
+		float x;
+		float y;
+		float z;
+		float xy;                              // vertex position
 		float radius = 1.0f;
 		float sectorStep = 2 * PI / sectorCount;
 		float stackStep = PI / stackCount;
-		float sectorAngle, stackAngle;
+		float sectorAngle;
+		float stackAngle;
 
 		for (int i = 0; i <= stackCount; ++i)
 		{
@@ -26,7 +30,7 @@ namespace Engine::Graphic
 				y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
 				glm::vec3 color;
 				color = glm::vec3{ x,y,z };
-				_modelVertex.push_back(Vertex{ glm::vec3{x,y,z},color });
+				_modelVertex.emplace_back(Vertex{ glm::vec3{x,y,z},color });
 			}
 		}
 		// generate CCW index list of sphere triangles
@@ -34,7 +38,8 @@ namespace Engine::Graphic
 		// |  / |
 		// | /  |
 		// k2--k2+1
-		int k1, k2;
+		int k1;
+		int k2;
 		for (int i = 0; i < stackCount; ++i)
 		{
 			k1 = i * (sectorCount + 1);     // beginning of current stack
@@ -83,15 +88,11 @@ namespace Engine::Graphic
 		commandPool.endTemporalCommandBuffer(commandBuffer);
 	}
 
-	Model::~Model()
+	void Model::bind(VkCommandBuffer commandBuffer) const
 	{
-	}
-
-	void Model::bind(VkCommandBuffer commandBuffer)
-	{
-		VkBuffer vertexBuffers[] = { _buffer->getBuffer()};
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+		std::array<VkBuffer,1> vertexBuffers = { _buffer->getBuffer()};
+		std::array<VkDeviceSize,1> offsets = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 		vkCmdBindIndexBuffer(commandBuffer, _buffer->getBuffer(), sizeof(_modelVertex[0]) * _modelVertex.size() , VK_INDEX_TYPE_UINT32);
 	}
 

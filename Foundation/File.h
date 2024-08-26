@@ -13,11 +13,11 @@ namespace Foundation
 		File(const File&) = delete;
 		File& operator=(const File&) = delete;
 
-		File(std::string filename, bool isShader = true);
+		File(std::string const &filename, bool isShader = true);
 		~File();
-		size_t getSize() { return size; };
+		size_t getSize() const { return size; };
 		std::vector<char> read();
-		void write(std::string data);
+		void write(std::string const & data);
 
 	private:
 		std::fstream file;

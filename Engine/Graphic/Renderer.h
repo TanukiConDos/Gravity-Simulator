@@ -25,7 +25,6 @@ namespace Engine
 			Renderer(const Renderer&) = delete;
 			Renderer& operator=(const Renderer&) = delete;
 
-			~Renderer();
 			Renderer(Application::Window& window, std::shared_ptr<std::vector<Engine::Physic::PhysicObject>> physicObjects,float* frameTime,float* tickTime);
 			void updateObjects();
 			void drawFrame();

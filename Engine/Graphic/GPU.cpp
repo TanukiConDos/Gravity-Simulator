@@ -90,8 +90,7 @@ namespace Engine::Graphic
 		}
 
 		// Check if the best candidate is suitable at all
-		std::multimap<int, VkPhysicalDevice>::iterator i = candidates.begin();
-		if (i->first > 0) {
+		if (std::multimap<int, VkPhysicalDevice>::iterator i = candidates.begin(); i->first > 0) {
 			_physicalDevice = i->second;
 		}
 		else {
@@ -107,7 +106,6 @@ namespace Engine::Graphic
 	{
 		QueueFamilyIndices indices = findQueueFamilies(_physicalDevice);
 
-		VkDeviceQueueCreateInfo queueCreateInfo{};
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
@@ -264,7 +262,7 @@ namespace Engine::Graphic
 
 		// Application can't function without geometry shaders
 		if (!deviceFeatures.geometryShader) {
-			return 0;
+			return false;
 		}
 
 		QueueFamilyIndices indices = findQueueFamilies(device);
@@ -278,7 +276,7 @@ namespace Engine::Graphic
 
 		if (!indices.isComplete() && !extensionsSupported && !swapChainAdequate)
 		{
-			return 0;
+			return false;
 		}
 
 		std::cout << deviceProperties.deviceName << ": " << score << std::endl;

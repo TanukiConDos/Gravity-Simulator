@@ -2,7 +2,7 @@
 #include <chrono>
 namespace Foundation
 {
-	enum Timer
+	enum class Timer
 	{
 		TICK,
 		FRAME,
@@ -17,7 +17,7 @@ namespace Foundation
 
 		static Timers* getTimers();
 		void setTimer(Timer timer, bool start);
-		float getElapsedTime(Timer timer);
+		float getElapsedTime(Timer timer) const;
 	private:
 		Timers() = default;
 		std::chrono::steady_clock::time_point _tick[2] = {};

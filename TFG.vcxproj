@@ -141,7 +141,6 @@
   <ItemGroup>
     <ClCompile Include="Application\GravitySimulator.cpp" />
     <ClCompile Include="Application\Window.cpp" />
-    <ClCompile Include="Foundation\Arena.cpp" />
     <ClCompile Include="Foundation\Config.cpp" />
     <ClCompile Include="Engine\Graphic\Buffer.cpp" />
     <ClCompile Include="Engine\Graphic\Camera.cpp" />
@@ -224,6 +223,7 @@
     <None Include="Engine\Graphic\shader\vertexShader.vert" />
     <None Include="imgui.ini" />
     <None Include="README.md" />
+    <None Include="scenes\colision.json" />
     <None Include="scenes\tierra.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

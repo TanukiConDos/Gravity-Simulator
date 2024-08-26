@@ -41,7 +41,7 @@ namespace Engine
 			GPU& operator=(const GPU&) = delete;
 
 			~GPU();
-			GPU(Application::Window& window);
+			explicit GPU(Application::Window& window);
 
 			void wait();
 			VkInstance getInstance() { return _instance; }

@@ -4,16 +4,16 @@
 
 namespace Foundation
 {
-	enum Algorithm
+	enum class Algorithm
 	{
-		BRUTE_FORCE,
-		OCTREE
+		BRUTE_FORCE = 0,
+		OCTREE = 1
 	};
 	
-	enum Mode
+	enum class Mode
 	{
-		RANDOM,
-		FILE
+		RANDOM = 0,
+		FILE = 1
 	};
 
 	class Config

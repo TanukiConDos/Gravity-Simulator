@@ -41,7 +41,7 @@ namespace Engine
 						for (int objectId2 = 0; objectId2 < nodeObjects.size(); objectId2++)
 						{
 							if (objectId2 == objectId) continue;
-							PhysicObject* object2 = &_objects->at(objectId2);
+							const PhysicObject* object2 = &_objects->at(objectId2);
 							distance = glm::distance(object2->_position, object->_position);
 							totalForce = totalForce + (glm::vec3)(((-PhysicSystem::UNIVERSAL_GRAVITATION * object->_mass * object2->_mass) / (distance * distance)) * (glm::dvec3)glm::normalize(object->_position - object2->_position));
 						}
@@ -60,7 +60,8 @@ namespace Engine
 
 		void OctTree::massCalculation()
 		{
-			std::stack<Node*> stack, stack2;
+			std::stack<Node*> stack;
+			std::stack<Node*> stack2;
 			stack.emplace(_root);
 			while (!stack.empty())
 			{

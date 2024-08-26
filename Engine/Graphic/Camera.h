@@ -13,12 +13,11 @@ namespace Engine
 			Camera(const Camera&) = delete;
 			Camera& operator=(const Camera&) = delete;
 
-			Camera(SwapChain& swapchain);
-			Camera() = default;
-			glm::vec3 getDir() { return _dir; }
-			glm::vec3 getUp() { return _up; }
-			glm::vec3 getLeft() { return _left; }
-			void transform(UniformBufferObject& ubo);
+			explicit Camera(SwapChain& swapchain);
+			glm::vec3 getDir() const { return _dir; }
+			glm::vec3 getUp() const { return _up; }
+			glm::vec3 getLeft() const { return _left; }
+			void transform(UniformBufferObject& ubo) const;
 			void move(glm::vec3 translation);
 			void rotate(float degrees,bool vertical);
 		private:

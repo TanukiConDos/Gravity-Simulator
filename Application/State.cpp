@@ -9,8 +9,8 @@ namespace Application
     {
         switch (algorithm)
         {
-        case Foundation::BRUTE_FORCE:   return "Fuerza bruta";
-        case Foundation::OCTREE:   return "Octree";
+        case Foundation::Algorithm::BRUTE_FORCE:   return "Fuerza bruta";
+        case Foundation::Algorithm::OCTREE:   return "Octree";
         }
     }
 
@@ -18,8 +18,8 @@ namespace Application
     {
         switch (mode)
         {
-        case Foundation::RANDOM:   return "Aleatorio";
-        case Foundation::FILE:   return "JSON";
+        case Foundation::Mode::RANDOM:   return "Aleatorio";
+        case Foundation::Mode::FILE:   return "JSON";
         }
     }
 
@@ -96,7 +96,7 @@ namespace Application
 
         if (ImGui::BeginCombo("Modo de creación de la escena", toString(config->systemCreationMode)))
         {
-            for (int i = Foundation::RANDOM; i <= Foundation::FILE; i++)
+            for (int i = 0; i <= 1; i++)
             {
                 Foundation::Mode mode = static_cast<Foundation::Mode>(i);
                 bool isSelected = mode == config->systemCreationMode;
@@ -105,18 +105,19 @@ namespace Application
             }
             ImGui::EndCombo();
         }
-        if (config->systemCreationMode == Foundation::FILE)
+        if (config->systemCreationMode == Foundation::Mode::FILE)
         {
+     
             ImGui::InputText("fichero JSON", config->fichero, 100);
         }
-        if (config->systemCreationMode == Foundation::RANDOM)
+        if (config->systemCreationMode == Foundation::Mode::RANDOM)
         {
             ImGui::InputInt("Numero de objetos", &config->numObjects,0,0);
         }
 
         if (ImGui::BeginCombo("Collision Algorithm", toString(config->collisionAlgorithm)))
         {
-            for (int i = Foundation::BRUTE_FORCE; i <= Foundation::OCTREE; i++)
+            for (int i = 0; i <= 1; i++)
             {
                 Foundation::Algorithm algorithm = static_cast<Foundation::Algorithm>(i);
                 bool isSelected = algorithm == config->collisionAlgorithm;
@@ -128,7 +129,7 @@ namespace Application
 
         if (ImGui::BeginCombo("Solver Algorithm", toString(config->SolverAlgorithm)))
         {
-            for (int i = Foundation::BRUTE_FORCE; i <= Foundation::OCTREE; i++)
+            for (int i = 0; i <= 1; i++)
             {
                 Foundation::Algorithm algorithm = static_cast<Foundation::Algorithm>(i);
                 bool isSelected = algorithm == config->SolverAlgorithm;
@@ -203,9 +204,9 @@ namespace Application
         double massAux = *_mass / 1000;
         float radiusAux = *_radius / 1000;
 
-        if (ImGui::InputFloat3("posicion", posAux.data(), "%.0f %km"), ImGuiInputTextFlags_EnterReturnsTrue) *_pos = posAux.data();
-        ImGui::InputFloat3("velocidad", *_vel,"%.2f %m/s", ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::InputFloat3("acceleracion", *_acc,"%.2f %m/s^2", ImGuiInputTextFlags_EnterReturnsTrue);
+        if (ImGui::InputFloat3("posicion", posAux.data(), "%.0f %km"), ImGuiInputTextFlags_EnterReturnsTrue) *_pos.data() = posAux.data();
+        ImGui::InputFloat3("velocidad", *_vel.data(), "%.2f %m/s", ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::InputFloat3("acceleracion", *_acc.data(), "%.2f %m/s^2", ImGuiInputTextFlags_EnterReturnsTrue);
 
         if(ImGui::InputDouble("masa", &massAux, 0.0, 0.0, "%.3e %kg", ImGuiInputTextFlags_EnterReturnsTrue) && massAux > 0) *_mass = massAux;
         if(ImGui::InputFloat("radio", &radiusAux, 0.0, 0.0, "%.0f %km", ImGuiInputTextFlags_EnterReturnsTrue)) *_radius = radiusAux;

@@ -1,5 +1,6 @@
 #include "PhysicObject.h"
 #include <iostream>
+#include "../../Foundation/Config.h"
 namespace Engine::Physic
 {
 	PhysicObject::PhysicObject(glm::vec3 position, glm::vec3 velocity, float mass, float radius): _position(position),_velocity(velocity),_mass(mass),_radius(radius)
@@ -8,7 +9,7 @@ namespace Engine::Physic
 
 	void PhysicObject::update(float deltaTime, glm::vec3 force)
 	{
-		deltaTime = deltaTime;
+		deltaTime = deltaTime / 1000 * Foundation::Config::getConfig()->time;
 		this->_acceleration = force / (float)_mass;
 		this->_position = _position + ((_velocity * deltaTime) + 0.5f * _acceleration * (deltaTime * deltaTime));
 		this->_velocity = _velocity + (_acceleration * deltaTime);
@@ -21,12 +22,9 @@ namespace Engine::Physic
 			glm::vec3 distanceVec = _position - object._position;
 			glm::vec3 move = glm::normalize(distanceVec) * intersection;
 			_position = _position + move;
-			if (glm::length(_velocity) - glm::length(object._velocity) > 1000)
-			{
-				_velocity += object._velocity;
-				object._velocity = _velocity;
-			}
-			
+			glm::vec3 v1 = _velocity;
+			_velocity = (float)((_mass - object._mass) / (_mass + object._mass)) * v1 + (float)((2 * object._mass) / (_mass + object._mass)) * object._velocity;
+			object._velocity = (float)((2*_mass) / (_mass + object._mass)) * v1 + (float)((object._mass - _mass) / (_mass + object._mass)) * object._velocity;
 		}
 	}
 	void to_json(nlohmann::json& j, const PhysicObject& o)

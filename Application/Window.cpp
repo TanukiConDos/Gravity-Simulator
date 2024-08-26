@@ -6,7 +6,7 @@ namespace Application
     void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         if (action == GLFW_RELEASE) return;
-        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        Window* app = static_cast<Window*>(glfwGetWindowUserPointer(window));
         switch (key)
         {
         case GLFW_KEY_W:
@@ -68,7 +68,7 @@ namespace Application
 
     void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
-        auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        Window* app = static_cast<Window*>(glfwGetWindowUserPointer(window));
         app->_framebufferResized = true;
     }
 

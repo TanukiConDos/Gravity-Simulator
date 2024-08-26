@@ -20,7 +20,6 @@ namespace Engine
 			double _mass;
 			float _radius;
 			bool _selected = false;
-		private:
 
 		};
 		void to_json(nlohmann::json& j, const PhysicObject& o);

@@ -26,7 +26,7 @@ namespace Engine::Graphic
 		return _commandBuffers[imageIndex];
 	}
 
-	void CommandPool::endCommandBuffer(VkCommandBuffer commandBuffer)
+	void CommandPool::endCommandBuffer(VkCommandBuffer commandBuffer) const
 	{
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

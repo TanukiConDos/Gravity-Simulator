@@ -25,7 +25,7 @@ namespace Foundation
 			break;
 		}
 	}
-	float Timers::getElapsedTime(Timer timer)
+	float Timers::getElapsedTime(Timer timer) const
 	{
 		float elapsedTime = 0;
 		switch (timer)

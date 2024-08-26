@@ -3,7 +3,7 @@
 #include "../Physic/PhysicObject.h"
 #include "CommandPool.h"
 #include "Buffer.h"
-#define PI          3.141592653589793238462643383279502884f
+const double PI = 3.141592653589793238462643383279502884f;
 
 namespace Engine
 {
@@ -16,8 +16,7 @@ namespace Engine
 			Model(const Model&) = delete;
 			Model& operator=(const Model&) = delete;
 			Model(int sectorCount, int stackCount, GPU& gpu,CommandPool& commandPool);
-			~Model();
-			void bind(VkCommandBuffer commandBuffer);
+			void bind(VkCommandBuffer commandBuffer) const;
 			size_t getIndexSize();
 		private:
 			std::vector<Vertex> _modelVertex = std::vector<Vertex>{};

@@ -8,7 +8,6 @@ namespace Engine::Physic
 		if (collitionDetectionAlgorithm == nullptr && solverAlgorithm == nullptr) return;
 		collitionDetectionAlgorithm->detection(deltaTime,objects);
 		solverAlgorithm->solve(deltaTime,objects);
-		//checkEnergyConservation(objects);
 	}
 
 	PhysicSystem::PhysicSystem(std::unique_ptr<CollisionDetectionInterface> collitionDetectionAlgorithm,
