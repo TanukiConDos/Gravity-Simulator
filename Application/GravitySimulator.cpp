@@ -112,6 +112,7 @@ namespace Application
 
     void GravitySimulator::run()
     {
+        
         Foundation::Timers* timers = Foundation::Timers::getTimers();
         float elapsed_time_ms = 0;
         while (!glfwWindowShouldClose(_window.getWindow())) {

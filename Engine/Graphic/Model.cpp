@@ -30,7 +30,7 @@ namespace Engine::Graphic
 				y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
 				glm::vec3 color;
 				color = glm::vec3{ x,y,z };
-				_modelVertex.emplace_back(Vertex{ glm::vec3{x,y,z},color });
+				_modelVertex.emplace_back(glm::vec3{x,y,z},color );
 			}
 		}
 		// generate CCW index list of sphere triangles

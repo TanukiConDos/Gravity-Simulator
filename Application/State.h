@@ -48,8 +48,6 @@ namespace Application
 		static std::shared_ptr<StateMachine> getStateMachine();
 		void frame();
 		void changeState(std::unique_ptr<State> state) { _state = std::move(state); }
-	private:
-		
 
 	};
 

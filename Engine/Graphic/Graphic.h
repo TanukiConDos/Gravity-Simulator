@@ -32,7 +32,7 @@ namespace Engine
 			alignas(16) glm::mat4 proj;
 			bool selected = false;
 
-			void updateModel(Physic::PhysicObject& const object)
+			void updateModel(Physic::PhysicObject& object)
 			{
 				this->model = glm::translate(glm::mat4(1.0f), object._position * 0.00001f) * glm::scale(glm::mat4(1.0f), glm::vec3(object._radius* 0.00001f, object._radius* 0.00001f, object._radius* 0.00001f));
 				this->selected = object._selected;
