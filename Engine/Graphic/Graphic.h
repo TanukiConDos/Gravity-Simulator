@@ -43,6 +43,8 @@ namespace Engine
 			glm::vec3 pos;
 			glm::vec3 color;
 
+			Vertex(glm::vec3 pos, glm::vec3 color) : pos(pos), color(color) {};
+
 			static VkVertexInputBindingDescription getBindingDescription() {
 				VkVertexInputBindingDescription bindingDescription{};
 				bindingDescription.binding = 0;
