@@ -96,7 +96,7 @@ namespace Engine::Graphic
 		vkCmdBindIndexBuffer(commandBuffer, _buffer->getBuffer(), sizeof(_modelVertex[0]) * _modelVertex.size() , VK_INDEX_TYPE_UINT32);
 	}
 
-	size_t Model::getIndexSize()
+	size_t Model::getIndexSize() const
 	{
 		return _index.size();
 	}

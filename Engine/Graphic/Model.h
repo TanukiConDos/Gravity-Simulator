@@ -59,7 +59,7 @@ namespace Engine
 			 *
 			 * @return size_t Número de índices almacenados.
 			 */
-			size_t getIndexSize();
+			size_t getIndexSize() const;
 
 		private:
 			/// Vector que almacena los vértices del modelo.
