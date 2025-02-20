@@ -1,0 +1,18 @@
+digraph "Application::GravitySimulator::run"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="Application::GravitySimulator::run",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Ejecuta la simulación."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="Foundation::Timers\l::getElapsedTime",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5",tooltip="Obtiene el tiempo transcurrido de un temporizador."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="Foundation::Timers\l::getTimers",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_foundation_1_1_timers.html#aa6b9c89d5453ff5239ad1f2aace4aa23",tooltip="Recupera la instancia singleton de Timers."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="Foundation::Timers\l::Timers",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_foundation_1_1_timers.html#a19d687f9e30d289bfa50244a2d5dd669",tooltip=" "];
+  Node4 -> Node4 [id="edge4_Node000004_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node5 [id="edge5_Node000001_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="Foundation::Timers\l::setTimer",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7",tooltip="Inicia o detiene un temporizador especificado."];
+}

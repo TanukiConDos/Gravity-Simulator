@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Referencia de la clase Foundation::Timers</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('class_foundation_1_1_timers.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="summary">
+<a href="#pub-methods">Métodos públicos</a> &#124;
+<a href="#pub-static-methods">Métodos públicos estáticos</a> &#124;
+<a href="class_foundation_1_1_timers-members.html">Lista de todos los miembros</a>  </div>
+  <div class="headertitle"><div class="title">Referencia de la clase Foundation::Timers</div></div>
+</div><!--header-->
+<div class="contents">
+
+<p>Clase singleton que administra distintos temporizadores para mediciones de rendimiento.  
+ <a href="#details">Más...</a></p>
+
+<p><code>#include &lt;<a class="el" href="_timers_8h_source.html">Timers.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+Métodos públicos</h2></td></tr>
+<tr class="memitem:a19d687f9e30d289bfa50244a2d5dd669" id="r_a19d687f9e30d289bfa50244a2d5dd669"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a19d687f9e30d289bfa50244a2d5dd669">Timers</a> (const <a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp;)=delete</td></tr>
+<tr class="separator:a19d687f9e30d289bfa50244a2d5dd669"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6548c829ad92e5c69bc07263c04aa05d" id="r_a6548c829ad92e5c69bc07263c04aa05d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6548c829ad92e5c69bc07263c04aa05d">operator=</a> (const <a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp;)=delete</td></tr>
+<tr class="separator:a6548c829ad92e5c69bc07263c04aa05d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2eb7b23762783829a97b6f5fbfa96d7" id="r_ae2eb7b23762783829a97b6f5fbfa96d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a> (<a class="el" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7">Timer</a> timer, bool start)</td></tr>
+<tr class="memdesc:ae2eb7b23762783829a97b6f5fbfa96d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inicia o detiene un temporizador especificado.  <br /></td></tr>
+<tr class="separator:ae2eb7b23762783829a97b6f5fbfa96d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94602b05412b4bf4428709555b15b0d5" id="r_a94602b05412b4bf4428709555b15b0d5"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a94602b05412b4bf4428709555b15b0d5">getElapsedTime</a> (<a class="el" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7">Timer</a> timer) const</td></tr>
+<tr class="memdesc:a94602b05412b4bf4428709555b15b0d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el tiempo transcurrido de un temporizador.  <br /></td></tr>
+<tr class="separator:a94602b05412b4bf4428709555b15b0d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Métodos públicos estáticos</h2></td></tr>
+<tr class="memitem:aa6b9c89d5453ff5239ad1f2aace4aa23" id="r_aa6b9c89d5453ff5239ad1f2aace4aa23"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="class_foundation_1_1_timers.html">Timers</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa6b9c89d5453ff5239ad1f2aace4aa23">getTimers</a> ()</td></tr>
+<tr class="memdesc:aa6b9c89d5453ff5239ad1f2aace4aa23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recupera la instancia singleton de <a class="el" href="class_foundation_1_1_timers.html" title="Clase singleton que administra distintos temporizadores para mediciones de rendimiento.">Timers</a>.  <br /></td></tr>
+<tr class="separator:aa6b9c89d5453ff5239ad1f2aace4aa23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
+<div class="textblock"><p>Clase singleton que administra distintos temporizadores para mediciones de rendimiento. </p>
+<p>Esta clase proporciona m�todos para iniciar/detener temporizadores y obtener el tiempo transcurrido para eventos espec�ficos. </p>
+
+<p class="definition">Definición en la línea <a class="el" href="_timers_8h_source.html#l00032">32</a> del archivo <a class="el" href="_timers_8h_source.html">Timers.h</a>.</p>
+</div><h2 class="groupheader">Documentación de constructores y destructores</h2>
+<a id="a19d687f9e30d289bfa50244a2d5dd669" name="a19d687f9e30d289bfa50244a2d5dd669"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a19d687f9e30d289bfa50244a2d5dd669">&#9670;&#160;</a></span>Timers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Foundation::Timers::Timers </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel delete">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_a19d687f9e30d289bfa50244a2d5dd669_cgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_a19d687f9e30d289bfa50244a2d5dd669_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_a19d687f9e30d289bfa50244a2d5dd669_icgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_a19d687f9e30d289bfa50244a2d5dd669_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<h2 class="groupheader">Documentación de funciones miembro</h2>
+<a id="a94602b05412b4bf4428709555b15b0d5" name="a94602b05412b4bf4428709555b15b0d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94602b05412b4bf4428709555b15b0d5">&#9670;&#160;</a></span>getElapsedTime()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float Foundation::Timers::getElapsedTime </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7">Timer</a></td>          <td class="paramname"><span class="paramname"><em>timer</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Obtiene el tiempo transcurrido de un temporizador. </p>
+<dl class="params"><dt>Parámetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">timer</td><td>El temporizador para el cual se desea obtener el tiempo transcurrido. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Devuelve</dt><dd>float El tiempo transcurrido en segundos. </dd></dl>
+
+<p class="definition">Definición en la línea <a class="el" href="_timers_8cpp_source.html#l00028">28</a> del archivo <a class="el" href="_timers_8cpp_source.html">Timers.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_a94602b05412b4bf4428709555b15b0d5_icgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_a94602b05412b4bf4428709555b15b0d5_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="aa6b9c89d5453ff5239ad1f2aace4aa23" name="aa6b9c89d5453ff5239ad1f2aace4aa23"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6b9c89d5453ff5239ad1f2aace4aa23">&#9670;&#160;</a></span>getTimers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_foundation_1_1_timers.html">Timers</a> * Foundation::Timers::getTimers </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Recupera la instancia singleton de <a class="el" href="class_foundation_1_1_timers.html" title="Clase singleton que administra distintos temporizadores para mediciones de rendimiento.">Timers</a>. </p>
+<dl class="section return"><dt>Devuelve</dt><dd>Timers* Puntero a la instancia singleton. </dd></dl>
+
+<p class="definition">Definición en la línea <a class="el" href="_timers_8cpp_source.html#l00004">4</a> del archivo <a class="el" href="_timers_8cpp_source.html">Timers.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_aa6b9c89d5453ff5239ad1f2aace4aa23_cgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_aa6b9c89d5453ff5239ad1f2aace4aa23_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_aa6b9c89d5453ff5239ad1f2aace4aa23_icgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_aa6b9c89d5453ff5239ad1f2aace4aa23_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a6548c829ad92e5c69bc07263c04aa05d" name="a6548c829ad92e5c69bc07263c04aa05d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6548c829ad92e5c69bc07263c04aa05d">&#9670;&#160;</a></span>operator=()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp; Foundation::Timers::operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_foundation_1_1_timers.html">Timers</a> &amp;</td>          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel delete">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_a6548c829ad92e5c69bc07263c04aa05d_cgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_a6548c829ad92e5c69bc07263c04aa05d_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ae2eb7b23762783829a97b6f5fbfa96d7" name="ae2eb7b23762783829a97b6f5fbfa96d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2eb7b23762783829a97b6f5fbfa96d7">&#9670;&#160;</a></span>setTimer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Foundation::Timers::setTimer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7">Timer</a></td>          <td class="paramname"><span class="paramname"><em>timer</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>start</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Inicia o detiene un temporizador especificado. </p>
+<dl class="params"><dt>Parámetros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">timer</td><td>El temporizador a controlar. </td></tr>
+    <tr><td class="paramname">start</td><td>true para iniciar el temporizador, false para detenerlo. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definición en la línea <a class="el" href="_timers_8cpp_source.html#l00010">10</a> del archivo <a class="el" href="_timers_8cpp_source.html">Timers.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_foundation_1_1_timers_ae2eb7b23762783829a97b6f5fbfa96d7_icgraph.png" border="0" usemap="#aclass_foundation_1_1_timers_ae2eb7b23762783829a97b6f5fbfa96d7_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<hr/>La documentación de esta clase está generada de los siguientes archivos:<ul>
+<li>Foundation/<a class="el" href="_timers_8h_source.html">Timers.h</a></li>
+<li>Foundation/<a class="el" href="_timers_8cpp_source.html">Timers.cpp</a></li>
+</ul>
+</div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="namespace_foundation.html">Foundation</a></li><li class="navelem"><a class="el" href="class_foundation_1_1_timers.html">Timers</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

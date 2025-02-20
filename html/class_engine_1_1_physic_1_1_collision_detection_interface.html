@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Referencia de la clase Engine::Physic::CollisionDetectionInterface</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('class_engine_1_1_physic_1_1_collision_detection_interface.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="summary">
+<a href="#pub-methods">MÃ©todos pÃºblicos</a> &#124;
+<a href="class_engine_1_1_physic_1_1_collision_detection_interface-members.html">Lista de todos los miembros</a>  </div>
+  <div class="headertitle"><div class="title">Referencia de la clase Engine::Physic::CollisionDetectionInterface</div></div>
+</div><!--header-->
+<div class="contents">
+
+<p>Interfaz para implementar algoritmos de detección de colisiones.  
+ <a href="#details">MÃ¡s...</a></p>
+
+<p><code>#include &lt;<a class="el" href="_collision_detection_interface_8h_source.html">CollisionDetectionInterface.h</a>&gt;</code></p>
+<div class="dynheader">
+Diagrama de herencia de Engine::Physic::CollisionDetectionInterface</div>
+<div class="dyncontent">
+<div class="center"><img src="class_engine_1_1_physic_1_1_collision_detection_interface__inherit__graph.png" border="0" usemap="#a_engine_1_1_physic_1_1_collision_detection_interface_inherit__map" alt="Inheritance graph"/></div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">leyenda</a>]</span></center></div>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
+MÃ©todos pÃºblicos</h2></td></tr>
+<tr class="memitem:addf38ca222d9edc009353a2f91940ad6" id="r_addf38ca222d9edc009353a2f91940ad6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#addf38ca222d9edc009353a2f91940ad6">detection</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)</td></tr>
+<tr class="memdesc:addf38ca222d9edc009353a2f91940ad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detecta colisiones entre objetos físicos.  <br /></td></tr>
+<tr class="separator:addf38ca222d9edc009353a2f91940ad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">DescripciÃ³n detallada</h2>
+<div class="textblock"><p>Interfaz para implementar algoritmos de detección de colisiones. </p>
+<p>Las clases que hereden de esta interfaz deben sobrescribir el método <a class="el" href="#addf38ca222d9edc009353a2f91940ad6" title="Detecta colisiones entre objetos físicos.">detection()</a> para procesar la detección de colisiones de acuerdo al intervalo de tiempo especificado y el conjunto de objetos físicos. </p>
+
+<p class="definition">DefiniciÃ³n en la lÃ­nea <a class="el" href="_collision_detection_interface_8h_source.html#l00023">23</a> del archivo <a class="el" href="_collision_detection_interface_8h_source.html">CollisionDetectionInterface.h</a>.</p>
+</div><h2 class="groupheader">DocumentaciÃ³n de funciones miembro</h2>
+<a id="addf38ca222d9edc009353a2f91940ad6" name="addf38ca222d9edc009353a2f91940ad6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#addf38ca222d9edc009353a2f91940ad6">&#9670;&#160;</a></span>detection()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Engine::Physic::CollisionDetectionInterface::detection </td>
+          <td>(</td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>deltaTime</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>objects</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Detecta colisiones entre objetos físicos. </p>
+<p>Este método evalúa las colisiones aplicables en función del intervalo de tiempo transcurrido y el vector de objetos proporcionado. Las clases derivadas deben implementar su lógica de detección de colisiones en este método.</p>
+<dl class="params"><dt>ParÃ¡metros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos físicos a evaluar. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Reimplementado en <a class="el" href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">Engine::Physic::bruteForceDetection</a> y <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a1ae53a9983c8ea1a98a13eb06212665d">Engine::Physic::OctTreeCollisionDetection</a>.</p>
+
+<p class="definition">DefiniciÃ³n en la lÃ­nea <a class="el" href="_collision_detection_interface_8cpp_source.html#l00003">3</a> del archivo <a class="el" href="_collision_detection_interface_8cpp_source.html">CollisionDetectionInterface.cpp</a>.</p>
+
+</div>
+</div>
+<hr/>La documentaciÃ³n de esta clase estÃ¡ generada de los siguientes archivos:<ul>
+<li>Engine/Physic/<a class="el" href="_collision_detection_interface_8h_source.html">CollisionDetectionInterface.h</a></li>
+<li>Engine/Physic/<a class="el" href="_collision_detection_interface_8cpp_source.html">CollisionDetectionInterface.cpp</a></li>
+</ul>
+</div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="namespace_engine.html">Engine</a></li><li class="navelem"><a class="el" href="namespace_engine_1_1_physic.html">Physic</a></li><li class="navelem"><a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">CollisionDetectionInterface</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

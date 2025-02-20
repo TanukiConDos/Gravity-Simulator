@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Referencia del archivo Engine/Graphic/GPU.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_g_p_u_8h.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="summary">
+<a href="#nested-classes">Clases</a> &#124;
+<a href="#namespaces">Espacios de nombres</a> &#124;
+<a href="#define-members">defines</a> &#124;
+<a href="#var-members">Variables</a>  </div>
+  <div class="headertitle"><div class="title">Referencia del archivo GPU.h</div></div>
+</div><!--header-->
+<div class="contents">
+
+<p>Gestiona los recursos de la GPU y la interacci�n con Vulkan, utilizando la ventana provista.  
+<a href="#details">Más...</a></p>
+<div class="textblock"><code>#include &lt;vulkan/vulkan.hpp&gt;</code><br />
+<code>#include &lt;GLFW/glfw3.h&gt;</code><br />
+<code>#include &lt;GLFW/glfw3native.h&gt;</code><br />
+<code>#include &lt;glm/glm.hpp&gt;</code><br />
+<code>#include &lt;glm/gtc/matrix_transform.hpp&gt;</code><br />
+<code>#include &lt;chrono&gt;</code><br />
+<code>#include &lt;iostream&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
+<code>#include &lt;set&gt;</code><br />
+<code>#include &lt;cstdint&gt;</code><br />
+<code>#include &lt;limits&gt;</code><br />
+<code>#include &lt;algorithm&gt;</code><br />
+<code>#include &lt;map&gt;</code><br />
+<code>#include &quot;<a class="el" href="_window_8h_source.html">../../Application/Window.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="_graphic_8h_source.html">Graphic.h</a>&quot;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Gráfico de dependencias incluidas en GPU.h:</div>
+<div class="dyncontent">
+<div class="center"><img src="_g_p_u_8h__incl.png" border="0" usemap="#a_engine_2_graphic_2_g_p_u_8h" alt=""/></div>
+</div>
+</div><div class="textblock"><div class="dynheader">
+Gráfico de los archivos que directa o indirectamente incluyen a este archivo:</div>
+<div class="dyncontent">
+<div class="center"><img src="_g_p_u_8h__dep__incl.png" border="0" usemap="#a_engine_2_graphic_2_g_p_u_8hdep" alt=""/></div>
+</div>
+</div>
+<p><a href="_g_p_u_8h_source.html">Ir al código fuente de este archivo.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Clases</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clase que administra recursos de la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci�n con Vulkan.">GPU</a> y la interacci�n con Vulkan.  <a href="class_engine_1_1_graphic_1_1_g_p_u.html#details">Más...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
+Espacios de nombres</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine.html">Engine</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
+defines</h2></td></tr>
+<tr class="memitem:a9f918755b601cf4bffca775992e6fb90" id="r_a9f918755b601cf4bffca775992e6fb90"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9f918755b601cf4bffca775992e6fb90">NOMINMAX</a></td></tr>
+<tr class="separator:a9f918755b601cf4bffca775992e6fb90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea22151c1df842d43772ec5f931d2600" id="r_aea22151c1df842d43772ec5f931d2600"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aea22151c1df842d43772ec5f931d2600">VK_USE_PLATFORM_WIN32_KHR</a></td></tr>
+<tr class="separator:aea22151c1df842d43772ec5f931d2600"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab91f325a54d3e35fe831a86d6382c2a9" id="r_ab91f325a54d3e35fe831a86d6382c2a9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab91f325a54d3e35fe831a86d6382c2a9">GLFW_INCLUDE_VULKAN</a></td></tr>
+<tr class="separator:ab91f325a54d3e35fe831a86d6382c2a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7226e54815f41685fdc9df544352957e" id="r_a7226e54815f41685fdc9df544352957e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7226e54815f41685fdc9df544352957e">GLFW_EXPOSE_NATIVE_WIN32</a></td></tr>
+<tr class="separator:a7226e54815f41685fdc9df544352957e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a816ab7d5c2ce1f0a01216042837beb93" id="r_a816ab7d5c2ce1f0a01216042837beb93"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a816ab7d5c2ce1f0a01216042837beb93">GLM_FORCE_RADIANS</a></td></tr>
+<tr class="separator:a816ab7d5c2ce1f0a01216042837beb93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa53e0967978ad7a8792f6961156ec968" id="r_aa53e0967978ad7a8792f6961156ec968"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa53e0967978ad7a8792f6961156ec968">GLM_FORCE_DEPTH_ZERO_TO_ONE</a></td></tr>
+<tr class="separator:aa53e0967978ad7a8792f6961156ec968"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a55529c2fb93bee3a4e43982b65651ad4" id="r_a55529c2fb93bee3a4e43982b65651ad4"><td class="memItemLeft" align="right" valign="top">const std::vector&lt; const char * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html#a55529c2fb93bee3a4e43982b65651ad4">Engine::Graphic::deviceExtensions</a></td></tr>
+<tr class="memdesc:a55529c2fb93bee3a4e43982b65651ad4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extensiones requeridas para el dispositivo.  <br /></td></tr>
+<tr class="separator:a55529c2fb93bee3a4e43982b65651ad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
+<div class="textblock"><p>Gestiona los recursos de la GPU y la interacci�n con Vulkan, utilizando la ventana provista. </p>
+
+<p class="definition">Definición en el archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+</div><h2 class="groupheader">Documentación de «define»</h2>
+<a id="a7226e54815f41685fdc9df544352957e" name="a7226e54815f41685fdc9df544352957e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7226e54815f41685fdc9df544352957e">&#9670;&#160;</a></span>GLFW_EXPOSE_NATIVE_WIN32</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GLFW_EXPOSE_NATIVE_WIN32</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00014">14</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+<a id="ab91f325a54d3e35fe831a86d6382c2a9" name="ab91f325a54d3e35fe831a86d6382c2a9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab91f325a54d3e35fe831a86d6382c2a9">&#9670;&#160;</a></span>GLFW_INCLUDE_VULKAN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GLFW_INCLUDE_VULKAN</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00012">12</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+<a id="aa53e0967978ad7a8792f6961156ec968" name="aa53e0967978ad7a8792f6961156ec968"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa53e0967978ad7a8792f6961156ec968">&#9670;&#160;</a></span>GLM_FORCE_DEPTH_ZERO_TO_ONE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GLM_FORCE_DEPTH_ZERO_TO_ONE</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00017">17</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+<a id="a816ab7d5c2ce1f0a01216042837beb93" name="a816ab7d5c2ce1f0a01216042837beb93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a816ab7d5c2ce1f0a01216042837beb93">&#9670;&#160;</a></span>GLM_FORCE_RADIANS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GLM_FORCE_RADIANS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00016">16</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+<a id="a9f918755b601cf4bffca775992e6fb90" name="a9f918755b601cf4bffca775992e6fb90"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f918755b601cf4bffca775992e6fb90">&#9670;&#160;</a></span>NOMINMAX</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define NOMINMAX</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00008">8</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+<a id="aea22151c1df842d43772ec5f931d2600" name="aea22151c1df842d43772ec5f931d2600"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea22151c1df842d43772ec5f931d2600">&#9670;&#160;</a></span>VK_USE_PLATFORM_WIN32_KHR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VK_USE_PLATFORM_WIN32_KHR</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="_g_p_u_8h_source.html#l00011">11</a> del archivo <a class="el" href="_g_p_u_8h_source.html">GPU.h</a>.</p>
+
+</div>
+</div>
+</div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_0b6ee6e7e9547e675db4add2e5de97da.html">Engine</a></li><li class="navelem"><a class="el" href="dir_8404e32aee7c4f7d7fc8d76c84d6a5ca.html">Graphic</a></li><li class="navelem"><a class="el" href="_g_p_u_8h.html">GPU.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

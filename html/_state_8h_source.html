@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Application/State.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_state_8h_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">State.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="_state_8h.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span> </div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include&lt;string&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include&lt;functional&gt;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;../External/imgui/imgui.h&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="_physic_object_8h.html">../Engine/Physic/PhysicObject.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>{</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keyword">class </span><a class="code hl_class" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html">ImGUIWindow</a>;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>}</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_application.html">Application</a></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>{</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="keyword">class </span><a class="code hl_class" href="class_application_1_1_state.html">State</a>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    <span class="keyword">class </span><a class="code hl_class" href="class_application_1_1_state_machine.html">StateMachine</a>;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keyword">static</span> std::shared_ptr&lt;StateMachine&gt; g_stateMachine;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <span class="keyword">class </span><a class="code hl_class" href="class_application_1_1_gravity_simulator.html">GravitySimulator</a>;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
+<div class="foldopen" id="foldopen00045" data-start="{" data-end="};">
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">   45</a></span>    <span class="keyword">enum class</span> <a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa5b39c8b553c821e7cddc6da64b5bd2ee">   47</a></span>        <a class="code hl_enumvalue" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa5b39c8b553c821e7cddc6da64b5bd2ee">DEFAULT</a>,          </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa53e04602ad23097051c5b88424c73c67">   48</a></span>        <a class="code hl_enumvalue" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa53e04602ad23097051c5b88424c73c67">BEGIN_SIMULATION</a>, </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aad08e68ea80bc3bf47a03757579c11900">   49</a></span>        <a class="code hl_enumvalue" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aad08e68ea80bc3bf47a03757579c11900">CONFIGURATION</a>,    </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaf5cf47ab06d0d98b0d16d10c82d87953">   50</a></span>        <a class="code hl_enumvalue" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaf5cf47ab06d0d98b0d16d10c82d87953">SAVE</a>,             </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaa42b2fb0e720a080e79a92f4ca97d927">   51</a></span>        <a class="code hl_enumvalue" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaa42b2fb0e720a080e79a92f4ca97d927">EXIT</a>              </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    };</div>
+</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
+<div class="foldopen" id="foldopen00058" data-start="{" data-end="};">
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html">   58</a></span>    <span class="keyword">class </span><a class="code hl_function" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">StateMachine</a></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#ae92365c5675ee19671e80155bee94073">   62</a></span>        std::unique_ptr&lt;State&gt; <a class="code hl_variable" href="class_application_1_1_state_machine.html#ae92365c5675ee19671e80155bee94073">_state</a>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#a78248af426878449eee6a11ac971a6e6">   64</a></span>        std::shared_ptr&lt;std::vector&lt;Engine::Physic::PhysicObject&gt;&gt; <a class="code hl_variable" href="class_application_1_1_state_machine.html#a78248af426878449eee6a11ac971a6e6">_objects</a>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#a4aef0fca26478c8691b58ac791e0b673">   66</a></span>        <a class="code hl_class" href="class_application_1_1_gravity_simulator.html">GravitySimulator</a>* <a class="code hl_variable" href="class_application_1_1_state_machine.html#a4aef0fca26478c8691b58ac791e0b673">_sub</a>;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#ae59eaa751b59f37b8241b201640b1c56">   68</a></span>        <span class="keywordtype">float</span>* <a class="code hl_variable" href="class_application_1_1_state_machine.html#ae59eaa751b59f37b8241b201640b1c56">_frameTime</a>;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#affb87a63a942ab50328a59ecb9c86430">   70</a></span>        <span class="keywordtype">float</span>* <a class="code hl_variable" href="class_application_1_1_state_machine.html#affb87a63a942ab50328a59ecb9c86430">_tickTime</a>;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">   72</a></span>        <a class="code hl_function" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">StateMachine</a>(<a class="code hl_function" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">StateMachine</a> <span class="keyword">const</span>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#ad0ca8971ac3d4125dcf3991257eb66bd">   73</a></span>        <a class="code hl_function" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">StateMachine</a> <a class="code hl_function" href="class_application_1_1_state_machine.html#ad0ca8971ac3d4125dcf3991257eb66bd">operator=</a>(<a class="code hl_function" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">StateMachine</a> <span class="keyword">const</span>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#a24cee059b352c4f3ad0434e46048e5bc">   75</a></span>        <a class="code hl_function" href="class_application_1_1_state_machine.html#a24cee059b352c4f3ad0434e46048e5bc">StateMachine</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span></div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keyword">static</span> std::shared_ptr&lt;StateMachine&gt; <a class="code hl_function" href="class_application_1_1_state_machine.html#ad532da57604458f5b605bd7f7ad0ba8c">getStateMachine</a>();</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_state_machine.html#a13f25d29b1e06581bef041a959354d2d">frame</a>();</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="class_application_1_1_state_machine.html#a3d1bbab420bdfe7ab76869ca7941285c">   92</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_state_machine.html#a3d1bbab420bdfe7ab76869ca7941285c">changeState</a>(std::unique_ptr&lt;State&gt; state) { <a class="code hl_variable" href="class_application_1_1_state_machine.html#ae92365c5675ee19671e80155bee94073">_state</a> = std::move(state); }</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    };</div>
+</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span></div>
+<div class="foldopen" id="foldopen00099" data-start="{" data-end="};">
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno"><a class="line" href="class_application_1_1_state.html">   99</a></span>    <span class="keyword">class </span><a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    {</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno"><a class="line" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">  106</a></span>        <span class="keyword">explicit</span> <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a>(std::shared_ptr&lt;StateMachine&gt; context) : <a class="code hl_variable" href="class_application_1_1_state.html#ab9eb01f0a4cc9e9325f433421c9a18b0">_context</a>(context) {}</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno"><a class="line" href="class_application_1_1_state.html#a83e454182a3d5b4a978173bc925ce22e">  111</a></span>        <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_state.html#a83e454182a3d5b4a978173bc925ce22e">frame</a>() {}</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno"><a class="line" href="class_application_1_1_state.html#a74c9c9b7ae13eb1b8d9ecc1e261b4668">  117</a></span>        <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_state.html#a74c9c9b7ae13eb1b8d9ecc1e261b4668">changeState</a>(<a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action) {}</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno"><a class="line" href="class_application_1_1_state.html#ab9eb01f0a4cc9e9325f433421c9a18b0">  121</a></span>        std::shared_ptr&lt;StateMachine&gt; <a class="code hl_variable" href="class_application_1_1_state.html#ab9eb01f0a4cc9e9325f433421c9a18b0">_context</a>;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    };</div>
+</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span></div>
+<div class="foldopen" id="foldopen00128" data-start="{" data-end="};">
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno"><a class="line" href="class_application_1_1_main_menu.html">  128</a></span>    <span class="keyword">class </span><a class="code hl_function" href="class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608">MainMenu</a>: <span class="keyword">public</span> <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a></div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    {</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno"><a class="line" href="class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608">  135</a></span>        <span class="keyword">explicit</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608">MainMenu</a>(std::shared_ptr&lt;StateMachine&gt; context) : <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a>(context) {}</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span></div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">frame</a>() final;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span></div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">changeState</a>(<a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action) final;</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    };</div>
+</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span></div>
+<div class="foldopen" id="foldopen00153" data-start="{" data-end="};">
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno"><a class="line" href="class_application_1_1_debug.html">  153</a></span>    class <a class="code hl_function" href="class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8">Debug</a> : public <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a></div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    {</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno"><a class="line" href="class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8">  161</a></span>        <a class="code hl_function" href="class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8">Debug</a>(std::shared_ptr&lt;StateMachine&gt; context, std::unique_ptr&lt;State&gt; state) : <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a>(context), _state(std::move(state)) {}</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span></div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">frame</a>() final;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span></div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">changeState</a>(<a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action) final;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    private:</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        std::unique_ptr&lt;<a class="code hl_class" href="class_application_1_1_state.html">State</a>&gt; _state;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    };</div>
+</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span></div>
+<div class="foldopen" id="foldopen00183" data-start="{" data-end="};">
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno"><a class="line" href="class_application_1_1_config.html">  183</a></span>    class <a class="code hl_function" href="class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c">Config</a> : public <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a></div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    {</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno"><a class="line" href="class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c">  190</a></span>        <span class="keyword">explicit</span> <a class="code hl_function" href="class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c">Config</a>(std::shared_ptr&lt;StateMachine&gt; context) : <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a>(context) {}</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">frame</a>() final;</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span></div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">changeState</a>(<a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action) final;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    };</div>
+</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span></div>
+<div class="foldopen" id="foldopen00208" data-start="{" data-end="};">
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno"><a class="line" href="class_application_1_1_object_selected.html">  208</a></span>    class <a class="code hl_function" href="class_application_1_1_object_selected.html#afce2cddc944eb5447b489e90899e48f9">ObjectSelected</a> : public <a class="code hl_function" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">State</a></div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    {</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>        <a class="code hl_function" href="class_application_1_1_object_selected.html#afce2cddc944eb5447b489e90899e48f9">ObjectSelected</a>(std::shared_ptr&lt;StateMachine&gt; context, std::unique_ptr&lt;State&gt; state);</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span></div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">frame</a>() <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span></div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">changeState</a>(<a class="code hl_enumeration" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span> </div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        std::unique_ptr&lt;State&gt; _state;</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>        <span class="keywordtype">int</span> _objectId = 0;</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        <span class="keywordtype">int</span> _oldId = -1;</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>        std::array&lt;float*,3&gt; _pos;</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>        std::array&lt;float*, 3&gt; _vel;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>        std::array&lt;float*, 3&gt; _acc;</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>        <span class="keywordtype">double</span>* _mass;</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>        <span class="keywordtype">float</span>* _radius;</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    };</div>
+</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>} <span class="comment">// namespace Application</span></div>
+<div class="ttc" id="a_physic_object_8h_html"><div class="ttname"><a href="_physic_object_8h.html">PhysicObject.h</a></div><div class="ttdoc">Define la clase PhysicObject para representar un objeto físico en la simulación, proporcionando métodos para...</div></div>
+<div class="ttc" id="aclass_application_1_1_config_html_ad446dd1244b06aa41c2108461a96f45c"><div class="ttname"><a href="class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c">Application::Config::Config</a></div><div class="ttdeci">Config(std::shared_ptr&lt; StateMachine &gt; context)</div><div class="ttdoc">Constructor que inicializa el estado de configuración.</div><div class="ttdef"><b>Definition</b> <a href="#l00190">State.h:190</a></div></div>
+<div class="ttc" id="aclass_application_1_1_debug_html_a9f0c098bc6a477c94c24041928e1f0f8"><div class="ttname"><a href="class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8">Application::Debug::Debug</a></div><div class="ttdeci">Debug(std::shared_ptr&lt; StateMachine &gt; context, std::unique_ptr&lt; State &gt; state)</div><div class="ttdoc">Constructor que inicializa el estado de depuración.</div><div class="ttdef"><b>Definition</b> <a href="#l00161">State.h:161</a></div></div>
+<div class="ttc" id="aclass_application_1_1_gravity_simulator_html"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html">Application::GravitySimulator</a></div><div class="ttdoc">Clase principal para la simulación de gravedad.</div><div class="ttdef"><b>Definition</b> <a href="_gravity_simulator_8h_source.html#l00030">GravitySimulator.h:31</a></div></div>
+<div class="ttc" id="aclass_application_1_1_main_menu_html_a53ca38da66119d529da877cda18ba608"><div class="ttname"><a href="class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608">Application::MainMenu::MainMenu</a></div><div class="ttdeci">MainMenu(std::shared_ptr&lt; StateMachine &gt; context)</div><div class="ttdoc">Constructor que inicializa el menú principal.</div><div class="ttdef"><b>Definition</b> <a href="#l00135">State.h:135</a></div></div>
+<div class="ttc" id="aclass_application_1_1_main_menu_html_a6fd7e0167eacf6a7bd06a1c1da6f46ea"><div class="ttname"><a href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">Application::MainMenu::changeState</a></div><div class="ttdeci">void changeState(Action action) final</div><div class="ttdoc">Realiza la transición de estado basada en la acción seleccionada en el menú principal.</div><div class="ttdef"><b>Definition</b> <a href="_state_8cpp_source.html#l00041">State.cpp:41</a></div></div>
+<div class="ttc" id="aclass_application_1_1_main_menu_html_a868fe54ddb269b9ab03f0d7d068dd698"><div class="ttname"><a href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">Application::MainMenu::frame</a></div><div class="ttdeci">void frame() final</div><div class="ttdoc">Ejecuta la lógica del frame para el menú principal.</div><div class="ttdef"><b>Definition</b> <a href="_state_8cpp_source.html#l00027">State.cpp:27</a></div></div>
+<div class="ttc" id="aclass_application_1_1_object_selected_html_afce2cddc944eb5447b489e90899e48f9"><div class="ttname"><a href="class_application_1_1_object_selected.html#afce2cddc944eb5447b489e90899e48f9">Application::ObjectSelected::ObjectSelected</a></div><div class="ttdeci">ObjectSelected(std::shared_ptr&lt; StateMachine &gt; context, std::unique_ptr&lt; State &gt; state)</div><div class="ttdoc">Constructor que inicializa el estado de objeto seleccionado.</div><div class="ttdef"><b>Definition</b> <a href="_state_8cpp_source.html#l00156">State.cpp:156</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_html"><div class="ttname"><a href="class_application_1_1_state.html">Application::State</a></div><div class="ttdoc">Clase base para los diferentes estados de la aplicación.</div><div class="ttdef"><b>Definition</b> <a href="#l00099">State.h:100</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_html_a374a363a3447f88efa91946a66616f2e"><div class="ttname"><a href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">Application::State::State</a></div><div class="ttdeci">State(std::shared_ptr&lt; StateMachine &gt; context)</div><div class="ttdoc">Constructor que inicializa el estado con el contexto de la máquina de estados.</div><div class="ttdef"><b>Definition</b> <a href="#l00106">State.h:106</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_html_a74c9c9b7ae13eb1b8d9ecc1e261b4668"><div class="ttname"><a href="class_application_1_1_state.html#a74c9c9b7ae13eb1b8d9ecc1e261b4668">Application::State::changeState</a></div><div class="ttdeci">virtual void changeState(Action action)</div><div class="ttdoc">Gestiona la transición a otro estado basado en la acción.</div><div class="ttdef"><b>Definition</b> <a href="#l00117">State.h:117</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_html_a83e454182a3d5b4a978173bc925ce22e"><div class="ttname"><a href="class_application_1_1_state.html#a83e454182a3d5b4a978173bc925ce22e">Application::State::frame</a></div><div class="ttdeci">virtual void frame()</div><div class="ttdoc">Ejecuta la lógica que debe ocurrir en cada frame.</div><div class="ttdef"><b>Definition</b> <a href="#l00111">State.h:111</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_html_ab9eb01f0a4cc9e9325f433421c9a18b0"><div class="ttname"><a href="class_application_1_1_state.html#ab9eb01f0a4cc9e9325f433421c9a18b0">Application::State::_context</a></div><div class="ttdeci">std::shared_ptr&lt; StateMachine &gt; _context</div><div class="ttdoc">Contexto (máquina de estados) de este estado.</div><div class="ttdef"><b>Definition</b> <a href="#l00121">State.h:121</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html"><div class="ttname"><a href="class_application_1_1_state_machine.html">Application::StateMachine</a></div><div class="ttdoc">Gestiona la transición y ejecución de estados en la aplicación.</div><div class="ttdef"><b>Definition</b> <a href="#l00058">State.h:59</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a13f25d29b1e06581bef041a959354d2d"><div class="ttname"><a href="class_application_1_1_state_machine.html#a13f25d29b1e06581bef041a959354d2d">Application::StateMachine::frame</a></div><div class="ttdeci">void frame()</div><div class="ttdoc">Ejecuta la lógica de cada frame utilizando el estado actual.</div><div class="ttdef"><b>Definition</b> <a href="_state_8cpp_source.html#l00239">State.cpp:239</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a24cee059b352c4f3ad0434e46048e5bc"><div class="ttname"><a href="class_application_1_1_state_machine.html#a24cee059b352c4f3ad0434e46048e5bc">Application::StateMachine::StateMachine</a></div><div class="ttdeci">StateMachine()=default</div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a3d1bbab420bdfe7ab76869ca7941285c"><div class="ttname"><a href="class_application_1_1_state_machine.html#a3d1bbab420bdfe7ab76869ca7941285c">Application::StateMachine::changeState</a></div><div class="ttdeci">void changeState(std::unique_ptr&lt; State &gt; state)</div><div class="ttdoc">Cambia el estado actual de la máquina.</div><div class="ttdef"><b>Definition</b> <a href="#l00092">State.h:92</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a4aef0fca26478c8691b58ac791e0b673"><div class="ttname"><a href="class_application_1_1_state_machine.html#a4aef0fca26478c8691b58ac791e0b673">Application::StateMachine::_sub</a></div><div class="ttdeci">GravitySimulator * _sub</div><div class="ttdoc">Puntero al sub-sistema GravitySimulator.</div><div class="ttdef"><b>Definition</b> <a href="#l00066">State.h:66</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a56072f0841515fb119de17cf4a5b84dd"><div class="ttname"><a href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">Application::StateMachine::StateMachine</a></div><div class="ttdeci">StateMachine(StateMachine const &amp;)=delete</div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_a78248af426878449eee6a11ac971a6e6"><div class="ttname"><a href="class_application_1_1_state_machine.html#a78248af426878449eee6a11ac971a6e6">Application::StateMachine::_objects</a></div><div class="ttdeci">std::shared_ptr&lt; std::vector&lt; Engine::Physic::PhysicObject &gt; &gt; _objects</div><div class="ttdoc">Colección de objetos físicos de la simulación.</div><div class="ttdef"><b>Definition</b> <a href="#l00064">State.h:64</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_ad0ca8971ac3d4125dcf3991257eb66bd"><div class="ttname"><a href="class_application_1_1_state_machine.html#ad0ca8971ac3d4125dcf3991257eb66bd">Application::StateMachine::operator=</a></div><div class="ttdeci">StateMachine operator=(StateMachine const &amp;)=delete</div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_ad532da57604458f5b605bd7f7ad0ba8c"><div class="ttname"><a href="class_application_1_1_state_machine.html#ad532da57604458f5b605bd7f7ad0ba8c">Application::StateMachine::getStateMachine</a></div><div class="ttdeci">static std::shared_ptr&lt; StateMachine &gt; getStateMachine()</div><div class="ttdoc">Obtiene la instancia singleton de la máquina de estados.</div><div class="ttdef"><b>Definition</b> <a href="_state_8cpp_source.html#l00230">State.cpp:230</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_ae59eaa751b59f37b8241b201640b1c56"><div class="ttname"><a href="class_application_1_1_state_machine.html#ae59eaa751b59f37b8241b201640b1c56">Application::StateMachine::_frameTime</a></div><div class="ttdeci">float * _frameTime</div><div class="ttdoc">Puntero al tiempo de frame.</div><div class="ttdef"><b>Definition</b> <a href="#l00068">State.h:68</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_ae92365c5675ee19671e80155bee94073"><div class="ttname"><a href="class_application_1_1_state_machine.html#ae92365c5675ee19671e80155bee94073">Application::StateMachine::_state</a></div><div class="ttdeci">std::unique_ptr&lt; State &gt; _state</div><div class="ttdoc">Estado actual de la máquina de estados.</div><div class="ttdef"><b>Definition</b> <a href="#l00062">State.h:62</a></div></div>
+<div class="ttc" id="aclass_application_1_1_state_machine_html_affb87a63a942ab50328a59ecb9c86430"><div class="ttname"><a href="class_application_1_1_state_machine.html#affb87a63a942ab50328a59ecb9c86430">Application::StateMachine::_tickTime</a></div><div class="ttdeci">float * _tickTime</div><div class="ttdoc">Puntero al tiempo de tick del sistema.</div><div class="ttdef"><b>Definition</b> <a href="#l00070">State.h:70</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html">Engine::Graphic::ImGUIWindow</a></div><div class="ttdoc">Gestiona la interfaz gráfica basada en ImGui.</div><div class="ttdef"><b>Definition</b> <a href="im_g_u_i_window_8h_source.html#l00034">imGUIWindow.h:35</a></div></div>
+<div class="ttc" id="anamespace_application_html"><div class="ttname"><a href="namespace_application.html">Application</a></div><div class="ttdoc">Espacio de nombres que contiene la aplicación y sus componentes.</div><div class="ttdef"><b>Definition</b> <a href="_gravity_simulator_8cpp_source.html#l00010">GravitySimulator.cpp:11</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92a"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Application::Action</a></div><div class="ttdeci">Action</div><div class="ttdoc">Enumera las acciones disponibles para cambiar el estado de la aplicación.</div><div class="ttdef"><b>Definition</b> <a href="#l00045">State.h:46</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92aa53e04602ad23097051c5b88424c73c67"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa53e04602ad23097051c5b88424c73c67">Application::Action::BEGIN_SIMULATION</a></div><div class="ttdeci">@ BEGIN_SIMULATION</div><div class="ttdoc">Inicia la simulación.</div><div class="ttdef"><b>Definition</b> <a href="#l00048">State.h:48</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92aa5b39c8b553c821e7cddc6da64b5bd2ee"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aa5b39c8b553c821e7cddc6da64b5bd2ee">Application::Action::DEFAULT</a></div><div class="ttdeci">@ DEFAULT</div><div class="ttdoc">Acción por defecto.</div><div class="ttdef"><b>Definition</b> <a href="#l00047">State.h:47</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92aaa42b2fb0e720a080e79a92f4ca97d927"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaa42b2fb0e720a080e79a92f4ca97d927">Application::Action::EXIT</a></div><div class="ttdeci">@ EXIT</div><div class="ttdoc">Sale de la aplicación.</div><div class="ttdef"><b>Definition</b> <a href="#l00051">State.h:51</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92aad08e68ea80bc3bf47a03757579c11900"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aad08e68ea80bc3bf47a03757579c11900">Application::Action::CONFIGURATION</a></div><div class="ttdeci">@ CONFIGURATION</div><div class="ttdoc">Entra al modo de configuración.</div><div class="ttdef"><b>Definition</b> <a href="#l00049">State.h:49</a></div></div>
+<div class="ttc" id="anamespace_application_html_ab7d42aa28fd48ab53086f1139e6ed92aaf5cf47ab06d0d98b0d16d10c82d87953"><div class="ttname"><a href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92aaf5cf47ab06d0d98b0d16d10c82d87953">Application::Action::SAVE</a></div><div class="ttdeci">@ SAVE</div><div class="ttdoc">Guarda el estado o configuración.</div><div class="ttdef"><b>Definition</b> <a href="#l00050">State.h:50</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_eb1463819d84903762eb6f59cc0c4383.html">Application</a></li><li class="navelem"><a class="el" href="_state_8h.html">State.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

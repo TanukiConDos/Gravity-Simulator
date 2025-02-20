@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Engine/Physic/bruteForceDetection.cpp</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('brute_force_detection_8cpp_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">bruteForceDetection.cpp</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="brute_force_detection_8cpp.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#include &quot;<a class="code" href="brute_force_detection_8h.html">bruteForceDetection.h</a>&quot;</span></div>
+<div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#include &lt;chrono&gt;</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="preprocessor">#include &lt;iostream&gt;</span></div>
+<div class="foldopen" id="foldopen00004" data-start="{" data-end="}">
+<div class="line"><a id="l00004" name="l00004"></a><span class="lineno"><a class="line" href="namespace_engine_1_1_physic.html">    4</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_physic.html">Engine::Physic</a></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span>{</div>
+<div class="foldopen" id="foldopen00006" data-start="{" data-end="}">
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">    6</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">bruteForceDetection::detection</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects)</div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>    {</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; objects-&gt;size(); i++)</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>        {</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>            <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a>* <span class="keywordtype">object</span> = &amp;objects-&gt;at(i);</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j = 0; j &lt; objects-&gt;size(); j++)</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>            {</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>                <span class="keywordflow">if</span> (i != j)</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>                {</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>                    <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a>* object2 = &amp;objects-&gt;at(j);</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>                    <span class="keywordtype">object</span>-&gt;<a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec">collision</a>(*object2);</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>                }</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>            }</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>        }</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    }</div>
+</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
+</div>
+<div class="ttc" id="abrute_force_detection_8h_html"><div class="ttname"><a href="brute_force_detection_8h.html">bruteForceDetection.h</a></div><div class="ttdoc">Implementa la detección de colisiones utilizando el método de fuerza bruta.</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a></div><div class="ttdoc">Representa un objeto físico en la simulación.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8h_source.html#l00022">PhysicObject.h:23</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_ae3d5423aa21b8f09987238bb87bbbeec"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec">Engine::Physic::PhysicObject::collision</a></div><div class="ttdeci">void collision(PhysicObject &amp;object)</div><div class="ttdoc">Gestiona la colisión con otro objeto físico.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00017">PhysicObject.cpp:17</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1brute_force_detection_html_aa3e17cd0701ff552e8646b2b5f65b170"><div class="ttname"><a href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">Engine::Physic::bruteForceDetection::detection</a></div><div class="ttdeci">void detection(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects) final</div><div class="ttdoc">Detecta colisiones entre objetos físicos.</div><div class="ttdef"><b>Definition</b> <a href="#l00006">bruteForceDetection.cpp:6</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdef"><b>Definition</b> <a href="#l00004">bruteForceDetection.cpp:5</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_0b6ee6e7e9547e675db4add2e5de97da.html">Engine</a></li><li class="navelem"><a class="el" href="dir_8c85e81d571a4a64f072ff417f542c34.html">Physic</a></li><li class="navelem"><a class="el" href="brute_force_detection_8cpp.html">bruteForceDetection.cpp</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

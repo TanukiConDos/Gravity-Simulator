@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Engine/Physic/OctTreeCollisionDetection.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_oct_tree_collision_detection_8h_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">OctTreeCollisionDetection.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="_oct_tree_collision_detection_8h.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="_collision_detection_interface_8h.html">CollisionDetectionInterface.h</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="_oct_tree_8h.html">OctTree.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine.html">Engine</a></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>{</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    <span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_physic.html">Physic</a></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    {</div>
+<div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html">   24</a></span>        <span class="keyword">class </span><a class="code hl_function" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a69f6d2cb65316ab9cfd989c6a17fdcb4">OctTreeCollisionDetection</a> : <span class="keyword">public</span> <a class="code hl_class" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">CollisionDetectionInterface</a></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>        {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a69f6d2cb65316ab9cfd989c6a17fdcb4">   32</a></span>            <span class="keyword">explicit</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a69f6d2cb65316ab9cfd989c6a17fdcb4">OctTreeCollisionDetection</a>(std::shared_ptr&lt;OctTree&gt; tree): _tree(tree) {}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a1ae53a9983c8ea1a98a13eb06212665d">detection</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects) <span class="keyword">final</span>;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>        <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>            std::shared_ptr&lt;OctTree&gt; _tree;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        };</div>
+</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    }</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="ttc" id="a_collision_detection_interface_8h_html"><div class="ttname"><a href="_collision_detection_interface_8h.html">CollisionDetectionInterface.h</a></div><div class="ttdoc">Define una interfaz para la detección de colisiones en la simulación física.</div></div>
+<div class="ttc" id="a_oct_tree_8h_html"><div class="ttname"><a href="_oct_tree_8h.html">OctTree.h</a></div><div class="ttdoc">Define la clase OctTree para gestionar la partición espacial de objetos físicos mediante un árbol octal.</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html">Engine::Physic::CollisionDetectionInterface</a></div><div class="ttdoc">Interfaz para implementar algoritmos de detección de colisiones.</div><div class="ttdef"><b>Definition</b> <a href="_collision_detection_interface_8h_source.html#l00023">CollisionDetectionInterface.h:24</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_oct_tree_collision_detection_html_a1ae53a9983c8ea1a98a13eb06212665d"><div class="ttname"><a href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a1ae53a9983c8ea1a98a13eb06212665d">Engine::Physic::OctTreeCollisionDetection::detection</a></div><div class="ttdeci">void detection(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects) final</div><div class="ttdoc">Detecta colisiones entre objetos físicos utilizando el árbol octal.</div><div class="ttdef"><b>Definition</b> <a href="_oct_tree_collision_detection_8cpp_source.html#l00003">OctTreeCollisionDetection.cpp:3</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_oct_tree_collision_detection_html_a69f6d2cb65316ab9cfd989c6a17fdcb4"><div class="ttname"><a href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a69f6d2cb65316ab9cfd989c6a17fdcb4">Engine::Physic::OctTreeCollisionDetection::OctTreeCollisionDetection</a></div><div class="ttdeci">OctTreeCollisionDetection(std::shared_ptr&lt; OctTree &gt; tree)</div><div class="ttdoc">Constructor que inicializa el detector con un árbol octal.</div><div class="ttdef"><b>Definition</b> <a href="#l00032">OctTreeCollisionDetection.h:32</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
+<div class="ttc" id="anamespace_engine_html"><div class="ttname"><a href="namespace_engine.html">Engine</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_0b6ee6e7e9547e675db4add2e5de97da.html">Engine</a></li><li class="navelem"><a class="el" href="dir_8c85e81d571a4a64f072ff417f542c34.html">Physic</a></li><li class="navelem"><a class="el" href="_oct_tree_collision_detection_8h.html">OctTreeCollisionDetection.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

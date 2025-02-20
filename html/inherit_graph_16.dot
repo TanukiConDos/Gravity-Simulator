@@ -1,0 +1,9 @@
+digraph "Gráfico de jerarquía de clases"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node0 [id="Node000000",label="Engine::Graphic::SwapChain\lSupportDetails",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_swap_chain_support_details.html",tooltip="Almacena informaci�n sobre el soporte del swap chain."];
+}

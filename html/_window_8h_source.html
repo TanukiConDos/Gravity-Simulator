@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Application/Window.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_window_8h_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">Window.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="_window_8h.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span> </div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno"><a class="line" href="_window_8h.html#ab91f325a54d3e35fe831a86d6382c2a9">    7</a></span><span class="preprocessor">#define GLFW_INCLUDE_VULKAN</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &lt;GLFW/glfw3.h&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;stdexcept&gt;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="input_8h.html">input.h</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_application.html">Application</a></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>{</div>
+<div class="foldopen" id="foldopen00018" data-start="{" data-end="};">
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html">   18</a></span>    <span class="keyword">class </span><a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a> {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">   23</a></span>        <a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a>();</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>        <a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a>(<span class="keywordtype">int</span> width, <span class="keywordtype">int</span> height);</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        <a class="code hl_function" href="class_application_1_1_window.html#aba13c45f814d790bd5123e7eaca5e865">~Window</a>();</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#a6aefa5113c98d81a9c28848d42d0d7d3">   38</a></span>        <a class="code hl_function" href="class_application_1_1_window.html#a6aefa5113c98d81a9c28848d42d0d7d3">Window</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#a128d2d242fa2ea89f66d2043fccda326">   39</a></span>        <a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a>&amp; <a class="code hl_function" href="class_application_1_1_window.html#a128d2d242fa2ea89f66d2043fccda326">operator=</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Window</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#ad2dfa5a5442c970b1007465b352c7edb">framebufferResizeCallback</a>(GLFWwindow* window, <span class="keywordtype">int</span> width, <span class="keywordtype">int</span> height);</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#a3ae703776f61c7fa8c84b179bc481669">key_callback</a>(GLFWwindow* window, <span class="keywordtype">int</span> key, <span class="keywordtype">int</span> scancode, <span class="keywordtype">int</span> action, <span class="keywordtype">int</span> mods);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#a6cbb366467b1caf00c7aa49b93be1ca9">   66</a></span>        VkSurfaceKHR <a class="code hl_function" href="class_application_1_1_window.html#a6cbb366467b1caf00c7aa49b93be1ca9">getSurface</a>() { <span class="keywordflow">return</span> _surface; }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        GLFWwindow* <a class="code hl_function" href="class_application_1_1_window.html#a0894597d7c39be5ac303ee241e7d08a0">getWindow</a>();</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span></div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#a8cabe7a91ffa96c5e5b5cf9f60449d7b">   75</a></span>        <span class="keywordtype">bool</span> <a class="code hl_function" href="class_application_1_1_window.html#a8cabe7a91ffa96c5e5b5cf9f60449d7b">getFramebufferResized</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _framebufferResized; }</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span></div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#ae523f7e4277116da0e21dd3715740011">   82</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#ae523f7e4277116da0e21dd3715740011">setFramebufferResized</a>() { _framebufferResized = <span class="keyword">false</span>; }</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#a54ce6c6776da898645a277fadf251071">checkMinimized</a>();</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#ac821395acd42206d95c4d33ebdea2152">getSize</a>(<span class="keywordtype">int</span>&amp; width, <span class="keywordtype">int</span>&amp; height);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#a7181186bf0573d0c14fc901ff44c1c3a">createSurface</a>(VkInstance instance);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span></div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno"><a class="line" href="class_application_1_1_window.html#ab0b5a0115435a16a1c0d85e52621df85">  109</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_window.html#ab0b5a0115435a16a1c0d85e52621df85">attachCameraToEvent</a>(<a class="code hl_class" href="class_engine_1_1_graphic_1_1_camera.html">Engine::Graphic::Camera</a>* camera) { _inputEvent.subscribe(camera); }</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        GLFWwindow* _window;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        <span class="keywordtype">bool</span> _framebufferResized = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        <span class="keywordtype">int</span> _width;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        <span class="keywordtype">int</span> _height;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>        VkSurfaceKHR _surface;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>        <a class="code hl_class" href="class_application_1_1_input_event.html">InputEvent</a> _inputEvent{};</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    };</div>
+</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>}</div>
+<div class="ttc" id="aclass_application_1_1_input_event_html"><div class="ttname"><a href="class_application_1_1_input_event.html">Application::InputEvent</a></div><div class="ttdoc">Gestiona los eventos de entrada en la aplicación.</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00053">input.h:54</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a0894597d7c39be5ac303ee241e7d08a0"><div class="ttname"><a href="class_application_1_1_window.html#a0894597d7c39be5ac303ee241e7d08a0">Application::Window::getWindow</a></div><div class="ttdeci">GLFWwindow * getWindow()</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00075">Window.cpp:75</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a128d2d242fa2ea89f66d2043fccda326"><div class="ttname"><a href="class_application_1_1_window.html#a128d2d242fa2ea89f66d2043fccda326">Application::Window::operator=</a></div><div class="ttdeci">Window &amp; operator=(const Window &amp;)=delete</div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a3ae703776f61c7fa8c84b179bc481669"><div class="ttname"><a href="class_application_1_1_window.html#a3ae703776f61c7fa8c84b179bc481669">Application::Window::key_callback</a></div><div class="ttdeci">static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)</div><div class="ttdoc">Callback para eventos de teclado.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00006">Window.cpp:6</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a54ce6c6776da898645a277fadf251071"><div class="ttname"><a href="class_application_1_1_window.html#a54ce6c6776da898645a277fadf251071">Application::Window::checkMinimized</a></div><div class="ttdeci">void checkMinimized()</div><div class="ttdoc">Comprueba si la ventana está minimizada.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00079">Window.cpp:79</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a6aefa5113c98d81a9c28848d42d0d7d3"><div class="ttname"><a href="class_application_1_1_window.html#a6aefa5113c98d81a9c28848d42d0d7d3">Application::Window::Window</a></div><div class="ttdeci">Window(const Window &amp;)=delete</div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a6cbb366467b1caf00c7aa49b93be1ca9"><div class="ttname"><a href="class_application_1_1_window.html#a6cbb366467b1caf00c7aa49b93be1ca9">Application::Window::getSurface</a></div><div class="ttdeci">VkSurfaceKHR getSurface()</div><div class="ttdoc">Obtiene la superficie Vulkan asociada a la ventana.</div><div class="ttdef"><b>Definition</b> <a href="#l00066">Window.h:66</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a7181186bf0573d0c14fc901ff44c1c3a"><div class="ttname"><a href="class_application_1_1_window.html#a7181186bf0573d0c14fc901ff44c1c3a">Application::Window::createSurface</a></div><div class="ttdeci">void createSurface(VkInstance instance)</div><div class="ttdoc">Crea la superficie Vulkan de la ventana.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00092">Window.cpp:92</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a7328cefe7f392055b6676d1328abf796"><div class="ttname"><a href="class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796">Application::Window::Window</a></div><div class="ttdeci">Window()</div><div class="ttdoc">Constructor por defecto.</div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_a8cabe7a91ffa96c5e5b5cf9f60449d7b"><div class="ttname"><a href="class_application_1_1_window.html#a8cabe7a91ffa96c5e5b5cf9f60449d7b">Application::Window::getFramebufferResized</a></div><div class="ttdeci">bool getFramebufferResized() const</div><div class="ttdoc">Indica si el framebuffer ha sido redimensionado.</div><div class="ttdef"><b>Definition</b> <a href="#l00075">Window.h:75</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_ab0b5a0115435a16a1c0d85e52621df85"><div class="ttname"><a href="class_application_1_1_window.html#ab0b5a0115435a16a1c0d85e52621df85">Application::Window::attachCameraToEvent</a></div><div class="ttdeci">void attachCameraToEvent(Engine::Graphic::Camera *camera)</div><div class="ttdoc">Asocia una cámara a los eventos de entrada.</div><div class="ttdef"><b>Definition</b> <a href="#l00109">Window.h:109</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_aba13c45f814d790bd5123e7eaca5e865"><div class="ttname"><a href="class_application_1_1_window.html#aba13c45f814d790bd5123e7eaca5e865">Application::Window::~Window</a></div><div class="ttdeci">~Window()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00049">Window.cpp:49</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_ac821395acd42206d95c4d33ebdea2152"><div class="ttname"><a href="class_application_1_1_window.html#ac821395acd42206d95c4d33ebdea2152">Application::Window::getSize</a></div><div class="ttdeci">void getSize(int &amp;width, int &amp;height)</div><div class="ttdoc">Obtiene el tamaño actual de la ventana.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00087">Window.cpp:87</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_ad2dfa5a5442c970b1007465b352c7edb"><div class="ttname"><a href="class_application_1_1_window.html#ad2dfa5a5442c970b1007465b352c7edb">Application::Window::framebufferResizeCallback</a></div><div class="ttdeci">static void framebufferResizeCallback(GLFWwindow *window, int width, int height)</div><div class="ttdoc">Callback para el redimensionado del framebuffer.</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00069">Window.cpp:69</a></div></div>
+<div class="ttc" id="aclass_application_1_1_window_html_ae523f7e4277116da0e21dd3715740011"><div class="ttname"><a href="class_application_1_1_window.html#ae523f7e4277116da0e21dd3715740011">Application::Window::setFramebufferResized</a></div><div class="ttdeci">void setFramebufferResized()</div><div class="ttdoc">Marca la ventana como redimensionada.</div><div class="ttdef"><b>Definition</b> <a href="#l00082">Window.h:82</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_camera_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_camera.html">Engine::Graphic::Camera</a></div><div class="ttdoc">Clase que controla la posición, orientación y proyección de la cámara.</div><div class="ttdef"><b>Definition</b> <a href="_camera_8h_source.html#l00021">Camera.h:22</a></div></div>
+<div class="ttc" id="ainput_8h_html"><div class="ttname"><a href="input_8h.html">input.h</a></div><div class="ttdoc">Define acciones de entrada y eventos para la aplicación.</div></div>
+<div class="ttc" id="anamespace_application_html"><div class="ttname"><a href="namespace_application.html">Application</a></div><div class="ttdoc">Espacio de nombres que contiene la aplicación y sus componentes.</div><div class="ttdef"><b>Definition</b> <a href="_gravity_simulator_8cpp_source.html#l00010">GravitySimulator.cpp:11</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_eb1463819d84903762eb6f59cc0c4383.html">Application</a></li><li class="navelem"><a class="el" href="_window_8h.html">Window.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Engine/Graphic/CommandPool.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_command_pool_8h_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">CommandPool.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="_command_pool_8h.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;vulkan/vulkan.hpp&gt;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="_graphic_8h.html">Graphic.h</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="_g_p_u_8h.html">GPU.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="_pipeline_8h.html">Pipeline.h</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine.html">Engine</a></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>{</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Graphic</a></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    {</div>
+<div class="foldopen" id="foldopen00026" data-start="{" data-end="};">
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_command_pool.html">   26</a></span>        <span class="keyword">class </span><a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>        {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>        <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">   29</a></span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_command_pool.html#a9ab45b1e9315c0e7a3b3423d907619e2">   30</a></span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a>&amp; <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#a9ab45b1e9315c0e7a3b3423d907619e2">operator=</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>            <span class="keyword">explicit</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">CommandPool</a>(<a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; gpu);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#adff4d526145a282f92d676e6f1721994">~CommandPool</a>();</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>            VkCommandBuffer <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#af8ad75a9405c77b14caf15fdd3820377">beginCommandBuffer</a>(uint32_t imageIndex);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#acb32591ed1df044c0487d04266df9520">endCommandBuffer</a>(VkCommandBuffer commandBuffer) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#a62c23a077846950bcddc00438993dbab">resetCommandBuffer</a>(uint32_t currentFrame);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span></div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>            VkCommandBuffer <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#a29d97538836e69c4b129a0f95bc6fe1b">createTemporalCommandBuffer</a>();</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_command_pool.html#ae1754d162b5d55f7625dc05b1bdc3036">endTemporalCommandBuffer</a>(VkCommandBuffer commandBuffer);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>            </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>        <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>            <a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; _gpu;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>            VkCommandPool _commandPool;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>            std::vector&lt;VkCommandBuffer&gt; _commandBuffers;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>            <span class="keywordtype">void</span> createCommandPool();</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>            <span class="keywordtype">void</span> createCommandBuffer();</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>            </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        };</div>
+</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    }</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>}</div>
+<div class="ttc" id="a_g_p_u_8h_html"><div class="ttname"><a href="_g_p_u_8h.html">GPU.h</a></div><div class="ttdoc">Gestiona los recursos de la GPU y la interacción con Vulkan, utilizando la ventana provista.</div></div>
+<div class="ttc" id="a_graphic_8h_html"><div class="ttname"><a href="_graphic_8h.html">Graphic.h</a></div><div class="ttdoc">Define las estructuras y constantes utilizadas en la gestión de recursos gráficos con Vulkan.</div></div>
+<div class="ttc" id="a_pipeline_8h_html"><div class="ttname"><a href="_pipeline_8h.html">Pipeline.h</a></div><div class="ttdoc">Gestiona la creación y configuración del pipeline gráfico de Vulkan.</div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_a29d97538836e69c4b129a0f95bc6fe1b"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#a29d97538836e69c4b129a0f95bc6fe1b">Engine::Graphic::CommandPool::createTemporalCommandBuffer</a></div><div class="ttdeci">VkCommandBuffer createTemporalCommandBuffer()</div><div class="ttdoc">Crea un buffer de comandos temporal.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00071">CommandPool.cpp:71</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_a62c23a077846950bcddc00438993dbab"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#a62c23a077846950bcddc00438993dbab">Engine::Graphic::CommandPool::resetCommandBuffer</a></div><div class="ttdeci">void resetCommandBuffer(uint32_t currentFrame)</div><div class="ttdoc">Reinicializa el buffer de comandos para el frame actual.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00037">CommandPool.cpp:37</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_a9ab45b1e9315c0e7a3b3423d907619e2"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#a9ab45b1e9315c0e7a3b3423d907619e2">Engine::Graphic::CommandPool::operator=</a></div><div class="ttdeci">CommandPool &amp; operator=(const CommandPool &amp;)=delete</div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_acb32591ed1df044c0487d04266df9520"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#acb32591ed1df044c0487d04266df9520">Engine::Graphic::CommandPool::endCommandBuffer</a></div><div class="ttdeci">void endCommandBuffer(VkCommandBuffer commandBuffer) const</div><div class="ttdoc">Finaliza el registro en un buffer de comandos.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00029">CommandPool.cpp:29</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_adff4d526145a282f92d676e6f1721994"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#adff4d526145a282f92d676e6f1721994">Engine::Graphic::CommandPool::~CommandPool</a></div><div class="ttdeci">~CommandPool()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00011">CommandPool.cpp:11</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_ae1754d162b5d55f7625dc05b1bdc3036"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#ae1754d162b5d55f7625dc05b1bdc3036">Engine::Graphic::CommandPool::endTemporalCommandBuffer</a></div><div class="ttdeci">void endTemporalCommandBuffer(VkCommandBuffer commandBuffer)</div><div class="ttdoc">Finaliza un buffer de comandos temporal.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00089">CommandPool.cpp:89</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_aecf092000fb746e252e7244158a4760b"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#aecf092000fb746e252e7244158a4760b">Engine::Graphic::CommandPool::CommandPool</a></div><div class="ttdeci">CommandPool(const CommandPool &amp;)=delete</div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_command_pool_html_af8ad75a9405c77b14caf15fdd3820377"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_command_pool.html#af8ad75a9405c77b14caf15fdd3820377">Engine::Graphic::CommandPool::beginCommandBuffer</a></div><div class="ttdeci">VkCommandBuffer beginCommandBuffer(uint32_t imageIndex)</div><div class="ttdoc">Inicia un buffer de comandos para la imagen especificada.</div><div class="ttdef"><b>Definition</b> <a href="_command_pool_8cpp_source.html#l00016">CommandPool.cpp:16</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></div><div class="ttdoc">Clase que administra recursos de la GPU y la interacción con Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00052">GPU.h:53</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+<div class="ttc" id="anamespace_engine_html"><div class="ttname"><a href="namespace_engine.html">Engine</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_0b6ee6e7e9547e675db4add2e5de97da.html">Engine</a></li><li class="navelem"><a class="el" href="dir_8404e32aee7c4f7d7fc8d76c84d6a5ca.html">Graphic</a></li><li class="navelem"><a class="el" href="_command_pool_8h.html">CommandPool.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

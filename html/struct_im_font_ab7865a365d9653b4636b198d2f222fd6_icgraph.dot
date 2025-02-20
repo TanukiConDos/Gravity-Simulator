@@ -1,0 +1,15 @@
+digraph "ImFont::GrowIndex"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="ImFont::GrowIndex",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="ImFont::AddRemapChar",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_im_font.html#aba8cd20f14ba47175d45d3f2063aa329",tooltip=" "];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="ImFont::BuildLookupTable",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_im_font.html#a04b3a1437bd0032722bbbd3613941162",tooltip=" "];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="ImFontAtlasBuildFinish",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$imgui__draw_8cpp.html#adbf0ee92b3ac86e30b9e81f552d15d37",tooltip=" "];
+}

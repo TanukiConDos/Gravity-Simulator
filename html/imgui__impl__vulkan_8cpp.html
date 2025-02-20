@@ -1,0 +1,1002 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Referencia del archivo External/imgui/imgui_impl_vulkan.cpp</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('imgui__impl__vulkan_8cpp.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="summary">
+<a href="#nested-classes">Clases</a> &#124;
+<a href="#define-members">defines</a> &#124;
+<a href="#func-members">Funciones</a>  </div>
+  <div class="headertitle"><div class="title">Referencia del archivo imgui_impl_vulkan.cpp</div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><code>#include &quot;<a class="el" href="imgui_8h_source.html">imgui.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="imgui__impl__vulkan_8h_source.html">imgui_impl_vulkan.h</a>&quot;</code><br />
+<code>#include &lt;stdio.h&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Gráfico de dependencias incluidas en imgui_impl_vulkan.cpp:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp__incl.png" border="0" usemap="#a_external_2imgui_2imgui__impl__vulkan_8cpp" alt=""/></div>
+</div>
+</div>
+<p><a href="imgui__impl__vulkan_8cpp_source.html">Ir al código fuente de este archivo.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Clases</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_im_gui___impl_vulkan___frame_render_buffers.html">ImGui_ImplVulkan_FrameRenderBuffers</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_im_gui___impl_vulkan___window_render_buffers.html">ImGui_ImplVulkan_WindowRenderBuffers</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_im_gui___impl_vulkan___data.html">ImGui_ImplVulkan_Data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
+defines</h2></td></tr>
+<tr class="memitem:a9d0693fad89638629beea97300c8f8f6" id="r_a9d0693fad89638629beea97300c8f8f6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9d0693fad89638629beea97300c8f8f6">IM_MAX</a>(A,  B)</td></tr>
+<tr class="separator:a9d0693fad89638629beea97300c8f8f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Funciones</h2></td></tr>
+<tr class="memitem:ae04f471c6a6dab69bc2992843a91ad75" id="r_ae04f471c6a6dab69bc2992843a91ad75"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae04f471c6a6dab69bc2992843a91ad75">ImGui_ImplVulkan_CreateDeviceObjects</a> ()</td></tr>
+<tr class="separator:ae04f471c6a6dab69bc2992843a91ad75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74aab8119e9e91d8932f955546dcd973" id="r_a74aab8119e9e91d8932f955546dcd973"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74aab8119e9e91d8932f955546dcd973">ImGui_ImplVulkan_DestroyDeviceObjects</a> ()</td></tr>
+<tr class="separator:a74aab8119e9e91d8932f955546dcd973"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6821285fa7713417f41013b4efd91ff" id="r_ab6821285fa7713417f41013b4efd91ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab6821285fa7713417f41013b4efd91ff">ImGui_ImplVulkan_DestroyFrameRenderBuffers</a> (VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan___frame_render_buffers.html">ImGui_ImplVulkan_FrameRenderBuffers</a> *buffers, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:ab6821285fa7713417f41013b4efd91ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1271c0808a7961eec36e864613f2e1d" id="r_ae1271c0808a7961eec36e864613f2e1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae1271c0808a7961eec36e864613f2e1d">ImGui_ImplVulkan_DestroyWindowRenderBuffers</a> (VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan___window_render_buffers.html">ImGui_ImplVulkan_WindowRenderBuffers</a> *buffers, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:ae1271c0808a7961eec36e864613f2e1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bdbd122b66063f3df95a0eafa5bb7dd" id="r_a7bdbd122b66063f3df95a0eafa5bb7dd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7bdbd122b66063f3df95a0eafa5bb7dd">ImGui_ImplVulkanH_DestroyFrame</a> (VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___frame.html">ImGui_ImplVulkanH_Frame</a> *fd, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:a7bdbd122b66063f3df95a0eafa5bb7dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5ddca6b231ca2e88b968af9440ac206" id="r_ae5ddca6b231ca2e88b968af9440ac206"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae5ddca6b231ca2e88b968af9440ac206">ImGui_ImplVulkanH_DestroyFrameSemaphores</a> (VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___frame_semaphores.html">ImGui_ImplVulkanH_FrameSemaphores</a> *fsd, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:ae5ddca6b231ca2e88b968af9440ac206"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56298dda09626af25de54d568b31830e" id="r_a56298dda09626af25de54d568b31830e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a56298dda09626af25de54d568b31830e">ImGui_ImplVulkanH_CreateWindowSwapChain</a> (VkPhysicalDevice physical_device, VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *wd, const VkAllocationCallbacks *allocator, int w, int h, uint32_t min_image_count)</td></tr>
+<tr class="separator:a56298dda09626af25de54d568b31830e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03fa20709ac538ff16a162e426240338" id="r_a03fa20709ac538ff16a162e426240338"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a03fa20709ac538ff16a162e426240338">ImGui_ImplVulkanH_CreateWindowCommandBuffers</a> (VkPhysicalDevice physical_device, VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *wd, uint32_t queue_family, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:a03fa20709ac538ff16a162e426240338"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07d2fbf5c27393a6a107dea81fba770c" id="r_a07d2fbf5c27393a6a107dea81fba770c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07d2fbf5c27393a6a107dea81fba770c">ImGui_ImplVulkan_RenderDrawData</a> (<a class="el" href="struct_im_draw_data.html">ImDrawData</a> *draw_data, VkCommandBuffer command_buffer, VkPipeline pipeline)</td></tr>
+<tr class="separator:a07d2fbf5c27393a6a107dea81fba770c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c82e91ac58260f067208117773c5426" id="r_a1c82e91ac58260f067208117773c5426"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1c82e91ac58260f067208117773c5426">ImGui_ImplVulkan_CreateFontsTexture</a> ()</td></tr>
+<tr class="separator:a1c82e91ac58260f067208117773c5426"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02d628dd92228291573067cbf882aa1b" id="r_a02d628dd92228291573067cbf882aa1b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a02d628dd92228291573067cbf882aa1b">ImGui_ImplVulkan_DestroyFontsTexture</a> ()</td></tr>
+<tr class="separator:a02d628dd92228291573067cbf882aa1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99b5beb5f6d2a31b8f93974ea98394a6" id="r_a99b5beb5f6d2a31b8f93974ea98394a6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a99b5beb5f6d2a31b8f93974ea98394a6">ImGui_ImplVulkan_LoadFunctions</a> (PFN_vkVoidFunction(*loader_func)(const char *function_name, void *user_data), void *user_data)</td></tr>
+<tr class="separator:a99b5beb5f6d2a31b8f93974ea98394a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa4bf09f14943bc282c433b9bcb4d81f" id="r_aaa4bf09f14943bc282c433b9bcb4d81f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa4bf09f14943bc282c433b9bcb4d81f">ImGui_ImplVulkan_Init</a> (<a class="el" href="struct_im_gui___impl_vulkan___init_info.html">ImGui_ImplVulkan_InitInfo</a> *info)</td></tr>
+<tr class="separator:aaa4bf09f14943bc282c433b9bcb4d81f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d24b6d00ffdc460712b1966199c28a2" id="r_a5d24b6d00ffdc460712b1966199c28a2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5d24b6d00ffdc460712b1966199c28a2">ImGui_ImplVulkan_Shutdown</a> ()</td></tr>
+<tr class="separator:a5d24b6d00ffdc460712b1966199c28a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c03e9375aa038eb0745c802af07fb21" id="r_a4c03e9375aa038eb0745c802af07fb21"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4c03e9375aa038eb0745c802af07fb21">ImGui_ImplVulkan_NewFrame</a> ()</td></tr>
+<tr class="separator:a4c03e9375aa038eb0745c802af07fb21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae028fe3e0796e9960d9aa5119df87f4f" id="r_ae028fe3e0796e9960d9aa5119df87f4f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae028fe3e0796e9960d9aa5119df87f4f">ImGui_ImplVulkan_SetMinImageCount</a> (uint32_t min_image_count)</td></tr>
+<tr class="separator:ae028fe3e0796e9960d9aa5119df87f4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0ea34fb01c85f2b547c062de3d338f5" id="r_af0ea34fb01c85f2b547c062de3d338f5"><td class="memItemLeft" align="right" valign="top">VkDescriptorSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af0ea34fb01c85f2b547c062de3d338f5">ImGui_ImplVulkan_AddTexture</a> (VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)</td></tr>
+<tr class="separator:af0ea34fb01c85f2b547c062de3d338f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97915175facfdbf3fba699a17f2098c8" id="r_a97915175facfdbf3fba699a17f2098c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97915175facfdbf3fba699a17f2098c8">ImGui_ImplVulkan_RemoveTexture</a> (VkDescriptorSet descriptor_set)</td></tr>
+<tr class="separator:a97915175facfdbf3fba699a17f2098c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5466b601034ad87d0478d37ac8b9e4e" id="r_af5466b601034ad87d0478d37ac8b9e4e"><td class="memItemLeft" align="right" valign="top">VkSurfaceFormatKHR&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af5466b601034ad87d0478d37ac8b9e4e">ImGui_ImplVulkanH_SelectSurfaceFormat</a> (VkPhysicalDevice physical_device, VkSurfaceKHR surface, const VkFormat *request_formats, int request_formats_count, VkColorSpaceKHR request_color_space)</td></tr>
+<tr class="separator:af5466b601034ad87d0478d37ac8b9e4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7224bb4a6e72a8d5de8f57a5464aadac" id="r_a7224bb4a6e72a8d5de8f57a5464aadac"><td class="memItemLeft" align="right" valign="top">VkPresentModeKHR&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7224bb4a6e72a8d5de8f57a5464aadac">ImGui_ImplVulkanH_SelectPresentMode</a> (VkPhysicalDevice physical_device, VkSurfaceKHR surface, const VkPresentModeKHR *request_modes, int request_modes_count)</td></tr>
+<tr class="separator:a7224bb4a6e72a8d5de8f57a5464aadac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a766ea9561cdaf481638ee07f44801449" id="r_a766ea9561cdaf481638ee07f44801449"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a766ea9561cdaf481638ee07f44801449">ImGui_ImplVulkanH_GetMinImageCountFromPresentMode</a> (VkPresentModeKHR present_mode)</td></tr>
+<tr class="separator:a766ea9561cdaf481638ee07f44801449"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8649c8725c938c7c47ec98d2c006638f" id="r_a8649c8725c938c7c47ec98d2c006638f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8649c8725c938c7c47ec98d2c006638f">ImGui_ImplVulkanH_CreateOrResizeWindow</a> (VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *wd, uint32_t queue_family, const VkAllocationCallbacks *allocator, int width, int height, uint32_t min_image_count)</td></tr>
+<tr class="separator:a8649c8725c938c7c47ec98d2c006638f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4d7a2987aecd23a4ea05ae341998f94" id="r_af4d7a2987aecd23a4ea05ae341998f94"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af4d7a2987aecd23a4ea05ae341998f94">ImGui_ImplVulkanH_DestroyWindow</a> (VkInstance instance, VkDevice device, <a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *wd, const VkAllocationCallbacks *allocator)</td></tr>
+<tr class="separator:af4d7a2987aecd23a4ea05ae341998f94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">Documentación de «define»</h2>
+<a id="a9d0693fad89638629beea97300c8f8f6" name="a9d0693fad89638629beea97300c8f8f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d0693fad89638629beea97300c8f8f6">&#9670;&#160;</a></span>IM_MAX</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define IM_MAX</td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>A</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>B</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Valor:</b><div class="fragment"><div class="line">(((A) &gt;= (B)) ? (A) : (B))</div>
+</div><!-- fragment -->
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l00089">89</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Documentación de funciones</h2>
+<a id="af0ea34fb01c85f2b547c062de3d338f5" name="af0ea34fb01c85f2b547c062de3d338f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0ea34fb01c85f2b547c062de3d338f5">&#9670;&#160;</a></span>ImGui_ImplVulkan_AddTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VkDescriptorSet ImGui_ImplVulkan_AddTexture </td>
+          <td>(</td>
+          <td class="paramtype">VkSampler</td>          <td class="paramname"><span class="paramname"><em>sampler</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkImageView</td>          <td class="paramname"><span class="paramname"><em>image_view</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkImageLayout</td>          <td class="paramname"><span class="paramname"><em>image_layout</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01156">1156</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_af0ea34fb01c85f2b547c062de3d338f5_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_af0ea34fb01c85f2b547c062de3d338f5_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ae04f471c6a6dab69bc2992843a91ad75" name="ae04f471c6a6dab69bc2992843a91ad75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae04f471c6a6dab69bc2992843a91ad75">&#9670;&#160;</a></span>ImGui_ImplVulkan_CreateDeviceObjects()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ImGui_ImplVulkan_CreateDeviceObjects </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l00968">968</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ae04f471c6a6dab69bc2992843a91ad75_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ae04f471c6a6dab69bc2992843a91ad75_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a1c82e91ac58260f067208117773c5426" name="a1c82e91ac58260f067208117773c5426"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c82e91ac58260f067208117773c5426">&#9670;&#160;</a></span>ImGui_ImplVulkan_CreateFontsTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ImGui_ImplVulkan_CreateFontsTexture </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l00615">615</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a1c82e91ac58260f067208117773c5426_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a1c82e91ac58260f067208117773c5426_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a1c82e91ac58260f067208117773c5426_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a1c82e91ac58260f067208117773c5426_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a74aab8119e9e91d8932f955546dcd973" name="a74aab8119e9e91d8932f955546dcd973"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74aab8119e9e91d8932f955546dcd973">&#9670;&#160;</a></span>ImGui_ImplVulkan_DestroyDeviceObjects()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_DestroyDeviceObjects </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01029">1029</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a74aab8119e9e91d8932f955546dcd973_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a74aab8119e9e91d8932f955546dcd973_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a74aab8119e9e91d8932f955546dcd973_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a74aab8119e9e91d8932f955546dcd973_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a02d628dd92228291573067cbf882aa1b" name="a02d628dd92228291573067cbf882aa1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02d628dd92228291573067cbf882aa1b">&#9670;&#160;</a></span>ImGui_ImplVulkan_DestroyFontsTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_DestroyFontsTexture </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l00811">811</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a02d628dd92228291573067cbf882aa1b_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a02d628dd92228291573067cbf882aa1b_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a02d628dd92228291573067cbf882aa1b_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a02d628dd92228291573067cbf882aa1b_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ab6821285fa7713417f41013b4efd91ff" name="ab6821285fa7713417f41013b4efd91ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6821285fa7713417f41013b4efd91ff">&#9670;&#160;</a></span>ImGui_ImplVulkan_DestroyFrameRenderBuffers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_DestroyFrameRenderBuffers </td>
+          <td>(</td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan___frame_render_buffers.html">ImGui_ImplVulkan_FrameRenderBuffers</a> *</td>          <td class="paramname"><span class="paramname"><em>buffers</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01197">1197</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ab6821285fa7713417f41013b4efd91ff_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ab6821285fa7713417f41013b4efd91ff_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ae1271c0808a7961eec36e864613f2e1d" name="ae1271c0808a7961eec36e864613f2e1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1271c0808a7961eec36e864613f2e1d">&#9670;&#160;</a></span>ImGui_ImplVulkan_DestroyWindowRenderBuffers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_DestroyWindowRenderBuffers </td>
+          <td>(</td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan___window_render_buffers.html">ImGui_ImplVulkan_WindowRenderBuffers</a> *</td>          <td class="paramname"><span class="paramname"><em>buffers</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01207">1207</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ae1271c0808a7961eec36e864613f2e1d_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ae1271c0808a7961eec36e864613f2e1d_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ae1271c0808a7961eec36e864613f2e1d_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ae1271c0808a7961eec36e864613f2e1d_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="aaa4bf09f14943bc282c433b9bcb4d81f" name="aaa4bf09f14943bc282c433b9bcb4d81f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa4bf09f14943bc282c433b9bcb4d81f">&#9670;&#160;</a></span>ImGui_ImplVulkan_Init()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ImGui_ImplVulkan_Init </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan___init_info.html">ImGui_ImplVulkan_InitInfo</a> *</td>          <td class="paramname"><span class="paramname"><em>info</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01074">1074</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_aaa4bf09f14943bc282c433b9bcb4d81f_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_aaa4bf09f14943bc282c433b9bcb4d81f_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_aaa4bf09f14943bc282c433b9bcb4d81f_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_aaa4bf09f14943bc282c433b9bcb4d81f_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a99b5beb5f6d2a31b8f93974ea98394a6" name="a99b5beb5f6d2a31b8f93974ea98394a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99b5beb5f6d2a31b8f93974ea98394a6">&#9670;&#160;</a></span>ImGui_ImplVulkan_LoadFunctions()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ImGui_ImplVulkan_LoadFunctions </td>
+          <td>(</td>
+          <td class="paramtype">PFN_vkVoidFunction(*</td>          <td class="paramname"><span class="paramname"><em>loader_func&#160;</em></span>)(const char *function_name, void *user_data), </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *</td>          <td class="paramname"><span class="paramname"><em>user_data</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01046">1046</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4c03e9375aa038eb0745c802af07fb21" name="a4c03e9375aa038eb0745c802af07fb21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c03e9375aa038eb0745c802af07fb21">&#9670;&#160;</a></span>ImGui_ImplVulkan_NewFrame()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_NewFrame </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01131">1131</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a4c03e9375aa038eb0745c802af07fb21_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a4c03e9375aa038eb0745c802af07fb21_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a4c03e9375aa038eb0745c802af07fb21_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a4c03e9375aa038eb0745c802af07fb21_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a97915175facfdbf3fba699a17f2098c8" name="a97915175facfdbf3fba699a17f2098c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97915175facfdbf3fba699a17f2098c8">&#9670;&#160;</a></span>ImGui_ImplVulkan_RemoveTexture()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_RemoveTexture </td>
+          <td>(</td>
+          <td class="paramtype">VkDescriptorSet</td>          <td class="paramname"><span class="paramname"><em>descriptor_set</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01190">1190</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a97915175facfdbf3fba699a17f2098c8_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a97915175facfdbf3fba699a17f2098c8_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a07d2fbf5c27393a6a107dea81fba770c" name="a07d2fbf5c27393a6a107dea81fba770c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07d2fbf5c27393a6a107dea81fba770c">&#9670;&#160;</a></span>ImGui_ImplVulkan_RenderDrawData()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_RenderDrawData </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="struct_im_draw_data.html">ImDrawData</a> *</td>          <td class="paramname"><span class="paramname"><em>draw_data</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkCommandBuffer</td>          <td class="paramname"><span class="paramname"><em>command_buffer</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkPipeline</td>          <td class="paramname"><span class="paramname"><em>pipeline</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l00474">474</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a07d2fbf5c27393a6a107dea81fba770c_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a07d2fbf5c27393a6a107dea81fba770c_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ae028fe3e0796e9960d9aa5119df87f4f" name="ae028fe3e0796e9960d9aa5119df87f4f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae028fe3e0796e9960d9aa5119df87f4f">&#9670;&#160;</a></span>ImGui_ImplVulkan_SetMinImageCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_SetMinImageCount </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>min_image_count</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01140">1140</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ae028fe3e0796e9960d9aa5119df87f4f_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ae028fe3e0796e9960d9aa5119df87f4f_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a5d24b6d00ffdc460712b1966199c28a2" name="a5d24b6d00ffdc460712b1966199c28a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d24b6d00ffdc460712b1966199c28a2">&#9670;&#160;</a></span>ImGui_ImplVulkan_Shutdown()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkan_Shutdown </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01118">1118</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a5d24b6d00ffdc460712b1966199c28a2_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a5d24b6d00ffdc460712b1966199c28a2_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a5d24b6d00ffdc460712b1966199c28a2_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a5d24b6d00ffdc460712b1966199c28a2_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a8649c8725c938c7c47ec98d2c006638f" name="a8649c8725c938c7c47ec98d2c006638f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8649c8725c938c7c47ec98d2c006638f">&#9670;&#160;</a></span>ImGui_ImplVulkanH_CreateOrResizeWindow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_CreateOrResizeWindow </td>
+          <td>(</td>
+          <td class="paramtype">VkInstance</td>          <td class="paramname"><span class="paramname"><em>instance</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkPhysicalDevice</td>          <td class="paramname"><span class="paramname"><em>physical_device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *</td>          <td class="paramname"><span class="paramname"><em>wd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>queue_family</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>width</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>height</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>min_image_count</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01534">1534</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a8649c8725c938c7c47ec98d2c006638f_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a8649c8725c938c7c47ec98d2c006638f_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a03fa20709ac538ff16a162e426240338" name="a03fa20709ac538ff16a162e426240338"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03fa20709ac538ff16a162e426240338">&#9670;&#160;</a></span>ImGui_ImplVulkanH_CreateWindowCommandBuffers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_CreateWindowCommandBuffers </td>
+          <td>(</td>
+          <td class="paramtype">VkPhysicalDevice</td>          <td class="paramname"><span class="paramname"><em>physical_device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *</td>          <td class="paramname"><span class="paramname"><em>wd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>queue_family</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01301">1301</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a03fa20709ac538ff16a162e426240338_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a03fa20709ac538ff16a162e426240338_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a56298dda09626af25de54d568b31830e" name="a56298dda09626af25de54d568b31830e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56298dda09626af25de54d568b31830e">&#9670;&#160;</a></span>ImGui_ImplVulkanH_CreateWindowSwapChain()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_CreateWindowSwapChain </td>
+          <td>(</td>
+          <td class="paramtype">VkPhysicalDevice</td>          <td class="paramname"><span class="paramname"><em>physical_device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *</td>          <td class="paramname"><span class="paramname"><em>wd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>w</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>h</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>min_image_count</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01364">1364</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a56298dda09626af25de54d568b31830e_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a56298dda09626af25de54d568b31830e_cgraph" alt=""/></div>
+</div>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a56298dda09626af25de54d568b31830e_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a56298dda09626af25de54d568b31830e_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a7bdbd122b66063f3df95a0eafa5bb7dd" name="a7bdbd122b66063f3df95a0eafa5bb7dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7bdbd122b66063f3df95a0eafa5bb7dd">&#9670;&#160;</a></span>ImGui_ImplVulkanH_DestroyFrame()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_DestroyFrame </td>
+          <td>(</td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___frame.html">ImGui_ImplVulkanH_Frame</a> *</td>          <td class="paramname"><span class="paramname"><em>fd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01563">1563</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a7bdbd122b66063f3df95a0eafa5bb7dd_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a7bdbd122b66063f3df95a0eafa5bb7dd_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="ae5ddca6b231ca2e88b968af9440ac206" name="ae5ddca6b231ca2e88b968af9440ac206"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5ddca6b231ca2e88b968af9440ac206">&#9670;&#160;</a></span>ImGui_ImplVulkanH_DestroyFrameSemaphores()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_DestroyFrameSemaphores </td>
+          <td>(</td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___frame_semaphores.html">ImGui_ImplVulkanH_FrameSemaphores</a> *</td>          <td class="paramname"><span class="paramname"><em>fsd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01576">1576</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_ae5ddca6b231ca2e88b968af9440ac206_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_ae5ddca6b231ca2e88b968af9440ac206_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="af4d7a2987aecd23a4ea05ae341998f94" name="af4d7a2987aecd23a4ea05ae341998f94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4d7a2987aecd23a4ea05ae341998f94">&#9670;&#160;</a></span>ImGui_ImplVulkanH_DestroyWindow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImGui_ImplVulkanH_DestroyWindow </td>
+          <td>(</td>
+          <td class="paramtype">VkInstance</td>          <td class="paramname"><span class="paramname"><em>instance</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkDevice</td>          <td class="paramname"><span class="paramname"><em>device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="struct_im_gui___impl_vulkan_h___window.html">ImGui_ImplVulkanH_Window</a> *</td>          <td class="paramname"><span class="paramname"><em>wd</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkAllocationCallbacks *</td>          <td class="paramname"><span class="paramname"><em>allocator</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01542">1542</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_af4d7a2987aecd23a4ea05ae341998f94_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_af4d7a2987aecd23a4ea05ae341998f94_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a766ea9561cdaf481638ee07f44801449" name="a766ea9561cdaf481638ee07f44801449"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a766ea9561cdaf481638ee07f44801449">&#9670;&#160;</a></span>ImGui_ImplVulkanH_GetMinImageCountFromPresentMode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ImGui_ImplVulkanH_GetMinImageCountFromPresentMode </td>
+          <td>(</td>
+          <td class="paramtype">VkPresentModeKHR</td>          <td class="paramname"><span class="paramname"><em>present_mode</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01351">1351</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a766ea9561cdaf481638ee07f44801449_icgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a766ea9561cdaf481638ee07f44801449_icgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="a7224bb4a6e72a8d5de8f57a5464aadac" name="a7224bb4a6e72a8d5de8f57a5464aadac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7224bb4a6e72a8d5de8f57a5464aadac">&#9670;&#160;</a></span>ImGui_ImplVulkanH_SelectPresentMode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VkPresentModeKHR ImGui_ImplVulkanH_SelectPresentMode </td>
+          <td>(</td>
+          <td class="paramtype">VkPhysicalDevice</td>          <td class="paramname"><span class="paramname"><em>physical_device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkSurfaceKHR</td>          <td class="paramname"><span class="paramname"><em>surface</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkPresentModeKHR *</td>          <td class="paramname"><span class="paramname"><em>request_modes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>request_modes_count</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01278">1278</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_a7224bb4a6e72a8d5de8f57a5464aadac_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_a7224bb4a6e72a8d5de8f57a5464aadac_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+<a id="af5466b601034ad87d0478d37ac8b9e4e" name="af5466b601034ad87d0478d37ac8b9e4e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5466b601034ad87d0478d37ac8b9e4e">&#9670;&#160;</a></span>ImGui_ImplVulkanH_SelectSurfaceFormat()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">VkSurfaceFormatKHR ImGui_ImplVulkanH_SelectSurfaceFormat </td>
+          <td>(</td>
+          <td class="paramtype">VkPhysicalDevice</td>          <td class="paramname"><span class="paramname"><em>physical_device</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkSurfaceKHR</td>          <td class="paramname"><span class="paramname"><em>surface</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const VkFormat *</td>          <td class="paramname"><span class="paramname"><em>request_formats</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>request_formats_count</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkColorSpaceKHR</td>          <td class="paramname"><span class="paramname"><em>request_color_space</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definición en la línea <a class="el" href="imgui__impl__vulkan_8cpp_source.html#l01233">1233</a> del archivo <a class="el" href="imgui__impl__vulkan_8cpp_source.html">imgui_impl_vulkan.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas de esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="imgui__impl__vulkan_8cpp_af5466b601034ad87d0478d37ac8b9e4e_cgraph.png" border="0" usemap="#aimgui__impl__vulkan_8cpp_af5466b601034ad87d0478d37ac8b9e4e_cgraph" alt=""/></div>
+</div>
+
+</div>
+</div>
+</div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_443fc37f241ba4018364a998c18d007b.html">External</a></li><li class="navelem"><a class="el" href="dir_1772d950c10e477a3a2e85240ecf5c46.html">imgui</a></li><li class="navelem"><a class="el" href="imgui__impl__vulkan_8cpp.html">imgui_impl_vulkan.cpp</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

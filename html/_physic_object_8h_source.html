@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.13.2"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simulador de Campos Gravitatorios: Archivo de cÃ³digo fuente Engine/Physic/PhysicObject.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+  $(function() { init_search(); });
+/* @license-end */
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Simulador de Campos Gravitatorios
+   </div>
+   <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
+  </td>
+    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <span id="MSearchSelect"                onmouseover="return searchBox.OnSearchSelectShow()"                onmouseout="return searchBox.OnSearchSelectHide()">&#160;</span>
+          <input type="text" id="MSearchField" value="" placeholder="Buscar" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.svg" alt=""/></a>
+          </span>
+        </div>
+</td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generado por Doxygen 1.13.2 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() { codefold.init(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('_physic_object_8h_source.html',''); initResizable(true); });
+/* @license-end */
+</script>
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Cargando...</div>
+<div class="SRStatus" id="Searching">Buscando...</div>
+<div class="SRStatus" id="NoMatches">Nada coincide</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">PhysicObject.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="_physic_object_8h.html">Ir a la documentaciÃ³n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;../../External/json/json.hpp&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine.html">Engine</a></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>{</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>    <span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_physic.html">Physic</a></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    {</div>
+<div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html">   22</a></span>        <span class="keyword">class </span><a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#a7b0a123e1a63404f79aab429822ea366">PhysicObject</a></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>            <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#a7b0a123e1a63404f79aab429822ea366">PhysicObject</a>(glm::vec3 position, glm::vec3 velocity, <span class="keywordtype">float</span> mass, <span class="keywordtype">float</span> radius);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#ae6bdc2995f34d85bfc3ecc4cd7d3995f">update</a>(<span class="keywordtype">float</span> deltaTime, glm::3 force);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec">collision</a>(<a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#a7b0a123e1a63404f79aab429822ea366">PhysicObject</a>&amp; <span class="keywordtype">object</span>);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#af204645417e82e51857c2842686441ad">   61</a></span>            <span class="keywordtype">float</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_object.html#af204645417e82e51857c2842686441ad">getVelocity</a>() { <span class="keywordflow">return</span> glm::length(<a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#a28954554652dedbc20472f826793d87c">_velocity</a>); }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#a6e42b9fa3a028da1423f56a7e048d69e">   64</a></span>            glm::vec3 <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#a6e42b9fa3a028da1423f56a7e048d69e">_position</a>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#a28954554652dedbc20472f826793d87c">   66</a></span>            glm::vec3 <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#a28954554652dedbc20472f826793d87c">_velocity</a>;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#af49fcb14ff6a3aa2cc269eda6fd75bb4">   68</a></span>            glm::vec3 <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#af49fcb14ff6a3aa2cc269eda6fd75bb4">_acceleration</a> = glm::vec3(0.0, 0.0, 0.0);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#a4e4ead0b550188e97daba80017ae80ab">   70</a></span>            <span class="keywordtype">double</span> <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#a4e4ead0b550188e97daba80017ae80ab">_mass</a>;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#a6d49d587764a7143e0ef752f92948e65">   72</a></span>            <span class="keywordtype">float</span> <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#a6d49d587764a7143e0ef752f92948e65">_radius</a>;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_object.html#aa1e52f7fb2a0185932dd9d7dc639b79b">   74</a></span>            <span class="keywordtype">bool</span> <a class="code hl_variable" href="class_engine_1_1_physic_1_1_physic_object.html#aa1e52f7fb2a0185932dd9d7dc639b79b">_selected</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        };</div>
+</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="namespace_engine_1_1_physic.html#a19c4ab58d4dc8f9b212feaa6d3732eca">to_json</a>(nlohmann::json&amp; j, <span class="keyword">const</span> <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a>&amp; o);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">from_json</a>(<span class="keyword">const</span> nlohmann::json&amp; j, <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a>&amp; o);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    }</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>}</div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a></div><div class="ttdoc">Representa un objeto físico en la simulación.</div><div class="ttdef"><b>Definition</b> <a href="#l00022">PhysicObject.h:23</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_a28954554652dedbc20472f826793d87c"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#a28954554652dedbc20472f826793d87c">Engine::Physic::PhysicObject::_velocity</a></div><div class="ttdeci">glm::vec3 _velocity</div><div class="ttdoc">Velocidad actual del objeto.</div><div class="ttdef"><b>Definition</b> <a href="#l00066">PhysicObject.h:66</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_a4e4ead0b550188e97daba80017ae80ab"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#a4e4ead0b550188e97daba80017ae80ab">Engine::Physic::PhysicObject::_mass</a></div><div class="ttdeci">double _mass</div><div class="ttdoc">Masa del objeto.</div><div class="ttdef"><b>Definition</b> <a href="#l00070">PhysicObject.h:70</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_a6d49d587764a7143e0ef752f92948e65"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#a6d49d587764a7143e0ef752f92948e65">Engine::Physic::PhysicObject::_radius</a></div><div class="ttdeci">float _radius</div><div class="ttdoc">Radio del objeto.</div><div class="ttdef"><b>Definition</b> <a href="#l00072">PhysicObject.h:72</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_a6e42b9fa3a028da1423f56a7e048d69e"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#a6e42b9fa3a028da1423f56a7e048d69e">Engine::Physic::PhysicObject::_position</a></div><div class="ttdeci">glm::vec3 _position</div><div class="ttdoc">Posición actual del objeto.</div><div class="ttdef"><b>Definition</b> <a href="#l00064">PhysicObject.h:64</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_a7b0a123e1a63404f79aab429822ea366"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#a7b0a123e1a63404f79aab429822ea366">Engine::Physic::PhysicObject::PhysicObject</a></div><div class="ttdeci">PhysicObject(glm::vec3 position, glm::vec3 velocity, float mass, float radius)</div><div class="ttdoc">Constructor que inicializa un objeto físico.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00006">PhysicObject.cpp:6</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_aa1e52f7fb2a0185932dd9d7dc639b79b"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#aa1e52f7fb2a0185932dd9d7dc639b79b">Engine::Physic::PhysicObject::_selected</a></div><div class="ttdeci">bool _selected</div><div class="ttdoc">Indica si el objeto está seleccionado.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">PhysicObject.h:74</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_ae3d5423aa21b8f09987238bb87bbbeec"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec">Engine::Physic::PhysicObject::collision</a></div><div class="ttdeci">void collision(PhysicObject &amp;object)</div><div class="ttdoc">Gestiona la colisión con otro objeto físico.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00017">PhysicObject.cpp:17</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_ae6bdc2995f34d85bfc3ecc4cd7d3995f"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#ae6bdc2995f34d85bfc3ecc4cd7d3995f">Engine::Physic::PhysicObject::update</a></div><div class="ttdeci">void update(float deltaTime, glm::3 force)</div><div class="ttdoc">Actualiza el estado del objeto.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00010">PhysicObject.cpp:10</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_af204645417e82e51857c2842686441ad"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#af204645417e82e51857c2842686441ad">Engine::Physic::PhysicObject::getVelocity</a></div><div class="ttdeci">float getVelocity()</div><div class="ttdoc">Obtiene la velocidad actual del objeto.</div><div class="ttdef"><b>Definition</b> <a href="#l00061">PhysicObject.h:61</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html_af49fcb14ff6a3aa2cc269eda6fd75bb4"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html#af49fcb14ff6a3aa2cc269eda6fd75bb4">Engine::Physic::PhysicObject::_acceleration</a></div><div class="ttdeci">glm::vec3 _acceleration</div><div class="ttdoc">Aceleración del objeto (inicialmente 0).</div><div class="ttdef"><b>Definition</b> <a href="#l00068">PhysicObject.h:68</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html_a19c4ab58d4dc8f9b212feaa6d3732eca"><div class="ttname"><a href="namespace_engine_1_1_physic.html#a19c4ab58d4dc8f9b212feaa6d3732eca">Engine::Physic::to_json</a></div><div class="ttdeci">void to_json(nlohmann::json &amp;j, const PhysicObject &amp;o)</div><div class="ttdoc">Serializa un objeto PhysicObject a formato JSON.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00030">PhysicObject.cpp:30</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html_ac69b2a15f80a2c1d50fd735c508a100d"><div class="ttname"><a href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">Engine::Physic::from_json</a></div><div class="ttdeci">void from_json(const nlohmann::json &amp;j, PhysicObject &amp;o)</div><div class="ttdoc">Deserializa un objeto PhysicObject desde formato JSON.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00039">PhysicObject.cpp:39</a></div></div>
+<div class="ttc" id="anamespace_engine_html"><div class="ttname"><a href="namespace_engine.html">Engine</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+</div><!-- fragment --></div><!-- contents -->
+</div><!-- doc-content -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="dir_0b6ee6e7e9547e675db4add2e5de97da.html">Engine</a></li><li class="navelem"><a class="el" href="dir_8c85e81d571a4a64f072ff417f542c34.html">Physic</a></li><li class="navelem"><a class="el" href="_physic_object_8h.html">PhysicObject.h</a></li>
+    <li class="footer">Generado por <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.13.2 </li>
+  </ul>
+</div>
+</body>
+</html>

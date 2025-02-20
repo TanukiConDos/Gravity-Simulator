@@ -1,0 +1,23 @@
+var searchData=
+[
+  ['u0_0',['U0',['../struct_im_font_glyph.html#a3c9d90fb39f6beaf9d69413fa4c8366f',1,'ImFontGlyph']]],
+  ['u1_1',['U1',['../struct_im_font_glyph.html#aaca9625f2d6972016e05fed583db85b0',1,'ImFontGlyph']]],
+  ['undo_5fchar_2',['undo_char',['../struct_im_stb_1_1_stb_undo_state.html#ad7306e0d772be233efb3e24a7da0ddc1',1,'ImStb::StbUndoState::undo_char'],['../struct_stb_undo_state.html#a8458dacf2d823a6eb69d4991ed219c05',1,'StbUndoState::undo_char']]],
+  ['undo_5fchar_5fpoint_3',['undo_char_point',['../struct_im_stb_1_1_stb_undo_state.html#a1e93b8c26a8a23536921d125aceacd06',1,'ImStb::StbUndoState::undo_char_point'],['../struct_stb_undo_state.html#a1e93b8c26a8a23536921d125aceacd06',1,'StbUndoState::undo_char_point']]],
+  ['undo_5fpoint_4',['undo_point',['../struct_im_stb_1_1_stb_undo_state.html#ad29a8695b3e8252ac164d0c2d0be7d7c',1,'ImStb::StbUndoState::undo_point'],['../struct_stb_undo_state.html#ad29a8695b3e8252ac164d0c2d0be7d7c',1,'StbUndoState::undo_point']]],
+  ['undo_5frec_5',['undo_rec',['../struct_im_stb_1_1_stb_undo_state.html#a341ef745f2240ebf0b8fd90cedd90adc',1,'ImStb::StbUndoState::undo_rec'],['../struct_stb_undo_state.html#ad8f3e6ad062589d2b560e6d0d20cc897',1,'StbUndoState::undo_rec']]],
+  ['undostate_6',['undostate',['../struct_im_stb_1_1_s_t_b___textedit_state.html#a7e1f0366bbd57e01a4f49a720beb9ead',1,'ImStb::STB_TexteditState::undostate'],['../struct_s_t_b___textedit_state.html#a7e1f0366bbd57e01a4f49a720beb9ead',1,'STB_TexteditState::undostate']]],
+  ['undumped_5fchars_7',['undumped_chars',['../classdetail_1_1serializer.html#a44a05646a5ac7caec54f97ba17cb893b',1,'detail::serializer']]],
+  ['universal_5fgravitation_8',['UNIVERSAL_GRAVITATION',['../class_engine_1_1_physic_1_1_physic_system.html#a16f77480f2c32307f07d7745643ab729',1,'Engine::Physic::PhysicSystem']]],
+  ['used4kpagesmap_9',['Used4kPagesMap',['../struct_im_font.html#a95184d1095ecc7da9c843579052e1009',1,'ImFont']]],
+  ['usedchars_10',['UsedChars',['../struct_im_font_glyph_ranges_builder.html#af83d63600e78e2454a78f0d736ba8ee4',1,'ImFontGlyphRangesBuilder']]],
+  ['usedynamicrendering_11',['UseDynamicRendering',['../struct_im_gui___impl_vulkan___init_info.html#a0a9a0a08571e832b4cdf800be51f9ee7',1,'ImGui_ImplVulkan_InitInfo::UseDynamicRendering'],['../struct_im_gui___impl_vulkan_h___window.html#ac78d8e8eb73c149e8e28e1abca0abb2d',1,'ImGui_ImplVulkanH_Window::UseDynamicRendering']]],
+  ['user_5fallocator_5fcontext_12',['user_allocator_context',['../structstbtt__pack__context.html#a45fddc4d4adfcef58aa08ad2874cedc0',1,'stbtt_pack_context']]],
+  ['usercallback_13',['UserCallback',['../struct_im_draw_cmd.html#ad26dac4e939f5c4bb892cbca0f9e3af8',1,'ImDrawCmd']]],
+  ['usercallbackdata_14',['UserCallbackData',['../struct_im_draw_cmd.html#ae2f5a0baf4a0b25942237b8ce6adb42d',1,'ImDrawCmd']]],
+  ['userdata_15',['UserData',['../struct_im_gui_i_o.html#a8c5e74fd39c2655455329e09529da7d3',1,'ImGuiIO::UserData'],['../struct_im_gui_input_text_callback_data.html#ae8358ea4135032204fcba6c9ada7c49f',1,'ImGuiInputTextCallbackData::UserData'],['../struct_im_gui_size_callback_data.html#ae16a4a1b916810b2f69925c527430a39',1,'ImGuiSizeCallbackData::UserData'],['../struct_im_font_atlas.html#ac848a29825d36edf8629b31b419dc21e',1,'ImFontAtlas::UserData'],['../struct_im_gui_settings_handler.html#a4e8dc5a10948568680764a3cdaf9b102',1,'ImGuiSettingsHandler::UserData'],['../struct_im_gui_context_hook.html#a334cf9cae105a3636f13aa1f2bc25e60',1,'ImGuiContextHook::UserData'],['../struct_im_gui_get_name_from_index_old_to_new_callback_data.html#ab5145665995e4fd93266c2b14ae4d199',1,'ImGuiGetNameFromIndexOldToNewCallbackData::UserData']]],
+  ['userdata_16',['userdata',['../structstbtt__fontinfo.html#a9c81078df96a7a3f730137151efab285',1,'stbtt_fontinfo']]],
+  ['userid_17',['UserID',['../struct_im_gui_table_column.html#a41e54f7b02880ad716544c0928338443',1,'ImGuiTableColumn::UserID'],['../struct_im_gui_table_column_settings.html#a8b68ca3c4df704ce887e11e9b2a4ac8b',1,'ImGuiTableColumnSettings::UserID']]],
+  ['useroutersize_18',['UserOuterSize',['../struct_im_gui_table_temp_data.html#aaf4e14bfbf965747f8925825dcb13255',1,'ImGuiTableTempData']]],
+  ['uv_19',['uv',['../struct_im_draw_vert.html#abdf3183529055a6c3f709b23a4bf06b1',1,'ImDrawVert']]]
+];
