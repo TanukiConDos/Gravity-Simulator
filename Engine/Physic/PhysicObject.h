@@ -40,7 +40,7 @@ namespace Engine
 			 * @param deltaTime Intervalo de tiempo transcurrido.
 			 * @param force Fuerza aplicada al objeto.
 			 */
-			void update(float deltaTime, glm::3 force);
+			void update(float deltaTime, glm::vec3 force);
 
 			/**
 			 * @brief Gestiona la colisión con otro objeto físico.

@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : require
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -14,12 +15,6 @@ layout(location = 0) out vec3 fragColor;
 
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
-    if(ubo.selected)
-    {
-        fragColor = vec3(1,inColor.gb);
-    }
-    else
-    {
-        fragColor = inColor;
-    }
+    vec3 options[2] = vec3[](inColor, vec3(1,inColor.gb));
+    fragColor = options[int(ubo.selected)];
 }

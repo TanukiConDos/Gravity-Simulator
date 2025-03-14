@@ -43,7 +43,7 @@ namespace Engine
 			 * @param index Índice del objeto.
 			 * @return const VkDescriptorSet* Puntero al conjunto de descriptores.
 			 */
-			const VkDescriptorSet* getDescriptorSets(uint32_t currentFrame, uint32_t index) { return &_descriptorSets[currentFrame * _numObjects + index]; }
+			const VkDescriptorSet* getDescriptorSets(uint32_t currentFrame, uint32_t index) { return &_descriptorSets[currentFrame*_numObjects+index]; }
 
 			/**
 			 * @brief Actualiza el buffer uniforme asociado a un conjunto de descriptores específico.
@@ -52,6 +52,8 @@ namespace Engine
 			 * @param index Índice del objeto.
 			 */
 			void updateUniformBuffer(UniformBufferObject ubo, uint32_t currentImage, uint32_t index);
+
+			void sendUniformBufferToGPU(uint32_t currentImage);
 
 			/**
 			 * @brief Obtiene el pool de descriptores.
@@ -62,6 +64,16 @@ namespace Engine
 			/// Referencia a la instancia de GPU.
 			GPU& _gpu;
 			/// Número de objetos gestionados.
+            /**
+             * @brief Envía los buffers uniformes a la GPU.
+             *
+             * Este método transfiere el contenido actualizado de los buffers uniformes de la imagen actual a la GPU.
+             * Esto asegura que los datos de transformación y otros parámetros uniformes se encuentren sincronizados 
+             * con el procesamiento gráfico del frame correspondiente.
+             *
+             * @param currentImage Índice de la imagen actual para la que se deben enviar los datos.
+             */
+            void sendUniformBufferToGPU(uint32_t currentImage);
 			uint32_t _numObjects;
 			/// Pool de descriptores de Vulkan.
 			VkDescriptorPool _descriptorPool;
@@ -69,8 +81,8 @@ namespace Engine
 			VkDescriptorSetLayout _descriptorSetLayout;
 			/// Vector con los conjuntos de descriptores.
 			std::vector<VkDescriptorSet> _descriptorSets;
-			/// Buffers uniformes, uno para cada objeto y frame.
-			std::vector<std::unique_ptr<Buffer>> _uniformBuffers{ MAX_FRAMES_IN_FLIGHT * _numObjects };
+			/// Buffers uniformes, uno para cada frame.
+			std::vector<std::unique_ptr<Buffer>> _uniformBuffers{ MAX_FRAMES_IN_FLIGHT };
 
 			/**
 			 * @brief Crea el pool de descriptores.

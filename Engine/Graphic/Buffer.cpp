@@ -7,6 +7,13 @@ namespace Engine
 		Buffer::Buffer(GPU& gpu, VkDeviceSize instanceSize, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags): _gpu(gpu), _bufferSize(instanceSize)
 		{
 			gpu.createBuffer(instanceSize, usageFlags, memoryPropertyFlags, _buffer, _bufferMemory);
+			_memoryRange = VkMappedMemoryRange(
+				VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+				nullptr,
+				_bufferMemory,
+				0,
+				instanceSize
+			);
 		}
 		Buffer::~Buffer()
 		{
@@ -37,6 +44,10 @@ namespace Engine
 				memcpy(memOffset, data, size);
 			}
 			
+		}
+		void Buffer::sendToGPU()
+		{
+			vkFlushMappedMemoryRanges(_gpu.getDevice(),1,&_memoryRange);
 		}
 	}
 }

@@ -107,6 +107,7 @@ namespace Application
     {
         _objects->clear();
         _renderer->updateObjects();
+        _physicSystem = Engine::Physic::PhysicSystem();
     }
 
 

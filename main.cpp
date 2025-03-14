@@ -5,7 +5,6 @@
  * Se crea una instancia de GravitySimulator y se ejecuta utilizando app.run().
  * Se utiliza un bloque try/catch para capturar excepciones derivadas de std::exception y reportar errores.
  */
-
 #include "Application/GravitySimulator.h"
 #include <iostream>
 

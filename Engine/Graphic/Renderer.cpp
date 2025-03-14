@@ -51,6 +51,7 @@ namespace Engine
 				_model.bind(commandBuffer);
 				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(_model.getIndexSize()), 1, 0, 0, 0);
 			}
+			if(_gameObjects.size() > 0) _descriptorPool->sendUniformBufferToGPU(_currentFrame);
 			_imGui.draw(commandBuffer);
 			vkCmdEndRenderPass(commandBuffer);
 
