@@ -39,7 +39,7 @@ namespace Engine::Graphic
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = _descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _numObjects);
+		allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT * _numObjects;
 		allocInfo.pSetLayouts = layouts.data();
 
 		_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT*_numObjects);
