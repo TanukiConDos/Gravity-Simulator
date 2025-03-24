@@ -187,8 +187,13 @@ namespace Application
             _radius = &_context->_objects->at(_objectId)._radius;
             _context->_objects->at(_objectId)._selected = true;
             if(_oldId != -1) _context->_objects->at(_oldId)._selected = false;
+            _oldId = _objectId;
         }
-        _oldId = _objectId;
+        else
+        {
+			_objectId = _oldId;
+        }
+        
         ImGui::Begin("ItemSelected", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
         ImVec2 size = ImGui::GetMainViewport()->Size;
         ImVec2 windowSize = ImGui::GetWindowSize();
@@ -211,7 +216,7 @@ namespace Application
         if(ImGui::InputDouble("masa", &massAux, 0.0, 0.0, "%.3e %kg", ImGuiInputTextFlags_EnterReturnsTrue) && massAux > 0) *_mass = massAux;
         if(ImGui::InputFloat("radio", &radiusAux, 0.0, 0.0, "%.0f %km", ImGuiInputTextFlags_EnterReturnsTrue)) *_radius = radiusAux;
 
-        if (ImGui::Button("finalizar simulación")) changeState(Action::EXIT);
+        if (ImGui::Button("finalizar simulacion")) changeState(Action::EXIT);
 
         ImGui::End();
         
