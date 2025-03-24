@@ -252,5 +252,6 @@
     </None>
     <None Include="scenes\colision.json" />
     <None Include="scenes\last.json" />
+    <None Include="LICENSE.md" />
   </ItemGroup>
 </Project>

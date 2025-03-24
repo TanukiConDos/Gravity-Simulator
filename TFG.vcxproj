@@ -44,6 +44,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -51,6 +52,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -114,7 +116,19 @@
       </EntryPointSymbol>
       <AdditionalLibraryDirectories>C:\VulkanSDK\glfw-3.4\lib-vc2022;C:\VulkanSDK\1.4.304.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
+    <PreBuildEvent>
+      <Command>$(projectdir)Engine\graphic\shader\compilar.bat</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>mkdir "$(TargetDir)Engine\Graphic\shader"
+copy "$(SolutionDir)Engine\Graphic\shader\*.spv" "$(TargetDir)Engine\Graphic\shader"
+mkdir "$(TargetDir)scenes"
+copy "$(SolutionDir)scenes\*.json" "$(TargetDir)scenes"
+copy "$(SolutionDir)imgui.ini" "$(TargetDir)imgui.ini</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -232,6 +246,7 @@ copy "$(SolutionDir)imgui.ini" "$(TargetDir)imgui.ini</Command>
     <None Include="Engine\Graphic\shader\fragmentShader.frag" />
     <None Include="Engine\Graphic\shader\vertexShader.vert" />
     <None Include="imgui.ini" />
+    <None Include="LICENSE.md" />
     <None Include="README.md" />
     <None Include="scenes\colision.json">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>

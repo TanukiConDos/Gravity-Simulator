@@ -59,7 +59,7 @@ namespace Application
 
             Foundation::File file = Foundation::File(std::string("./scenes/").append(config->fichero));
             std::vector<char> aux = file.read();
-            std::string data = std::string{ aux.data()};
+            std::string data = std::string( aux.data(),aux.size());
             data.erase(aux.size());
             nlohmann::json j = nlohmann::json::parse(data);
             for (auto object : j)

@@ -94,7 +94,7 @@ namespace Application
         ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
         ImGui::InputFloat("Multiplicador paso del tiempo", &config->time);
 
-        if (ImGui::BeginCombo("Modo de creación de la escena", toString(config->systemCreationMode)))
+        if (ImGui::BeginCombo("Modo de creacion de la escena", toString(config->systemCreationMode)))
         {
             for (int i = 0; i <= 1; i++)
             {
@@ -108,14 +108,14 @@ namespace Application
         if (config->systemCreationMode == Foundation::Mode::FILE)
         {
      
-            ImGui::InputText("fichero JSON", config->fichero, 100);
+            ImGui::InputText("Fichero JSON", config->fichero, 100);
         }
         if (config->systemCreationMode == Foundation::Mode::RANDOM)
         {
             ImGui::InputInt("Numero de objetos", &config->numObjects,0,0);
         }
 
-        if (ImGui::BeginCombo("Collision Algorithm", toString(config->collisionAlgorithm)))
+        if (ImGui::BeginCombo("Algoritmo de deteccion de colision", toString(config->collisionAlgorithm)))
         {
             for (int i = 0; i <= 1; i++)
             {
@@ -127,7 +127,7 @@ namespace Application
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Solver Algorithm", toString(config->SolverAlgorithm)))
+        if (ImGui::BeginCombo("Algoritmo de resolucion", toString(config->SolverAlgorithm)))
         {
             for (int i = 0; i <= 1; i++)
             {

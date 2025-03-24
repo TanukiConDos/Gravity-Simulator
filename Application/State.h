@@ -99,6 +99,8 @@ namespace Application
 	class State
 	{
 	public:
+
+		virtual ~State() = default;
 		/**
 		 * @brief Constructor que inicializa el estado con el contexto de la máquina de estados.
 		 * @param context Puntero compartido al objeto StateMachine.

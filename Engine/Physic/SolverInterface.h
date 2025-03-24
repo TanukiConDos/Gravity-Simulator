@@ -22,6 +22,9 @@ namespace Engine::Physic
 	class SolverInterface
 	{
 	public:
+
+		virtual ~SolverInterface() = default;
+
 		/**
 		 * @brief Resuelve la simulación física.
 		 *
@@ -31,6 +34,6 @@ namespace Engine::Physic
 		 * @param deltaTime Intervalo de tiempo transcurrido.
 		 * @param objects Puntero compartido a un vector de objetos físicos a resolver.
 		 */
-		virtual void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
+		virtual void solve(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects) = 0;
 	};
 }

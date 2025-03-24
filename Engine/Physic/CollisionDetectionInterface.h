@@ -23,6 +23,9 @@ namespace Engine::Physic
 	class CollisionDetectionInterface
 	{
 	public:
+
+		virtual ~CollisionDetectionInterface() = default;
+
 		/**
 		 * @brief Detecta colisiones entre objetos físicos.
 		 *
@@ -33,6 +36,6 @@ namespace Engine::Physic
 		 * @param deltaTime Intervalo de tiempo transcurrido.
 		 * @param objects Puntero compartido a un vector de objetos físicos a evaluar.
 		 */
-		virtual void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects);
+		virtual void detection(float deltaTime, std::shared_ptr<std::vector<PhysicObject>> objects) = 0;
 	};
 }
