@@ -41,7 +41,7 @@ namespace Engine::Physic
 			* @brief Aplica el algoritmo Barnes-Hut para la simulación de fuerzas.
 			* @param deltaTime Intervalo de tiempo transcurrido.
 			*/
-		void barnesHut(float deltaTime);
+		glm::vec3 barnesHut(int objectId, float deltaTime);
 			
 		/**
 			* @brief Calcula la masa total en cada nodo del árbol.
@@ -51,17 +51,17 @@ namespace Engine::Physic
 		/**
 			* @brief Verifica y gestiona colisiones entre objetos.
 			*/
-		void checkCollisions();
+		std::vector<int> checkCollisions(int objectId);
 			
 		/**
 			* @brief Actualiza el árbol y sus elementos.
 			*/
-		void update();
+		void update(float tickTime);
 	private:
 		/// Colección de objetos físicos.
 		std::shared_ptr<std::vector<PhysicObject>> _objects;
 		/// Contador de ticks.
-		int _ticks = 0;
+		float _tickTime = 0;
 
 		/**
 			* @struct ObjectStruct
@@ -144,9 +144,9 @@ namespace Engine::Physic
 		/// Puntero a la raíz del árbol octal.
 		Node* _root;
 		/// Arena de asignación para nodos.
-		Foundation::Arena<Node> _arenaNode = Foundation::Arena<Node>(10000);
+		Foundation::Arena<Node> _arenaNode = Foundation::Arena<Node>(37449);
 		/// Arena de asignación para estructuras de objetos.
-		Foundation::Arena<ObjectStruct> _arenaObject = Foundation::Arena<ObjectStruct>(40000);
+		Foundation::Arena<ObjectStruct> _arenaObject = Foundation::Arena<ObjectStruct>(37449);
 			
 		/**
 			* @brief Inserta los objetos en el árbol octal.

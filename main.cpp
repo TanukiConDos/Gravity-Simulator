@@ -10,9 +10,6 @@
 
 int main()
 {
-#if  not _DEBUG
-	FreeConsole();
-#endif
 
     Application::GravitySimulator app{};
 

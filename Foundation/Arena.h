@@ -85,7 +85,8 @@ namespace Foundation
 			 */
 			T* alloc(int num)
 			{
-				if (_count == _capacity)
+				_count+=num;
+				if (_count >= _capacity)
 				{
 					if (_next == nullptr)
 					{
@@ -98,7 +99,7 @@ namespace Foundation
 				}
 				T* aux = _last;
 				_last += num;
-				_count++;
+				
 				return aux;
 			}
 
