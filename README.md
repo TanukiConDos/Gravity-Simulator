@@ -10,6 +10,7 @@ Las herramientas utilizadas para el desarrollo de este proyecto son las siguient
 - [GLM](https://glm.g-truc.net): Biblioteca de matemáticas para gráficos en 3D.
 - [ImGui](https://github.com/ocornut/imgui): Biblioteca para la creación de interfaces de usuario.
 - [json](https://json.nlohmann.me/): Biblioteca para el manejo de archivos JSON.
+- [EnkiTS](https://github.com/dougbinks/enkiTS): Biblioteca para la gestión de tareas y hilos.
 
 ## Instalación
 Descarga el zip de la última versión del proyecto desde la página de [releases]() y descomprímelo en la carpeta que prefieras.
