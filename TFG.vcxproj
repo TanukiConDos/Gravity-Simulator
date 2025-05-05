@@ -104,7 +104,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\glfw-3.4\include;C:\VulkanSDK\1.4.304.1\Include;C:\VulkanSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -136,7 +136,7 @@ copy "$(SolutionDir)imgui.ini" "$(TargetDir)imgui.ini</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\glfw-3.4\include;C:\VulkanSDK\1.4.304.1\Include;C:\VulkanSDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -167,6 +167,7 @@ copy "$(SolutionDir)imgui.ini" "$(TargetDir)imgui.ini</Command>
   <ItemGroup>
     <ClCompile Include="Application\GravitySimulator.cpp" />
     <ClCompile Include="Application\Window.cpp" />
+    <ClCompile Include="External\enkiTS\TaskScheduler.cpp" />
     <ClCompile Include="Foundation\Config.cpp" />
     <ClCompile Include="Engine\Graphic\Buffer.cpp" />
     <ClCompile Include="Engine\Graphic\Camera.cpp" />
@@ -204,6 +205,8 @@ copy "$(SolutionDir)imgui.ini" "$(TargetDir)imgui.ini</Command>
   <ItemGroup>
     <ClInclude Include="Application\GravitySimulator.h" />
     <ClInclude Include="Application\Window.h" />
+    <ClInclude Include="External\enkiTS\LockLessMultiReadPipe.h" />
+    <ClInclude Include="External\enkiTS\TaskScheduler.h" />
     <ClInclude Include="Foundation\Arena.h" />
     <ClInclude Include="External\json\json.hpp" />
     <ClInclude Include="Foundation\Config.h" />

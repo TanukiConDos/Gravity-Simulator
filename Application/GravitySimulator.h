@@ -13,6 +13,7 @@
 #include "Window.h"
 #include "../Engine/Graphic/Renderer.h"
 #include "../Engine/Physic/PhysicSystem.h"
+#include "../External/enkiTS/TaskScheduler.h"
 
 /**
  * @namespace Application
@@ -72,10 +73,25 @@ namespace Application
         Engine::Physic::PhysicSystem _physicSystem;
         /// Máquina de estados para gestionar el flujo de la simulación.
         std::shared_ptr<StateMachine> _stateMachine = StateMachine::getStateMachine();
+
+        /// Scheduler para la gestión de tareas en paralelo.
+		enki::TaskScheduler _taskScheduler;
         /// Tiempo transcurrido para cada frame.
         float _frameTime = 0;
         /// Tiempo de tick del sistema.
         float _tickTime = 0;
+        /// Simulacion en proceso de terminar.
+		bool _end = false;
+
+        /// Simulacion en proceso de iniciarse.
+        bool _start = false;
+		/// Simulacion esta terminando.
+		std::condition_variable _endSync;
+        /// Simulacion esta empezando.
+        std::condition_variable _startSync;
+        /// Mutex para la sincronización de hilos.
+		std::mutex _startMutex;
+        std::mutex _endMutex;
     };
 
 } // namespace Application

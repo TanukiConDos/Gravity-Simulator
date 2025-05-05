@@ -22,6 +22,8 @@ namespace Engine::Graphic
 
 	void Renderer::drawFrame()
 	{
+		_time += *_frameTime;
+		_time = _time > 1000 ? _time - 1000 : _time;
 		VkResult result = _swapChain.adquireNextImage(_currentFrame);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			_swapChain.recreateSwapChain();
@@ -42,7 +44,7 @@ namespace Engine::Graphic
 		_imGui.startFrame();
 		for (int i = 0; i < _gameObjects.size(); i++)
 		{
-			_gameObjects[i].updateModel(_physicObjects->at(i));
+			_gameObjects[i].updateModel(_physicObjects->at(i), _time);
 			_camera.transform(_gameObjects[i]);
 			_descriptorPool->updateUniformBuffer(_gameObjects[i], _currentFrame,i);
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline.getPipelineLayout(), 0, 1, _descriptorPool->getDescriptorSets(_currentFrame,i), 0, nullptr);

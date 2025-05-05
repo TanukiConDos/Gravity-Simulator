@@ -15,10 +15,14 @@ namespace Application
         _renderer = std::make_unique<Engine::Graphic::Renderer>(_window, _objects, &_frameTime, &_tickTime);
         _stateMachine->_sub = this;
         _window.attachCameraToEvent(_renderer->getCamera());
+        enki::TaskSchedulerConfig config;
+		config.numTaskThreadsToCreate = 2;
+        _taskScheduler.Initialize(config);
     }
 
     void GravitySimulator::initSimulation()
     {
+
         auto config = Foundation::Config::getConfig();
         switch (config->systemCreationMode)
         {
@@ -38,7 +42,7 @@ namespace Application
             std::uniform_real_distribution distrib(0.0f, 1.0f);
             nlohmann::json j = nlohmann::json{ };
 
-            _objects->emplace_back(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f);
+            _objects->emplace_back(glm::vec3{0,0,0}, glm::vec3{0,0,0}, 6e27f, 12371e3f);
             _objects->emplace_back(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f);
             for (int i = 0; i < config->numObjects; i++)
             {
@@ -101,37 +105,75 @@ namespace Application
 
         _physicSystem = Engine::Physic::PhysicSystem{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };
         _renderer->updateObjects();
+		_start = false;
     }
 
     void GravitySimulator::endSimulation()
     {
+		
+        std::unique_lock lk(_endMutex);
+        _end = true;
+		_endSync.wait(lk);
         _objects->clear();
         _renderer->updateObjects();
         _physicSystem = Engine::Physic::PhysicSystem();
+		_end = false;
+		lk.unlock();
+		_endSync.notify_one();
     }
 
 
     void GravitySimulator::run()
     {
         
-        Foundation::Timers* timers = Foundation::Timers::getTimers();
-        float elapsed_time_ms = 0;
+        
+		bool exit = false;
+        enki::TaskSet physicsTask(1, [&exit, this](enki::TaskSetPartition range_, uint32_t threadnum_)
+            {
+                Foundation::Timers* timers = Foundation::Timers::getTimers();
+
+                while (!exit)
+                {
+                    timers->setTimer(Foundation::Timer::TICK, true);
+                    _physicSystem.update(_tickTime, _objects);
+                    timers->setTimer(Foundation::Timer::TICK, false);
+                    _tickTime = timers->getElapsedTime(Foundation::Timer::TICK);
+                    if (_end)
+                    {
+						_endSync.notify_one();
+                        std::unique_lock lk(_endMutex);
+						_endSync.wait_for(lk,std::chrono::milliseconds(100));
+						lk.unlock();
+                    }
+
+                }
+            }
+        );
+        enki::TaskSet graphicsTask( 1, [&exit,this](enki::TaskSetPartition range_, uint32_t threadnum_)
+            {
+
+                Foundation::Timers* timers = Foundation::Timers::getTimers();
+                
+                while (!exit)
+                {
+                    timers->setTimer(Foundation::Timer::FRAME, true);
+                    _renderer->drawFrame();
+                    timers->setTimer(Foundation::Timer::FRAME, false);
+                    _frameTime = timers->getElapsedTime(Foundation::Timer::FRAME);
+                    
+                }
+                _renderer->wait();
+            }
+        );
+
+		_taskScheduler.AddTaskSetToPipe(&physicsTask);
+		_taskScheduler.AddTaskSetToPipe(&graphicsTask);
         while (!glfwWindowShouldClose(_window.getWindow())) {
             glfwPollEvents();
-            timers->setTimer(Foundation::Timer::TICK, true);
-            _physicSystem.update(elapsed_time_ms,_objects);
-            timers->setTimer(Foundation::Timer::TICK, false);
-
-            timers->setTimer(Foundation::Timer::FRAME, true);
-            _renderer->drawFrame();
-            timers->setTimer(Foundation::Timer::FRAME, false);
-
-            _frameTime = timers->getElapsedTime(Foundation::Timer::FRAME);
-            _tickTime = timers->getElapsedTime(Foundation::Timer::TICK);
-            elapsed_time_ms = _frameTime + _tickTime;
         }
-
-        _renderer->wait();
+		exit = true;
+		_taskScheduler.WaitforAll();
+        
     }
     
 }

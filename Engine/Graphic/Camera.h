@@ -68,9 +68,9 @@ namespace Engine::Graphic
 		/// Referencia al SwapChain, se usa para obtener las dimensiones de la ventana para la proyección.
 		SwapChain& _swapchain;
 		/// Posición de la cámara.
-		glm::vec3 _pos = { 0.0f, 0.0f, 4500.0f };
+		glm::vec3 _pos = { 0.0f, 0.0f, -4500.0f };
 		/// Vector de dirección hacia donde mira la cámara.
-		glm::vec3 _dir = glm::normalize(glm::vec3{0.0f, 0.0f, -1.0f});
+		glm::vec3 _dir = glm::normalize(glm::vec3{0.0f, 0.0f, 1.0f});
 		/// Vector que apunta hacia la izquierda de la cámara.
 		glm::vec3 _left = glm::normalize(glm::cross(glm::vec3{ 0.0f, 1.0f, 0.0f }, _dir));
 		/// Vector que apunta hacia arriba en la orientación de la cámara.

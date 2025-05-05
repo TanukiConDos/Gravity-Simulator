@@ -14,7 +14,7 @@
 namespace Engine::Graphic
 {
 	/// Número máximo de frames en vuelo.
-	const int MAX_FRAMES_IN_FLIGHT = 2;
+	const int MAX_FRAMES_IN_FLIGHT = 1;
 
 	/**
 		* @struct QueueFamilyIndices
@@ -69,9 +69,11 @@ namespace Engine::Graphic
 			*
 			* @param object Objeto físico del cual se extraen los datos.
 			*/
-		void updateModel(const Physic::PhysicObject& object)
+		void updateModel(const Physic::PhysicObject& object,float deltaTime)
 		{
+			float angle = 360 * deltaTime / 1000;
 			this->model = glm::translate(glm::mat4(1.0f), object._position * 0.00001f) *
+				glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0)) *
 				glm::scale(glm::mat4(1.0f), glm::vec3(object._radius * 0.00001f,
 					                                        object._radius * 0.00001f,
 					                                        object._radius * 0.00001f));

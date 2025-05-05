@@ -91,6 +91,8 @@ namespace Engine::Graphic
 		float* _frameTime;
 		/// Puntero al tiempo de tick.
 		float* _tickTime;
+		/// tiempo acumulado para la actualización de objetos.
+		float _time = 0.0f;
 		/// Interfaz de usuario ImGui para herramientas y depuración.
 		ImGUIWindow _imGui = ImGUIWindow{ _window, _gpu, _swapChain, _pipeline, _gpu.getInstance(), _frameTime, _tickTime };
 		/// Cámara utilizada para la visualización de la escena.
