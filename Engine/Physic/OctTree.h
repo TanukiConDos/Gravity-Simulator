@@ -41,7 +41,7 @@ namespace Engine::Physic
 			* @brief Aplica el algoritmo Barnes-Hut para la simulación de fuerzas.
 			* @param deltaTime Intervalo de tiempo transcurrido.
 			*/
-		glm::vec3 barnesHut(int objectId, float deltaTime);
+		glm::vec3 barnesHut(int objectId);
 			
 		/**
 			* @brief Calcula la masa total en cada nodo del árbol.

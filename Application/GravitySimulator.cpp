@@ -105,7 +105,6 @@ namespace Application
 
         _physicSystem = Engine::Physic::PhysicSystem{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };
         _renderer->updateObjects();
-		_start = false;
     }
 
     void GravitySimulator::endSimulation()
@@ -113,13 +112,14 @@ namespace Application
 		
         std::unique_lock lk(_endMutex);
         _end = true;
-		_endSync.wait(lk);
+        _endSync.wait(lk, [this]() {return _ended; });
         _objects->clear();
         _renderer->updateObjects();
+        _renderer->getCamera()->reset();
         _physicSystem = Engine::Physic::PhysicSystem();
-		_end = false;
-		lk.unlock();
-		_endSync.notify_one();
+        _end = false;
+		_endedSync.notify_one();
+        
     }
 
 
@@ -140,12 +140,13 @@ namespace Application
                     _tickTime = timers->getElapsedTime(Foundation::Timer::TICK);
                     if (_end)
                     {
+                        std::unique_lock lk(_endedMutex);
+                        _ended = true;
 						_endSync.notify_one();
-                        std::unique_lock lk(_endMutex);
-						_endSync.wait_for(lk,std::chrono::milliseconds(100));
-						lk.unlock();
-                    }
+                        
+                        _endedSync.wait(lk, [this]() { return !_end; });
 
+                    }
                 }
             }
         );

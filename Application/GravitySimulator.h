@@ -83,15 +83,18 @@ namespace Application
         /// Simulacion en proceso de terminar.
 		bool _end = false;
 
-        /// Simulacion en proceso de iniciarse.
-        bool _start = false;
+        /// Simulacion terminada.
+        bool _ended = false;
 		/// Simulacion esta terminando.
 		std::condition_variable _endSync;
-        /// Simulacion esta empezando.
-        std::condition_variable _startSync;
-        /// Mutex para la sincronización de hilos.
-		std::mutex _startMutex;
+		/// Simulacion ha terminando.
+        std::condition_variable _endedSync;
+		/// Mutex para la sincronización de finalización.
         std::mutex _endMutex;
+		/// Mutex para la sincronización de finalización.
+        std::mutex _endedMutex;
+
+
     };
 
 } // namespace Application

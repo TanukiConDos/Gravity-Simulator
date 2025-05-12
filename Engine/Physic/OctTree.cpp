@@ -13,7 +13,7 @@ namespace Engine::Physic
 		if(Foundation::Config::getConfig()->SolverAlgorithm == Foundation::Algorithm::OCTREE) massCalculation();
 	}
 
-	glm::vec3 OctTree::barnesHut(int objectId,float deltaTime)
+	glm::vec3 OctTree::barnesHut(int objectId)
 	{
 		
 		const PhysicObject* object = &_objects->at(objectId);

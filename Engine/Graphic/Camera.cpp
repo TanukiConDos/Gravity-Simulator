@@ -28,5 +28,13 @@ namespace Engine::Graphic
 		_left = glm::normalize(glm::cross(glm::vec3{ 0.0f, 1.0f, 0.0f }, _dir));
 		_view = glm::lookAt(_pos, _pos + _dir, glm::vec3{ 0.0f, 1.0f, 0.0f });
 	}
+	void Camera::reset()
+	{
+		_pos = { 0.0f, 0.0f, -4500.0f };
+		_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 1.0f });
+		_left = glm::normalize(glm::cross(glm::vec3{ 0.0f, 1.0f, 0.0f }, _dir));
+		_up = glm::cross(_dir, _left);
+		_view = glm::lookAt(_pos, _pos + _dir, glm::vec3{ 0.0f, 1.0f, 0.0f });
+	}
 }
 

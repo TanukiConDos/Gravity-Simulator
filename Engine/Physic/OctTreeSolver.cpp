@@ -5,7 +5,7 @@ void Engine::Physic::OctTreeSolver::solve(float deltaTime, std::shared_ptr<std::
 	_tree->update(deltaTime);
 	for (int objectId = 0; objectId < objects->size(); objectId++)
 	{
-		glm::vec3 force = _tree->barnesHut(objectId, deltaTime);
+		glm::vec3 force = _tree->barnesHut(objectId);
 		objects->at(objectId).update(deltaTime,force);
 	}
 }

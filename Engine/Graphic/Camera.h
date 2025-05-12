@@ -64,6 +64,10 @@ namespace Engine::Graphic
 			* @param vertical true para una rotación vertical; false para horizontal.
 			*/
 		void rotate(float degrees, bool vertical);
+		/**
+		*@brief Reinicia la posición y orientación de la cámara a sus valores predeterminados.
+		*/
+		void reset();
 	private:
 		/// Referencia al SwapChain, se usa para obtener las dimensiones de la ventana para la proyección.
 		SwapChain& _swapchain;
