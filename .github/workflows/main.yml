@@ -18,24 +18,10 @@ jobs:
       - name: Set up Visual Studio environment
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Install vcpkg and the GLM library.
-      - name: Setup vcpkg and install GLM
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgArguments: 'install glm'
-        env:
-          VCPKG_DEFAULT_TRIPLET: x64-windows
-
-      # (Optional) Display vcpkg environment variables for debugging.
-      - name: Show vcpkg Environment
-        run: |
-          echo "VCPKG_ROOT: $env:VCPKG_ROOT"
-          echo "VCPKG_DEFAULT_TRIPLET: $env:VCPKG_DEFAULT_TRIPLET"
-
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
       - name: Build Solution
-        run: msbuild $(System.DefaultWorkingDirectory)\Tests.vcxproj /p:Configuration=Tests /p:Platform="x64" /p:AdditionalIncludeDirectories="$(VCPKG_ROOT)\installed\$(VCPKG_DEFAULT_TRIPLET)\include;%(AdditionalIncludeDirectories)" /p:PreBuildEvent=""
+        run: msbuild $(System.DefaultWorkingDirectory)\Tests.vcxproj /p:Configuration=Tests /p:Platform="x64" /p:PreBuildEvent=""
       
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
