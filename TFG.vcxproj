@@ -163,7 +163,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PreBuildEvent>
-      <Command>$(projectdir)Engine\graphic\shader\compilar.bat</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>mkdir "$(TargetDir)Engine\Graphic\shader"
