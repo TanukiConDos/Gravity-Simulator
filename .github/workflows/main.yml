@@ -24,7 +24,7 @@ jobs:
       - name: Copy Google Test Adapter
         run: |
           $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$adapterPath\lib\net45\GoogleTestAdapter.TestAdapter.dll" -Destination "Tests\x64\Debug\"
+          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.TestAdapter.dll" -Destination "Tests\x64\Debug\"
       
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
