@@ -20,17 +20,16 @@ jobs:
 
       - name: Install Google Test Adapter
         run: nuget install GoogleTestAdapter -Version 0.18.0 -OutputDirectory packages
-
-      - name: Copy Google Test Adapter
-        run: |
-          $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.TestAdapter.dll" -Destination "Tests\x64\Debug\"
       
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
       - name: Build Solution
         run: msbuild Tests\Tests.vcxproj /p:BuildProjectReferences=false /p:Configuration=Debug /p:Platform="x64" /p:PreBuildEvent=
       
+      - name: Copy Google Test Adapter
+        run: |
+          $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
+          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.TestAdapter.dll" -Destination "Tests\x64\Debug\"
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
         run: |
