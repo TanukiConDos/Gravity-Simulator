@@ -19,7 +19,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install Google Test Adapter
-        run: nuget install GoogleTestAdapter -Version 0.18.1 -OutputDirectory packages
+        run: nuget install GoogleTestAdapter -Version 0.18.0 -OutputDirectory packages
 
       - name: Copy Google Test Adapter
         run: |
