@@ -55,4 +55,5 @@ Una vez configurada la simulación podemos pulsar en iniciar simulación. Esto n
    A continuación, ve a `Propiedades de la solución -> Configuración de propiedades -> Vinculador -> Directorios de bibliotecas adicionales` y añade las rutas a las carpetas lib de las librerías.
 
    Ya puedes compilar el proyecto y ejecutarlo.
+
    Para la ejecución de los test se debe añadir la ruta de la librería GLM a los directorios de inclusión adicionales siguiendo el mismo procedimiento que antes en el projecto de test.
