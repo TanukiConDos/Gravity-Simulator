@@ -21,7 +21,7 @@ jobs:
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
       - name: Build Solution
-        run: msbuild $(System.DefaultWorkingDirectory)\Tests.vcxproj /p:Configuration=Tests /p:Platform="x64" /p:PreBuildEvent=""
+        run: msbuild Tests\Tests.vcxproj /p:Configuration=Tests /p:Platform="x64" /p:PreBuildEvent=""
       
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
