@@ -5,7 +5,7 @@
  */
 
 #pragma once
-#include <glm/glm.hpp>
+#include "../../External/glm/glm.hpp"
 #include "../../External/json/json.hpp"
 
 namespace Engine::Physic

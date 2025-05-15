@@ -5,7 +5,7 @@
 
 #pragma once
 #include "SwapChain.h"
-#include <glm/glm.hpp>
+#include "../../External/glm/glm.hpp"
 
 namespace Engine::Graphic
 {

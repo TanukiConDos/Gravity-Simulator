@@ -5,8 +5,8 @@
 
 #pragma once
 #include <vulkan/vulkan.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "../../External/glm/glm.hpp"
+#include <../../External/glm/gtc/matrix_transform.hpp>
 #include <optional>
 #include <vector>
 #include "../Physic/PhysicObject.h"

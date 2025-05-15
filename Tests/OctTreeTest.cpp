@@ -2,7 +2,7 @@
 #include "../Engine/Physic/OctTree.h"
 #include "../Engine/Physic/PhysicSystem.h"
 #include "../Engine/Physic/PhysicObject.h"
-#include <glm/vec3.hpp>
+#include "../External/glm/vec3.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>

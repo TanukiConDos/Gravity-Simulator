@@ -1,6 +1,6 @@
 #include "input.h"
 #include "../Engine/Graphic/Camera.h"
-#include <glm/glm.hpp>
+#include "../../External/glm/glm.hpp"
 
 void Application::InputEvent::submit(InputAction action)
 {
