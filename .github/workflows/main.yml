@@ -1,12 +1,10 @@
-name: Windows Visual Studio CI with GoogleTest
+name: Windows Visual Studio CI with Google Test, GLM & vcpkg Integration
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
@@ -16,16 +14,32 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Set up the Visual Studio developer command prompt.
+      # Set up the Visual Studio Developer Command Prompt.
       - name: Set up Visual Studio environment
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Build the solution using MSBuild for the Debug configuration and x64 platform.
-      - name: Build Solution
-        run: msbuild TFG.sln /p:Configuration=Tests /p:Platform="x64"
+      # Install vcpkg and the GLM library.
+      - name: Setup vcpkg and install GLM
+        uses: lukka/get-vcpkg@v10
+        with:
+          vcpkgArguments: 'install glm'
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows
 
-      # Run tests by invoking vstest.console.exe on the test executable.
+      # (Optional) Display vcpkg environment variables for debugging.
+      - name: Show vcpkg Environment
+        run: |
+          echo "VCPKG_ROOT: $env:VCPKG_ROOT"
+          echo "VCPKG_DEFAULT_TRIPLET: $env:VCPKG_DEFAULT_TRIPLET"
+
+      # Build your Visual Studio solution.
+      # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
+      - name: Build Solution
+        run: msbuild $(System.DefaultWorkingDirectory)\Tests.vcxproj /p:Configuration=Tests /p:Platform="x64" /p:AdditionalIncludeDirectories="$(VCPKG_ROOT)\installed\$(VCPKG_DEFAULT_TRIPLET)\include;%(AdditionalIncludeDirectories)"
+      
+      # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "$(System.DefaultWorkingDirectory)\x64\Tests\Tests.exe" --logger:trx
+          vstest.console.exe "$(System.DefaultWorkingDirectory)\MyTestProject\x64\Tests\Tests.exe" --logger:trx
+
