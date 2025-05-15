@@ -1,4 +1,5 @@
 .vs
 lib
 x64
+!packages/**
 TFG
