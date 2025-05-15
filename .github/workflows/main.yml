@@ -1,0 +1,31 @@
+name: Windows Visual Studio CI with GoogleTest
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Set up the Visual Studio developer command prompt.
+      - name: Set up Visual Studio environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # Build the solution using MSBuild for the Debug configuration and x64 platform.
+      - name: Build Solution
+        run: msbuild TFG.sln /p:Configuration=Debug /p:Platform="x64"
+
+      # Run tests by invoking vstest.console.exe on the test executable.
+      - name: Run GoogleTest Unit Tests
+        run: |
+          echo "Running Google Test unit tests..."
+          vstest.console.exe "$(System.DefaultWorkingDirectory)\x64\Debug\Tests.exe" --logger:trx
