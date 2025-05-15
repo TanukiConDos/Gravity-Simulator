@@ -181,7 +181,8 @@ namespace Engine::Graphic
 				.basePipelineHandle = VK_NULL_HANDLE,
 				.basePipelineIndex = -1
 			};
-		} _pipelineConfig;
+		};
+		PipelineConfig _pipelineConfig;
 
 		/**
 			* @brief Crea un módulo de shader a partir del código proporcionado.
