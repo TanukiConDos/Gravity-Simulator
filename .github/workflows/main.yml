@@ -22,10 +22,10 @@ jobs:
 
       # Build the solution using MSBuild for the Debug configuration and x64 platform.
       - name: Build Solution
-        run: msbuild TFG.sln /p:Configuration=Debug /p:Platform="x64"
+        run: msbuild TFG.sln /p:Configuration=Tests /p:Platform="x64"
 
       # Run tests by invoking vstest.console.exe on the test executable.
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "$(System.DefaultWorkingDirectory)\x64\Debug\Tests.exe" --logger:trx
+          vstest.console.exe "$(System.DefaultWorkingDirectory)\x64\Tests\Tests.exe" --logger:trx
