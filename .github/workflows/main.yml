@@ -20,7 +20,7 @@ jobs:
 
       # Install vcpkg and the GLM library.
       - name: Setup vcpkg and install GLM
-        uses: lukka/get-vcpkg@v10
+        uses: lukka/run-vcpkg@v11
         with:
           vcpkgArguments: 'install glm'
         env:
