@@ -18,6 +18,14 @@ jobs:
       - name: Set up Visual Studio environment
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Install Google Test Adapter
+        run: nuget install GoogleTestAdapter -Version 0.18.1 -OutputDirectory packages
+
+      - name: Copy Google Test Adapter
+        run: |
+          $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
+          Copy-Item "$adapterPath\lib\net45\GoogleTestAdapter.TestAdapter.dll" -Destination "Tests\x64\Debug\"
+      
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
       - name: Build Solution
@@ -27,5 +35,5 @@ jobs:
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "Tests\x64\Debug\Tests.exe" --logger:trx
+          vstest.console.exe "Tests\x64\Debug\Tests.exe" /TestAdapterPath:"Tests\x64\Debug\" --logger:trx
 
