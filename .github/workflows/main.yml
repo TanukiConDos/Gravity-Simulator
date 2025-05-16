@@ -39,8 +39,8 @@ jobs:
         continue-on-error: true
 
       # Using the trx-parser action
-      - name: Parse Trx files
-        uses: NasAmin/trx-parser@v0.1
+      - name: trx-parser
+        uses: NasAmin/trx-parser@v0.6.0
         id: trx-parser
         with:
           TRX_PATH: TestResults #This should be the path to your TRX files
