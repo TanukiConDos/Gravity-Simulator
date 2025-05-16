@@ -39,9 +39,9 @@ jobs:
         continue-on-error: true
 
       # Using the trx-parser action
-      - name: trx-parser
-        uses: NasAmin/trx-parser@v0.6.0
-        id: trx-parser
+      - uses: dorny/test-reporter@v2
         with:
-          TRX_PATH: TestResults #This should be the path to your TRX files
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          artifact: test-results            # artifact name
+          name: Tests                  # Name of the check run which will be created
+          path: 'TestResults/*.trx'                     # Path to test results
+          reporter: dotnet-trx              # Format of test results
