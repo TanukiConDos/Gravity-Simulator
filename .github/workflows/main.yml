@@ -30,8 +30,8 @@ jobs:
         run: |
           $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
           Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.*" -Destination "Tests\x64\Release\"
-          Copy-Item "$adapterPath\build\_common\x64\msdia140.dll" -Destination "Tests\x64\Debug\"
-          regsvr32 /s "Tests\x64\Debug\msdia140.dll"
+          Copy-Item "$adapterPath\build\_common\x64\msdia140.dll" -Destination "Tests\x64\Release\"
+          regsvr32 /s "Tests\x64\Release\msdia140.dll"
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
         run: |
