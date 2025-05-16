@@ -17,12 +17,6 @@ jobs:
       # Set up the Visual Studio Developer Command Prompt.
       - name: Set up Visual Studio environment
         uses: ilammy/msvc-dev-cmd@v1
-
-      # Install Windows Debugging Tools (includes msdia.dll)
-      - name: Install Windows Debugging Tools
-        run: |
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?linkid=2196241" -OutFile winsdksetup.exe
-          .\winsdksetup.exe /features OptionId.WindowsDesktopDebuggers /quiet /norestart
       
       - name: Install Google Test Adapter
         run: nuget install GoogleTestAdapter -Version 0.18.0 -OutputDirectory packages
@@ -30,16 +24,24 @@ jobs:
       # Build your Visual Studio solution.
       # The /p:AdditionalIncludeDirectories parameter injects the vcpkg-installed GLM include directory.
       - name: Build Solution
-        run: msbuild Tests\Tests.vcxproj /p:BuildProjectReferences=false /p:Configuration=Release /p:Platform="x64" /p:PreBuildEvent=
+        run: msbuild Tests\Tests.vcxproj /p:BuildProjectReferences=false /p:Configuration=Debug /p:Platform="x64" /p:PreBuildEvent=
       
       - name: Copy Google Test Adapter
         run: |
           $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.*" -Destination "Tests\x64\Release\"
+          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.*" -Destination "Tests\x64\Debug\"
           
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "Tests\x64\Release\Tests.exe" /TestAdapterPath:"Tests\x64\Release\" /Platform:x64 --logger:trx
+          vstest.console.exe "Tests\x64\Debug\Tests.exe" /TestAdapterPath:"Tests\x64\Debug\" /Platform:x64 --logger:trx
         continue-on-error: true
+
+      # Using the trx-parser action
+      - name: Parse Trx files
+        uses: NasAmin/trx-parser@v0.1
+        id: trx-parser
+        with:
+          TRX_PATH: TestResults #This should be the path to your TRX files
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
