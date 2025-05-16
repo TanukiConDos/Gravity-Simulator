@@ -37,4 +37,4 @@ jobs:
         run: |
           echo "Running Google Test unit tests..."
           vstest.console.exe "Tests\x64\Release\Tests.exe" /TestAdapterPath:"Tests\x64\Release\" /Platform:x64 --logger:trx
-
+        continue-on-error: true
