@@ -29,10 +29,10 @@ jobs:
       - name: Copy Google Test Adapter
         run: |
           $adapterPath = (Get-ChildItem -Path "packages/GoogleTestAdapter.*" -Directory | Select-Object -First 1).FullName
-          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.*" -Destination "Tests\x64\Debug\"
+          Copy-Item "$adapterPath\build\_common\GoogleTestAdapter.*" -Destination "Tests\x64\Release\"
       # Run tests using Visual Studio’s test runner.
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "Tests\x64\Debug\Tests.exe" /TestAdapterPath:"Tests\x64\Debug\" --logger:trx
+          vstest.console.exe "Tests\x64\Release\Tests.exe" /TestAdapterPath:"Tests\x64\Release\" --logger:trx
 
