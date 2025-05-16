@@ -35,7 +35,7 @@ jobs:
       - name: Run GoogleTest Unit Tests
         run: |
           echo "Running Google Test unit tests..."
-          vstest.console.exe "Tests\x64\Debug\Tests.exe" /TestAdapterPath:"Tests\x64\Debug\" /Platform:x64 --logger:trx;LogFileName=test-results.trx
+          vstest.console.exe "Tests\x64\Debug\Tests.exe" /TestAdapterPath:"Tests\x64\Debug\" /Platform:x64 /logger:"trx;LogFileName=test-results.trx"
         continue-on-error: true
 
       # Using the trx-parser action
