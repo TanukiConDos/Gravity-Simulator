@@ -59,7 +59,7 @@ namespace Application
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-       _window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+       _window = glfwCreateWindow(width, height, "Gravity Simulation", nullptr, nullptr);
 
         glfwSetWindowUserPointer(_window, this);
         glfwSetFramebufferSizeCallback(_window, framebufferResizeCallback);
