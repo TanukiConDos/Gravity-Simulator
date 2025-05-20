@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,7 +111,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_physic_object.html',''); i
 </div><!--header-->
 <div class="contents">
 
-<p>Representa un objeto f�sico en la simulaci�n.  
+<p>Representa un objeto físico en la simulación.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>&gt;</code></p>
@@ -119,28 +119,28 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_physic_object.html',''); i
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Métodos públicos</h2></td></tr>
 <tr class="memitem:a7b0a123e1a63404f79aab429822ea366" id="r_a7b0a123e1a63404f79aab429822ea366"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7b0a123e1a63404f79aab429822ea366">PhysicObject</a> (glm::vec3 position, glm::vec3 velocity, float mass, float radius)</td></tr>
-<tr class="memdesc:a7b0a123e1a63404f79aab429822ea366"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa un objeto f�sico.  <br /></td></tr>
+<tr class="memdesc:a7b0a123e1a63404f79aab429822ea366"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa un objeto físico.  <br /></td></tr>
 <tr class="separator:a7b0a123e1a63404f79aab429822ea366"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6bdc2995f34d85bfc3ecc4cd7d3995f" id="r_ae6bdc2995f34d85bfc3ecc4cd7d3995f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae6bdc2995f34d85bfc3ecc4cd7d3995f">update</a> (float deltaTime, glm::3 force)</td></tr>
-<tr class="memdesc:ae6bdc2995f34d85bfc3ecc4cd7d3995f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el estado del objeto.  <br /></td></tr>
-<tr class="separator:ae6bdc2995f34d85bfc3ecc4cd7d3995f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72e025ca1fc7a118b49a520394c97c72" id="r_a72e025ca1fc7a118b49a520394c97c72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a72e025ca1fc7a118b49a520394c97c72">update</a> (float deltaTime, glm::vec3 force)</td></tr>
+<tr class="memdesc:a72e025ca1fc7a118b49a520394c97c72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el estado del objeto.  <br /></td></tr>
+<tr class="separator:a72e025ca1fc7a118b49a520394c97c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3d5423aa21b8f09987238bb87bbbeec" id="r_ae3d5423aa21b8f09987238bb87bbbeec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae3d5423aa21b8f09987238bb87bbbeec">collision</a> (<a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &amp;object)</td></tr>
-<tr class="memdesc:ae3d5423aa21b8f09987238bb87bbbeec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gestiona la colisi�n con otro objeto f�sico.  <br /></td></tr>
+<tr class="memdesc:ae3d5423aa21b8f09987238bb87bbbeec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gestiona la colisión con otro objeto físico.  <br /></td></tr>
 <tr class="separator:ae3d5423aa21b8f09987238bb87bbbeec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af204645417e82e51857c2842686441ad" id="r_af204645417e82e51857c2842686441ad"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af204645417e82e51857c2842686441ad">getVelocity</a> ()</td></tr>
-<tr class="memdesc:af204645417e82e51857c2842686441ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la velocidad actual del objeto.  <br /></td></tr>
-<tr class="separator:af204645417e82e51857c2842686441ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87f6cf764d3cd7235d9537a5f73b597f" id="r_a87f6cf764d3cd7235d9537a5f73b597f"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a87f6cf764d3cd7235d9537a5f73b597f">getVelocity</a> () const</td></tr>
+<tr class="memdesc:a87f6cf764d3cd7235d9537a5f73b597f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la velocidad actual del objeto.  <br /></td></tr>
+<tr class="separator:a87f6cf764d3cd7235d9537a5f73b597f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Atributos públicos</h2></td></tr>
 <tr class="memitem:a6e42b9fa3a028da1423f56a7e048d69e" id="r_a6e42b9fa3a028da1423f56a7e048d69e"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6e42b9fa3a028da1423f56a7e048d69e">_position</a></td></tr>
-<tr class="memdesc:a6e42b9fa3a028da1423f56a7e048d69e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posici�n actual del objeto.  <br /></td></tr>
+<tr class="memdesc:a6e42b9fa3a028da1423f56a7e048d69e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posición actual del objeto.  <br /></td></tr>
 <tr class="separator:a6e42b9fa3a028da1423f56a7e048d69e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28954554652dedbc20472f826793d87c" id="r_a28954554652dedbc20472f826793d87c"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a28954554652dedbc20472f826793d87c">_velocity</a></td></tr>
 <tr class="memdesc:a28954554652dedbc20472f826793d87c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Velocidad actual del objeto.  <br /></td></tr>
 <tr class="separator:a28954554652dedbc20472f826793d87c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af49fcb14ff6a3aa2cc269eda6fd75bb4" id="r_af49fcb14ff6a3aa2cc269eda6fd75bb4"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af49fcb14ff6a3aa2cc269eda6fd75bb4">_acceleration</a> = glm::vec3(0.0, 0.0, 0.0)</td></tr>
-<tr class="memdesc:af49fcb14ff6a3aa2cc269eda6fd75bb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Aceleraci�n del objeto (inicialmente 0).  <br /></td></tr>
+<tr class="memdesc:af49fcb14ff6a3aa2cc269eda6fd75bb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Aceleración del objeto (inicialmente 0).  <br /></td></tr>
 <tr class="separator:af49fcb14ff6a3aa2cc269eda6fd75bb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e4ead0b550188e97daba80017ae80ab" id="r_a4e4ead0b550188e97daba80017ae80ab"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4e4ead0b550188e97daba80017ae80ab">_mass</a></td></tr>
 <tr class="memdesc:a4e4ead0b550188e97daba80017ae80ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Masa del objeto.  <br /></td></tr>
@@ -149,14 +149,14 @@ Atributos públicos</h2></td></tr>
 <tr class="memdesc:a6d49d587764a7143e0ef752f92948e65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Radio del objeto.  <br /></td></tr>
 <tr class="separator:a6d49d587764a7143e0ef752f92948e65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa1e52f7fb2a0185932dd9d7dc639b79b" id="r_aa1e52f7fb2a0185932dd9d7dc639b79b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa1e52f7fb2a0185932dd9d7dc639b79b">_selected</a> = false</td></tr>
-<tr class="memdesc:aa1e52f7fb2a0185932dd9d7dc639b79b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indica si el objeto est� seleccionado.  <br /></td></tr>
+<tr class="memdesc:aa1e52f7fb2a0185932dd9d7dc639b79b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indica si el objeto está seleccionado.  <br /></td></tr>
 <tr class="separator:aa1e52f7fb2a0185932dd9d7dc639b79b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Representa un objeto f�sico en la simulaci�n. </p>
-<p>La clase permite actualizar el estado del objeto en funci�n de un intervalo de tiempo y una fuerza aplicada, gestionar colisiones con otros objetos y obtener la velocidad actual. Adem�s, sus datos pueden ser serializados/deserializados a formato JSON. </p>
+<div class="textblock"><p>Representa un objeto físico en la simulación. </p>
+<p>La clase permite actualizar el estado del objeto en función de un intervalo de tiempo y una fuerza aplicada, gestionar colisiones con otros objetos y obtener la velocidad actual. Además, sus datos pueden ser serializados/deserializados a formato JSON. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00022">22</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00020">20</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 </div><h2 class="groupheader">Documentación de constructores y destructores</h2>
 <a id="a7b0a123e1a63404f79aab429822ea366" name="a7b0a123e1a63404f79aab429822ea366"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7b0a123e1a63404f79aab429822ea366">&#9670;&#160;</a></span>PhysicObject()</h2>
@@ -187,10 +187,10 @@ Atributos públicos</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructor que inicializa un objeto f�sico. </p>
+<p>Constructor que inicializa un objeto físico. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">position</td><td>Posici�n inicial del objeto. </td></tr>
+    <tr><td class="paramname">position</td><td>Posición inicial del objeto. </td></tr>
     <tr><td class="paramname">velocity</td><td>Velocidad inicial del objeto. </td></tr>
     <tr><td class="paramname">mass</td><td>Masa del objeto. </td></tr>
     <tr><td class="paramname">radius</td><td>Radio del objeto. </td></tr>
@@ -223,8 +223,8 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Gestiona la colisi�n con otro objeto f�sico. </p>
-<p>Actualiza el estado del objeto en funci�n de la colisi�n ocurrida con otro objeto.</p>
+<p>Gestiona la colisión con otro objeto físico. </p>
+<p>Actualiza el estado del objeto en función de la colisión ocurrida con otro objeto.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">object</td><td>Referencia al objeto con el que se ha colisionado. </td></tr>
@@ -246,8 +246,8 @@ Gráfico de llamadas a esta función:</div>
 
 </div>
 </div>
-<a id="af204645417e82e51857c2842686441ad" name="af204645417e82e51857c2842686441ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af204645417e82e51857c2842686441ad">&#9670;&#160;</a></span>getVelocity()</h2>
+<a id="a87f6cf764d3cd7235d9537a5f73b597f" name="a87f6cf764d3cd7235d9537a5f73b597f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87f6cf764d3cd7235d9537a5f73b597f">&#9670;&#160;</a></span>getVelocity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -259,7 +259,7 @@ Gráfico de llamadas a esta función:</div>
           <td class="memname">float Engine::Physic::PhysicObject::getVelocity </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -273,12 +273,12 @@ Gráfico de llamadas a esta función:</div>
 <p>Calcula y retorna la longitud del vector velocidad.</p>
 <dl class="section return"><dt>Devuelve</dt><dd>float Velocidad del objeto. </dd></dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00061">61</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00059">59</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
-<a id="ae6bdc2995f34d85bfc3ecc4cd7d3995f" name="ae6bdc2995f34d85bfc3ecc4cd7d3995f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae6bdc2995f34d85bfc3ecc4cd7d3995f">&#9670;&#160;</a></span>update()</h2>
+<a id="a72e025ca1fc7a118b49a520394c97c72" name="a72e025ca1fc7a118b49a520394c97c72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a72e025ca1fc7a118b49a520394c97c72">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -291,13 +291,13 @@ Gráfico de llamadas a esta función:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">glm::3</td>          <td class="paramname"><span class="paramname"><em>force</em></span>&#160;)</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>force</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Actualiza el estado del objeto. </p>
-<p>Aplica la fuerza dada durante el intervalo de tiempo especificado para actualizar la posici�n y velocidad.</p>
+<p>Aplica la fuerza dada durante el intervalo de tiempo especificado para actualizar la posición y velocidad.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
@@ -310,12 +310,12 @@ Gráfico de llamadas a esta función:</div>
 <div class="dynheader">
 Gráfico de llamadas de esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_engine_1_1_physic_1_1_physic_object_ae6bdc2995f34d85bfc3ecc4cd7d3995f_cgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_physic_object_ae6bdc2995f34d85bfc3ecc4cd7d3995f_cgraph" alt=""/></div>
+<div class="center"><img src="class_engine_1_1_physic_1_1_physic_object_a72e025ca1fc7a118b49a520394c97c72_cgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_physic_object_a72e025ca1fc7a118b49a520394c97c72_cgraph" alt=""/></div>
 </div>
 <div class="dynheader">
 Gráfico de llamadas a esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_engine_1_1_physic_1_1_physic_object_ae6bdc2995f34d85bfc3ecc4cd7d3995f_icgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_physic_object_ae6bdc2995f34d85bfc3ecc4cd7d3995f_icgraph" alt=""/></div>
+<div class="center"><img src="class_engine_1_1_physic_1_1_physic_object_a72e025ca1fc7a118b49a520394c97c72_icgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_physic_object_a72e025ca1fc7a118b49a520394c97c72_icgraph" alt=""/></div>
 </div>
 
 </div>
@@ -333,9 +333,9 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Aceleraci�n del objeto (inicialmente 0). </p>
+<p>Aceleración del objeto (inicialmente 0). </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00068">68</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00066">66</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
@@ -353,7 +353,7 @@ Gráfico de llamadas a esta función:</div>
 
 <p>Masa del objeto. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00070">70</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00068">68</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
@@ -369,9 +369,9 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Posici�n actual del objeto. </p>
+<p>Posición actual del objeto. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00064">64</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00062">62</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
@@ -389,7 +389,7 @@ Gráfico de llamadas a esta función:</div>
 
 <p>Radio del objeto. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00072">72</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00070">70</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
@@ -405,9 +405,9 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Indica si el objeto est� seleccionado. </p>
+<p>Indica si el objeto está seleccionado. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00074">74</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00072">72</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>
@@ -425,7 +425,7 @@ Gráfico de llamadas a esta función:</div>
 
 <p>Velocidad actual del objeto. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00066">66</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_physic_object_8h_source.html#l00064">64</a> del archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 
 </div>
 </div>

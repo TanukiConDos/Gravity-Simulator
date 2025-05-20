@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['prid64_0',['PRId64',['../imgui__demo_8cpp.html#ae372e90b62c1e8b51dc5d95bf7f5ba48',1,'imgui_demo.cpp']]],
-  ['priu64_1',['PRIu64',['../imgui__demo_8cpp.html#ac582131d7a7c8ee57e73180d1714f9d5',1,'imgui_demo.cpp']]]
+  ['scoped_5ftrace_0',['SCOPED_TRACE',['../gtest_8h.html#a4dac08f15adc8cb1ee0e5c1bfb0f440d',1,'gtest.h']]],
+  ['succeed_1',['SUCCEED',['../gtest_8h.html#a75adcdf89f69b0b615e395daafc315af',1,'gtest.h']]]
 ];

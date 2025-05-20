@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -106,11 +106,11 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_solver_interface.html','')
   <div class="summary">
 <a href="#pub-methods">Métodos públicos</a> &#124;
 <a href="class_engine_1_1_physic_1_1_solver_interface-members.html">Lista de todos los miembros</a>  </div>
-  <div class="headertitle"><div class="title">Referencia de la clase Engine::Physic::SolverInterface</div></div>
+  <div class="headertitle"><div class="title">Referencia de la clase Engine::Physic::SolverInterface<span class="mlabels"><span class="mlabel abstract">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>Interfaz para resolver la simulaci�n f�sica.  
+<p>Interfaz para resolver la simulación física.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_solver_interface_8h_source.html">SolverInterface.h</a>&gt;</code></p>
@@ -122,18 +122,46 @@ Diagrama de herencia de Engine::Physic::SolverInterface</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Métodos públicos</h2></td></tr>
-<tr class="memitem:a47d5ca1ab75d4a763d67e266c02a14bb" id="r_a47d5ca1ab75d4a763d67e266c02a14bb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a47d5ca1ab75d4a763d67e266c02a14bb">solve</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)</td></tr>
-<tr class="memdesc:a47d5ca1ab75d4a763d67e266c02a14bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulaci�n f�sica.  <br /></td></tr>
-<tr class="separator:a47d5ca1ab75d4a763d67e266c02a14bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9fc29c56658a43eb26ef139462d4e70" id="r_af9fc29c56658a43eb26ef139462d4e70"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af9fc29c56658a43eb26ef139462d4e70">~SolverInterface</a> ()=default</td></tr>
+<tr class="separator:af9fc29c56658a43eb26ef139462d4e70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31fdaabca6d091537ccc95b89e3fcf16" id="r_a31fdaabca6d091537ccc95b89e3fcf16"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a31fdaabca6d091537ccc95b89e3fcf16">solve</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)=0</td></tr>
+<tr class="memdesc:a31fdaabca6d091537ccc95b89e3fcf16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulación física.  <br /></td></tr>
+<tr class="separator:a31fdaabca6d091537ccc95b89e3fcf16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Interfaz para resolver la simulaci�n f�sica. </p>
-<p>Las clases derivadas deben implementar el m�todo solve para actualizar los estados de los objetos f�sicos. </p>
+<div class="textblock"><p>Interfaz para resolver la simulación física. </p>
+<p>Las clases derivadas deben implementar el método solve para actualizar los estados de los objetos físicos. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_solver_interface_8h_source.html#l00022">22</a> del archivo <a class="el" href="_solver_interface_8h_source.html">SolverInterface.h</a>.</p>
-</div><h2 class="groupheader">Documentación de funciones miembro</h2>
-<a id="a47d5ca1ab75d4a763d67e266c02a14bb" name="a47d5ca1ab75d4a763d67e266c02a14bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a47d5ca1ab75d4a763d67e266c02a14bb">&#9670;&#160;</a></span>solve()</h2>
+</div><h2 class="groupheader">Documentación de constructores y destructores</h2>
+<a id="af9fc29c56658a43eb26ef139462d4e70" name="af9fc29c56658a43eb26ef139462d4e70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9fc29c56658a43eb26ef139462d4e70">&#9670;&#160;</a></span>~SolverInterface()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual Engine::Physic::SolverInterface::~SolverInterface </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel virtual">virtual</span><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Documentación de funciones miembro</h2>
+<a id="a31fdaabca6d091537ccc95b89e3fcf16" name="a31fdaabca6d091537ccc95b89e3fcf16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31fdaabca6d091537ccc95b89e3fcf16">&#9670;&#160;</a></span>solve()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -154,22 +182,22 @@ Métodos públicos</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel virtual">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel pure-virtual">pure virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Resuelve la simulaci�n f�sica. </p>
-<p>Este m�todo procesa la simulaci�n a partir del intervalo de tiempo especificado y actualiza el conjunto de objetos f�sicos.</p>
+<p>Resuelve la simulación física. </p>
+<p>Este método procesa la simulación a partir del intervalo de tiempo especificado y actualiza el conjunto de objetos físicos.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f�sicos a resolver. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos físicos a resolver. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Reimplementado en <a class="el" href="class_engine_1_1_physic_1_1_brute_force_solver.html#af9fd2a6a140a2d8b76fa3428849a8d02">Engine::Physic::BruteForceSolver</a> y <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver</a>.</p>
+<p>Implementado en <a class="el" href="class_engine_1_1_physic_1_1_brute_force_solver.html#af9fd2a6a140a2d8b76fa3428849a8d02">Engine::Physic::BruteForceSolver</a> y <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver</a>.</p>
 
 <p class="definition">Definición en la línea <a class="el" href="_solver_interface_8cpp_source.html#l00003">3</a> del archivo <a class="el" href="_solver_interface_8cpp_source.html">SolverInterface.cpp</a>.</p>
 

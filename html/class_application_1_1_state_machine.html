@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -112,7 +112,7 @@ $(function(){initNavTree('class_application_1_1_state_machine.html',''); initRes
 </div><!--header-->
 <div class="contents">
 
-<p>Gestiona la transici�n y ejecuci�n de estados en la aplicaci�n.  
+<p>Gestiona la transición y ejecución de estados en la aplicación.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_state_8h_source.html">State.h</a>&gt;</code></p>
@@ -131,28 +131,28 @@ Métodos públicos</h2></td></tr>
 <tr class="memitem:a24cee059b352c4f3ad0434e46048e5bc" id="r_a24cee059b352c4f3ad0434e46048e5bc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24cee059b352c4f3ad0434e46048e5bc">StateMachine</a> ()=default</td></tr>
 <tr class="separator:a24cee059b352c4f3ad0434e46048e5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13f25d29b1e06581bef041a959354d2d" id="r_a13f25d29b1e06581bef041a959354d2d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a13f25d29b1e06581bef041a959354d2d">frame</a> ()</td></tr>
-<tr class="memdesc:a13f25d29b1e06581bef041a959354d2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ejecuta la l�gica de cada frame utilizando el estado actual.  <br /></td></tr>
+<tr class="memdesc:a13f25d29b1e06581bef041a959354d2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ejecuta la lógica de cada frame utilizando el estado actual.  <br /></td></tr>
 <tr class="separator:a13f25d29b1e06581bef041a959354d2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d1bbab420bdfe7ab76869ca7941285c" id="r_a3d1bbab420bdfe7ab76869ca7941285c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d1bbab420bdfe7ab76869ca7941285c">changeState</a> (std::unique_ptr&lt; <a class="el" href="class_application_1_1_state.html">State</a> &gt; state)</td></tr>
-<tr class="memdesc:a3d1bbab420bdfe7ab76869ca7941285c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cambia el estado actual de la m�quina.  <br /></td></tr>
+<tr class="memdesc:a3d1bbab420bdfe7ab76869ca7941285c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cambia el estado actual de la máquina.  <br /></td></tr>
 <tr class="separator:a3d1bbab420bdfe7ab76869ca7941285c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Métodos públicos estáticos</h2></td></tr>
 <tr class="memitem:ad532da57604458f5b605bd7f7ad0ba8c" id="r_ad532da57604458f5b605bd7f7ad0ba8c"><td class="memItemLeft" align="right" valign="top">static std::shared_ptr&lt; <a class="el" href="class_application_1_1_state_machine.html">StateMachine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad532da57604458f5b605bd7f7ad0ba8c">getStateMachine</a> ()</td></tr>
-<tr class="memdesc:ad532da57604458f5b605bd7f7ad0ba8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la instancia singleton de la m�quina de estados.  <br /></td></tr>
+<tr class="memdesc:ad532da57604458f5b605bd7f7ad0ba8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la instancia singleton de la máquina de estados.  <br /></td></tr>
 <tr class="separator:ad532da57604458f5b605bd7f7ad0ba8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Atributos públicos</h2></td></tr>
 <tr class="memitem:ae92365c5675ee19671e80155bee94073" id="r_ae92365c5675ee19671e80155bee94073"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="class_application_1_1_state.html">State</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae92365c5675ee19671e80155bee94073">_state</a></td></tr>
-<tr class="memdesc:ae92365c5675ee19671e80155bee94073"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estado actual de la m�quina de estados.  <br /></td></tr>
+<tr class="memdesc:ae92365c5675ee19671e80155bee94073"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estado actual de la máquina de estados.  <br /></td></tr>
 <tr class="separator:ae92365c5675ee19671e80155bee94073"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a78248af426878449eee6a11ac971a6e6" id="r_a78248af426878449eee6a11ac971a6e6"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78248af426878449eee6a11ac971a6e6">_objects</a></td></tr>
-<tr class="memdesc:a78248af426878449eee6a11ac971a6e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Colecci�n de objetos f�sicos de la simulaci�n.  <br /></td></tr>
+<tr class="memdesc:a78248af426878449eee6a11ac971a6e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Colección de objetos físicos de la simulación.  <br /></td></tr>
 <tr class="separator:a78248af426878449eee6a11ac971a6e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4aef0fca26478c8691b58ac791e0b673" id="r_a4aef0fca26478c8691b58ac791e0b673"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_application_1_1_gravity_simulator.html">GravitySimulator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4aef0fca26478c8691b58ac791e0b673">_sub</a></td></tr>
-<tr class="memdesc:a4aef0fca26478c8691b58ac791e0b673"><td class="mdescLeft">&#160;</td><td class="mdescRight">Puntero al sub-sistema <a class="el" href="class_application_1_1_gravity_simulator.html" title="Clase principal para la simulaci�n de gravedad.">GravitySimulator</a>.  <br /></td></tr>
+<tr class="memdesc:a4aef0fca26478c8691b58ac791e0b673"><td class="mdescLeft">&#160;</td><td class="mdescRight">Puntero al sub-sistema <a class="el" href="class_application_1_1_gravity_simulator.html" title="Clase principal para la simulación de gravedad.">GravitySimulator</a>.  <br /></td></tr>
 <tr class="separator:a4aef0fca26478c8691b58ac791e0b673"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae59eaa751b59f37b8241b201640b1c56" id="r_ae59eaa751b59f37b8241b201640b1c56"><td class="memItemLeft" align="right" valign="top">float *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae59eaa751b59f37b8241b201640b1c56">_frameTime</a></td></tr>
 <tr class="memdesc:ae59eaa751b59f37b8241b201640b1c56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Puntero al tiempo de frame.  <br /></td></tr>
@@ -162,7 +162,7 @@ Atributos públicos</h2></td></tr>
 <tr class="separator:affb87a63a942ab50328a59ecb9c86430"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Gestiona la transici�n y ejecuci�n de estados en la aplicaci�n. </p>
+<div class="textblock"><p>Gestiona la transición y ejecución de estados en la aplicación. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_state_8h_source.html#l00058">58</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 </div><h2 class="groupheader">Documentación de constructores y destructores</h2>
@@ -250,10 +250,10 @@ Gráfico de llamadas a esta función:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Cambia el estado actual de la m�quina. </p>
+<p>Cambia el estado actual de la máquina. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">state</td><td>Nuevo estado que se adoptar�. </td></tr>
+    <tr><td class="paramname">state</td><td>Nuevo estado que se adoptará. </td></tr>
   </table>
   </dd>
 </dl>
@@ -277,9 +277,9 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Ejecuta la l�gica de cada frame utilizando el estado actual. </p>
+<p>Ejecuta la lógica de cada frame utilizando el estado actual. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_state_8cpp_source.html#l00239">239</a> del archivo <a class="el" href="_state_8cpp_source.html">State.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_state_8cpp_source.html#l00244">244</a> del archivo <a class="el" href="_state_8cpp_source.html">State.cpp</a>.</p>
 
 </div>
 </div>
@@ -306,10 +306,10 @@ Gráfico de llamadas a esta función:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene la instancia singleton de la m�quina de estados. </p>
-<dl class="section return"><dt>Devuelve</dt><dd>std::shared_ptr&lt;StateMachine&gt; Instancia de la m�quina de estados. </dd></dl>
+<p>Obtiene la instancia singleton de la máquina de estados. </p>
+<dl class="section return"><dt>Devuelve</dt><dd>std::shared_ptr&lt;StateMachine&gt; Instancia de la máquina de estados. </dd></dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_state_8cpp_source.html#l00230">230</a> del archivo <a class="el" href="_state_8cpp_source.html">State.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_state_8cpp_source.html#l00235">235</a> del archivo <a class="el" href="_state_8cpp_source.html">State.cpp</a>.</p>
 
 </div>
 </div>
@@ -374,7 +374,7 @@ Gráfico de llamadas de esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Colecci�n de objetos f�sicos de la simulaci�n. </p>
+<p>Colección de objetos físicos de la simulación. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_state_8h_source.html#l00064">64</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 
@@ -392,7 +392,7 @@ Gráfico de llamadas de esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Estado actual de la m�quina de estados. </p>
+<p>Estado actual de la máquina de estados. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_state_8h_source.html#l00062">62</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 
@@ -410,7 +410,7 @@ Gráfico de llamadas de esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Puntero al sub-sistema <a class="el" href="class_application_1_1_gravity_simulator.html" title="Clase principal para la simulaci�n de gravedad.">GravitySimulator</a>. </p>
+<p>Puntero al sub-sistema <a class="el" href="class_application_1_1_gravity_simulator.html" title="Clase principal para la simulación de gravedad.">GravitySimulator</a>. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_state_8h_source.html#l00066">66</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 

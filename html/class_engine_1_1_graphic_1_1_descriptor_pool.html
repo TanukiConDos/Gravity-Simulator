@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_descriptor_pool.html','')
 </div><!--header-->
 <div class="contents">
 
-<p>Clase que crea y administra el pool de descriptores, los conjuntos de descriptores y los buffers uniformes asociados al pipeline gr醘ico.  
+<p>Clase que crea y administra el pool de descriptores, los conjuntos de descriptores y los buffers uniformes asociados al pipeline gr谩fico.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>&gt;</code></p>
@@ -128,19 +128,22 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="memdesc:a9377399a3461685bb6149a4341852663"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor que libera los recursos asignados.  <br /></td></tr>
 <tr class="separator:a9377399a3461685bb6149a4341852663"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e6cce23a33ab0377f3d46ea497c3446" id="r_a5e6cce23a33ab0377f3d46ea497c3446"><td class="memItemLeft" align="right" valign="top">const VkDescriptorSet *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e6cce23a33ab0377f3d46ea497c3446">getDescriptorSets</a> (uint32_t currentFrame, uint32_t index)</td></tr>
-<tr class="memdesc:a5e6cce23a33ab0377f3d46ea497c3446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el conjunto de descriptores correspondiente al frame y al 韓dice especificados.  <br /></td></tr>
+<tr class="memdesc:a5e6cce23a33ab0377f3d46ea497c3446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el conjunto de descriptores correspondiente al frame y al 铆ndice especificados.  <br /></td></tr>
 <tr class="separator:a5e6cce23a33ab0377f3d46ea497c3446"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ad6eea7ffe60749efc6dfe1620301f8" id="r_a6ad6eea7ffe60749efc6dfe1620301f8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6ad6eea7ffe60749efc6dfe1620301f8">updateUniformBuffer</a> (<a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html">UniformBufferObject</a> ubo, uint32_t currentImage, uint32_t index)</td></tr>
-<tr class="memdesc:a6ad6eea7ffe60749efc6dfe1620301f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el buffer uniforme asociado a un conjunto de descriptores espec韋ico.  <br /></td></tr>
+<tr class="memdesc:a6ad6eea7ffe60749efc6dfe1620301f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el buffer uniforme asociado a un conjunto de descriptores espec铆fico.  <br /></td></tr>
 <tr class="separator:a6ad6eea7ffe60749efc6dfe1620301f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36f81bdfa4dc27ceb22d3ccdfa13865a" id="r_a36f81bdfa4dc27ceb22d3ccdfa13865a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a36f81bdfa4dc27ceb22d3ccdfa13865a">sendUniformBufferToGPU</a> (uint32_t currentImage)</td></tr>
+<tr class="memdesc:a36f81bdfa4dc27ceb22d3ccdfa13865a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Env铆a los buffers uniformes a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>.  <br /></td></tr>
+<tr class="separator:a36f81bdfa4dc27ceb22d3ccdfa13865a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9907b9ded57cb016164f46f9a2912af" id="r_af9907b9ded57cb016164f46f9a2912af"><td class="memItemLeft" align="right" valign="top">VkDescriptorPool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af9907b9ded57cb016164f46f9a2912af">getDescriptorPool</a> ()</td></tr>
 <tr class="memdesc:af9907b9ded57cb016164f46f9a2912af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el pool de descriptores.  <br /></td></tr>
 <tr class="separator:af9907b9ded57cb016164f46f9a2912af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Clase que crea y administra el pool de descriptores, los conjuntos de descriptores y los buffers uniformes asociados al pipeline gr醘ico. </p>
+<div class="textblock"><p>Clase que crea y administra el pool de descriptores, los conjuntos de descriptores y los buffers uniformes asociados al pipeline gr谩fico. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00021">21</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00019">19</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
 <a id="a3a17ad7c8f4b5f6d56ba8e378b1619ad" name="a3a17ad7c8f4b5f6d56ba8e378b1619ad"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3a17ad7c8f4b5f6d56ba8e378b1619ad">&#9670;&#160;</a></span>DescriptorPool() <span class="overload">[1/2]</span></h2>
@@ -204,9 +207,9 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 <p>Constructor que inicializa el <a class="el" href="class_engine_1_1_graphic_1_1_descriptor_pool.html" title="Clase que crea y administra el pool de descriptores, los conjuntos de descriptores y los buffers unif...">DescriptorPool</a>. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">gpu</td><td>Referencia a la instancia de <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>. </td></tr>
-    <tr><td class="paramname">pipeline</td><td>Referencia al pipeline gr醘ico. </td></tr>
-    <tr><td class="paramname">numObjects</td><td>N鷐ero de objetos para los que se gestionar醤 buffers uniformes. </td></tr>
+    <tr><td class="paramname">gpu</td><td>Referencia a la instancia de <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. </td></tr>
+    <tr><td class="paramname">pipeline</td><td>Referencia al pipeline gr谩fico. </td></tr>
+    <tr><td class="paramname">numObjects</td><td>N煤mero de objetos para los que se gestionar谩n buffers uniformes. </td></tr>
   </table>
   </dd>
 </dl>
@@ -232,7 +235,7 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 
 <p>Destructor que libera los recursos asignados. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8cpp_source.html#l00011">11</a> del archivo <a class="el" href="_descriptor_pool_8cpp_source.html">DescriptorPool.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8cpp_source.html#l00012">12</a> del archivo <a class="el" href="_descriptor_pool_8cpp_source.html">DescriptorPool.cpp</a>.</p>
 
 </div>
 </div>
@@ -263,7 +266,7 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 <p>Obtiene el pool de descriptores. </p>
 <dl class="section return"><dt>Devuelve</dt><dd>VkDescriptorPool Pool de descriptores. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00060">60</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00069">69</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
 
 </div>
 </div>
@@ -294,17 +297,17 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene el conjunto de descriptores correspondiente al frame y al 韓dice especificados. </p>
+<p>Obtiene el conjunto de descriptores correspondiente al frame y al 铆ndice especificados. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">currentFrame</td><td>蚽dice del frame actual. </td></tr>
-    <tr><td class="paramname">index</td><td>蚽dice del objeto. </td></tr>
+    <tr><td class="paramname">currentFrame</td><td>脥ndice del frame actual. </td></tr>
+    <tr><td class="paramname">index</td><td>脥ndice del objeto. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Devuelve</dt><dd>const VkDescriptorSet* Puntero al conjunto de descriptores. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00046">46</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8h_source.html#l00044">44</a> del archivo <a class="el" href="_descriptor_pool_8h_source.html">DescriptorPool.h</a>.</p>
 
 </div>
 </div>
@@ -338,6 +341,34 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 
 </div>
 </div>
+<a id="a36f81bdfa4dc27ceb22d3ccdfa13865a" name="a36f81bdfa4dc27ceb22d3ccdfa13865a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36f81bdfa4dc27ceb22d3ccdfa13865a">&#9670;&#160;</a></span>sendUniformBufferToGPU()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Engine::Graphic::DescriptorPool::sendUniformBufferToGPU </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>currentImage</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Env铆a los buffers uniformes a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. </p>
+<p>Este m茅todo transfiere el contenido actualizado de los buffers uniformes de la imagen actual a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. Esto asegura que los datos de transformaci贸n y otros par谩metros uniformes se encuentren sincronizados con el procesamiento gr谩fico del frame correspondiente.</p>
+<dl class="params"><dt>Par谩metros</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">currentImage</td><td>脥ndice de la imagen actual para la que se deben enviar los datos. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8cpp_source.html#l00081">81</a> del archivo <a class="el" href="_descriptor_pool_8cpp_source.html">DescriptorPool.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a6ad6eea7ffe60749efc6dfe1620301f8" name="a6ad6eea7ffe60749efc6dfe1620301f8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6ad6eea7ffe60749efc6dfe1620301f8">&#9670;&#160;</a></span>updateUniformBuffer()</h2>
 
@@ -362,17 +393,17 @@ Gr谩fico de llamadas de esta funci贸n:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Actualiza el buffer uniforme asociado a un conjunto de descriptores espec韋ico. </p>
+<p>Actualiza el buffer uniforme asociado a un conjunto de descriptores espec铆fico. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">ubo</td><td>Objeto de buffer uniforme con la informaci髇 de transformaci髇. </td></tr>
-    <tr><td class="paramname">currentImage</td><td>蚽dice de la imagen actual. </td></tr>
-    <tr><td class="paramname">index</td><td>蚽dice del objeto. </td></tr>
+    <tr><td class="paramname">ubo</td><td>Objeto de buffer uniforme con la informaci贸n de transformaci贸n. </td></tr>
+    <tr><td class="paramname">currentImage</td><td>脥ndice de la imagen actual. </td></tr>
+    <tr><td class="paramname">index</td><td>脥ndice del objeto. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8cpp_source.html#l00070">70</a> del archivo <a class="el" href="_descriptor_pool_8cpp_source.html">DescriptorPool.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_descriptor_pool_8cpp_source.html#l00074">74</a> del archivo <a class="el" href="_descriptor_pool_8cpp_source.html">DescriptorPool.cpp</a>.</p>
 
 </div>
 </div>

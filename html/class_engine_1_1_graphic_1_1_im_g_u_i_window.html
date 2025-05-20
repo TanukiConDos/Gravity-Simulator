@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_im_g_u_i_window.html','')
 </div><!--header-->
 <div class="contents">
 
-<p>Gestiona la interfaz gr醘ica basada en ImGui.  
+<p>Gestiona la interfaz gr谩fica basada en ImGui.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="im_g_u_i_window_8h_source.html">imGUIWindow.h</a>&gt;</code></p>
@@ -135,10 +135,10 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="separator:a97066e3a1d80e5ca0dd787d2e1772735"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Gestiona la interfaz gr醘ica basada en ImGui. </p>
-<p>Esta clase inicializa ImGui, configura la integraci髇 con GLFW y Vulkan, y ofrece m閠odos para iniciar el frame de ImGui y dibujar la interfaz sobre un VkCommandBuffer. </p>
+<div class="textblock"><p>Gestiona la interfaz gr谩fica basada en ImGui. </p>
+<p>Esta clase inicializa ImGui, configura la integraci贸n con GLFW y Vulkan, y ofrece m茅todos para iniciar el frame de ImGui y dibujar la interfaz sobre un VkCommandBuffer. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8h_source.html#l00034">34</a> del archivo <a class="el" href="im_g_u_i_window_8h_source.html">imGUIWindow.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8h_source.html#l00032">32</a> del archivo <a class="el" href="im_g_u_i_window_8h_source.html">imGUIWindow.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
 <a id="a9171af21410d34b33b35913d07330cec" name="a9171af21410d34b33b35913d07330cec"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9171af21410d34b33b35913d07330cec">&#9670;&#160;</a></span>ImGUIWindow() <span class="overload">[1/2]</span></h2>
@@ -220,13 +220,13 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </div><div class="memdoc">
 
 <p>Constructor. </p>
-<p>Inicializa ImGui utilizando la ventana, <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>, <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci髇 en Vulkan.">SwapChain</a>, <a class="el" href="class_engine_1_1_graphic_1_1_pipeline.html" title="Clase encargada de construir y gestionar el pipeline gr醘ico de Vulkan.">Pipeline</a> y la instancia Vulkan. Adem醩, recibe punteros a variables de tiempo para frame y tick, que pueden ser mostradas en la UI.</p>
+<p>Inicializa ImGui utilizando la ventana, <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>, <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci贸n en Vulkan.">SwapChain</a>, <a class="el" href="class_engine_1_1_graphic_1_1_pipeline.html" title="Clase encargada de construir y gestionar el pipeline gr谩fico de Vulkan.">Pipeline</a> y la instancia Vulkan. Adem谩s, recibe punteros a variables de tiempo para frame y tick, que pueden ser mostradas en la UI.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">window</td><td>Referencia a la ventana de la aplicaci髇. </td></tr>
-    <tr><td class="paramname">gpu</td><td>Referencia a la instancia de <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>. </td></tr>
-    <tr><td class="paramname">swapChain</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci髇 en Vulkan.">SwapChain</a>. </td></tr>
-    <tr><td class="paramname">pipeline</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_pipeline.html" title="Clase encargada de construir y gestionar el pipeline gr醘ico de Vulkan.">Pipeline</a>. </td></tr>
+    <tr><td class="paramname">window</td><td>Referencia a la ventana de la aplicaci贸n. </td></tr>
+    <tr><td class="paramname">gpu</td><td>Referencia a la instancia de <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. </td></tr>
+    <tr><td class="paramname">swapChain</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci贸n en Vulkan.">SwapChain</a>. </td></tr>
+    <tr><td class="paramname">pipeline</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_pipeline.html" title="Clase encargada de construir y gestionar el pipeline gr谩fico de Vulkan.">Pipeline</a>. </td></tr>
     <tr><td class="paramname">instance</td><td>Instancia Vulkan. </td></tr>
     <tr><td class="paramname">frameTime</td><td>Puntero a la variable de tiempo de frame. </td></tr>
     <tr><td class="paramname">tickTime</td><td>Puntero a la variable de tiempo de tick. </td></tr>
@@ -234,7 +234,7 @@ Gr谩fico de llamadas a esta funci贸n:</div>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00007">7</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00005">5</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
 <div class="dynheader">
 Gr谩fico de llamadas de esta funci贸n:</div>
 <div class="dyncontent">
@@ -261,7 +261,7 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Destructor. </p>
 <p>Libera los recursos utilizados por ImGui. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00058">58</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00056">56</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
 
 </div>
 </div>
@@ -285,12 +285,12 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Dibuja el contenido de ImGui en el VkCommandBuffer proporcionado.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti髇 de buffers de Vulkan.">Buffer</a> de comandos donde se dibuja la UI. </td></tr>
+    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti贸n de buffers de Vulkan.">Buffer</a> de comandos donde se dibuja la UI. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00074">74</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00072">72</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,7 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Inicia el frame de ImGui. </p>
 <p>Prepara a ImGui para comenzar a registrar los elementos de la interfaz para el frame actual. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00065">65</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="im_g_u_i_window_8cpp_source.html#l00063">63</a> del archivo <a class="el" href="im_g_u_i_window_8cpp_source.html">imGUIWindow.cpp</a>.</p>
 
 </div>
 </div>

@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_command_pool.html',''); i
 </div><!--header-->
 <div class="contents">
 
-<p>Encapsula un pool de comandos de Vulkan y gestiona m�ltiples buffers de comando.  
+<p>Encapsula un pool de comandos de Vulkan y gestiona múltiples buffers de comando.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_command_pool_8h_source.html">CommandPool.h</a>&gt;</code></p>
@@ -144,10 +144,10 @@ Métodos públicos</h2></td></tr>
 <tr class="separator:ae1754d162b5d55f7625dc05b1bdc3036"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Encapsula un pool de comandos de Vulkan y gestiona m�ltiples buffers de comando. </p>
-<p>La clase utiliza una referencia a <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci�n con Vulkan.">GPU</a> para crear el VkCommandPool, y ofrece m�todos para administrar la creaci�n, inicio, finalizaci�n y reinicializaci�n de VkCommandBuffer. </p>
+<div class="textblock"><p>Encapsula un pool de comandos de Vulkan y gestiona múltiples buffers de comando. </p>
+<p>La clase utiliza una referencia a <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacción con Vulkan.">GPU</a> para crear el VkCommandPool, y ofrece métodos para administrar la creación, inicio, finalización y reinicialización de VkCommandBuffer. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_command_pool_8h_source.html#l00026">26</a> del archivo <a class="el" href="_command_pool_8h_source.html">CommandPool.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_command_pool_8h_source.html#l00024">24</a> del archivo <a class="el" href="_command_pool_8h_source.html">CommandPool.h</a>.</p>
 </div><h2 class="groupheader">Documentación de constructores y destructores</h2>
 <a id="aecf092000fb746e252e7244158a4760b" name="aecf092000fb746e252e7244158a4760b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aecf092000fb746e252e7244158a4760b">&#9670;&#160;</a></span>CommandPool() <span class="overload">[1/2]</span></h2>
@@ -208,10 +208,10 @@ Gráfico de llamadas a esta función:</div>
 </div><div class="memdoc">
 
 <p>Constructor que inicializa el pool de comandos. </p>
-<p>Utiliza la referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci�n con Vulkan.">GPU</a> para crear el pool de comandos mediante createCommandPool().</p>
+<p>Utiliza la referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacción con Vulkan.">GPU</a> para crear el pool de comandos mediante createCommandPool().</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci�n con Vulkan.">GPU</a> que se utiliza para crear el pool de comandos. </td></tr>
+    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacción con Vulkan.">GPU</a> que se utiliza para crear el pool de comandos. </td></tr>
   </table>
   </dd>
 </dl>
@@ -259,14 +259,14 @@ Gráfico de llamadas a esta función:</div>
 </div><div class="memdoc">
 
 <p>Inicia un buffer de comandos para la imagen especificada. </p>
-<p>Crea y comienza la grabaci�n de un VkCommandBuffer que se utilizar� para la renderizaci�n de la imagen.</p>
+<p>Crea y comienza la grabación de un VkCommandBuffer que se utilizará para la renderización de la imagen.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">imageIndex</td><td>�ndice de la imagen para el cual se inicia el comando. </td></tr>
+    <tr><td class="paramname">imageIndex</td><td>Índice de la imagen para el cual se inicia el comando. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Devuelve</dt><dd>VkCommandBuffer <a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti�n de buffers de Vulkan.">Buffer</a> de comandos iniciado. </dd></dl>
+<dl class="section return"><dt>Devuelve</dt><dd>VkCommandBuffer <a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gestión de buffers de Vulkan.">Buffer</a> de comandos iniciado. </dd></dl>
 
 <p class="definition">Definición en la línea <a class="el" href="_command_pool_8cpp_source.html#l00016">16</a> del archivo <a class="el" href="_command_pool_8cpp_source.html">CommandPool.cpp</a>.</p>
 
@@ -288,8 +288,8 @@ Gráfico de llamadas a esta función:</div>
 </div><div class="memdoc">
 
 <p>Crea un buffer de comandos temporal. </p>
-<p>Este m�todo crea un VkCommandBuffer destinado a operaciones temporales.</p>
-<dl class="section return"><dt>Devuelve</dt><dd>VkCommandBuffer <a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti�n de buffers de Vulkan.">Buffer</a> de comandos temporal. </dd></dl>
+<p>Este método crea un VkCommandBuffer destinado a operaciones temporales.</p>
+<dl class="section return"><dt>Devuelve</dt><dd>VkCommandBuffer <a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gestión de buffers de Vulkan.">Buffer</a> de comandos temporal. </dd></dl>
 
 <p class="definition">Definición en la línea <a class="el" href="_command_pool_8cpp_source.html#l00071">71</a> del archivo <a class="el" href="_command_pool_8cpp_source.html">CommandPool.cpp</a>.</p>
 <div class="dynheader">
@@ -316,10 +316,10 @@ Gráfico de llamadas a esta función:</div>
 </div><div class="memdoc">
 
 <p>Finaliza el registro en un buffer de comandos. </p>
-<p>Este m�todo finaliza la grabaci�n del VkCommandBuffer proporcionado.</p>
+<p>Este método finaliza la grabación del VkCommandBuffer proporcionado.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti�n de buffers de Vulkan.">Buffer</a> de comandos a finalizar. </td></tr>
+    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gestión de buffers de Vulkan.">Buffer</a> de comandos a finalizar. </td></tr>
   </table>
   </dd>
 </dl>
@@ -344,10 +344,10 @@ Gráfico de llamadas a esta función:</div>
 </div><div class="memdoc">
 
 <p>Finaliza un buffer de comandos temporal. </p>
-<p>Este m�todo finaliza la grabaci�n en un buffer de comandos temporal.</p>
+<p>Este método finaliza la grabación en un buffer de comandos temporal.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti�n de buffers de Vulkan.">Buffer</a> de comandos temporal a finalizar. </td></tr>
+    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gestión de buffers de Vulkan.">Buffer</a> de comandos temporal a finalizar. </td></tr>
   </table>
   </dd>
 </dl>
@@ -407,10 +407,10 @@ Gráfico de llamadas de esta función:</div>
 </div><div class="memdoc">
 
 <p>Reinicializa el buffer de comandos para el frame actual. </p>
-<p>Este m�todo reinicia el estado del buffer de comando asociado al frame indicado, permitiendo su reutilizaci�n.</p>
+<p>Este método reinicia el estado del buffer de comando asociado al frame indicado, permitiendo su reutilización.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">currentFrame</td><td>�ndice del frame actual. </td></tr>
+    <tr><td class="paramname">currentFrame</td><td>Índice del frame actual. </td></tr>
   </table>
   </dd>
 </dl>

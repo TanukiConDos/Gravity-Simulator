@@ -5,9 +5,13 @@ digraph "Engine::Physic::OctTree::massCalculation"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="RL";
-  Node1 [id="Node000001",label="Engine::Physic::OctTree\l::massCalculation",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Calcula la masa total en cada nodo del árbol."];
+  Node1 [id="Node000001",label="Engine::Physic::OctTree\l::massCalculation",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Calcula la masa total en cada nodo del Ã¡rbol."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Engine::Physic::OctTree\l::OctTree",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_oct_tree.html#a1376f7a816bb832061bf7deee66fa663",tooltip="Constructor explícito."];
+  Node2 [id="Node000002",label="Engine::Physic::OctTree\l::OctTree",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_oct_tree.html#a1376f7a816bb832061bf7deee66fa663",tooltip="Constructor explÃ­cito."];
   Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="Engine::Physic::OctTree\l::update",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_oct_tree.html#accdc19544dec2cb9f43c0aede03eadf4",tooltip="Actualiza el árbol y sus elementos."];
+  Node3 [id="Node000003",label="TEST",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$_oct_tree_test_8cpp.html#a02143d6c9046a34d9bd56aea4debe773",tooltip=" "];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="TEST",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$_oct_tree_test_8cpp.html#af1658b73577945f62ba2db9c5e185714",tooltip=" "];
+  Node1 -> Node5 [id="edge4_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="Engine::Physic::OctTree\l::update",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_oct_tree.html#ab9af51cb9cd3bb6d80b3fca691f0d19f",tooltip="Actualiza el Ã¡rbol y sus elementos."];
 }

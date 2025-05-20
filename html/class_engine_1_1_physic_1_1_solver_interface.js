@@ -1,4 +1,5 @@
 var class_engine_1_1_physic_1_1_solver_interface =
 [
-    [ "solve", "class_engine_1_1_physic_1_1_solver_interface.html#a47d5ca1ab75d4a763d67e266c02a14bb", null ]
+    [ "~SolverInterface", "class_engine_1_1_physic_1_1_solver_interface.html#af9fc29c56658a43eb26ef139462d4e70", null ],
+    [ "solve", "class_engine_1_1_physic_1_1_solver_interface.html#a31fdaabca6d091537ccc95b89e3fcf16", null ]
 ];

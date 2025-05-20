@@ -5,13 +5,13 @@ digraph "Application::State::State"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="RL";
-  Node1 [id="Node000001",label="Application::State\l::State",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa el estado con el contexto de la máquina de estados."];
+  Node1 [id="Node000001",label="Application::State\l::State",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa el estado con el contexto de la mÃ¡quina de estados."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Application::Config\l::Config",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c",tooltip="Constructor que inicializa el estado de configuración."];
+  Node2 [id="Node000002",label="Application::Config\l::Config",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_config.html#ad446dd1244b06aa41c2108461a96f45c",tooltip="Constructor que inicializa el estado de configuraciÃ³n."];
   Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="Application::Debug\l::Debug",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8",tooltip="Constructor que inicializa el estado de depuración."];
+  Node3 [id="Node000003",label="Application::Debug\l::Debug",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_debug.html#a9f0c098bc6a477c94c24041928e1f0f8",tooltip="Constructor que inicializa el estado de depuraciÃ³n."];
   Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node4 [id="Node000004",label="Application::MainMenu\l::MainMenu",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608",tooltip="Constructor que inicializa el menú principal."];
+  Node4 [id="Node000004",label="Application::MainMenu\l::MainMenu",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_main_menu.html#a53ca38da66119d529da877cda18ba608",tooltip="Constructor que inicializa el menÃº principal."];
   Node1 -> Node5 [id="edge4_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node5 [id="Node000005",label="Application::ObjectSelected\l::ObjectSelected",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_object_selected.html#afce2cddc944eb5447b489e90899e48f9",tooltip="Constructor que inicializa el estado de objeto seleccionado."];
 }

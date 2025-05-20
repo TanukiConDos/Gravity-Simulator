@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -125,148 +125,192 @@ $(function(){initNavTree('_gravity_simulator_8cpp_source.html',''); initResizabl
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>        _renderer = std::make_unique&lt;Engine::Graphic::Renderer&gt;(_window, _objects, &amp;_frameTime, &amp;_tickTime);</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>        _stateMachine-&gt;_sub = <span class="keyword">this</span>;</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>        _window.attachCameraToEvent(_renderer-&gt;getCamera());</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    }</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>        enki::TaskSchedulerConfig config;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>        config.numTaskThreadsToCreate = 2;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>        _taskScheduler.Initialize(config);</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    }</div>
 </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="foldopen" id="foldopen00020" data-start="{" data-end="}">
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">   20</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">GravitySimulator::initSimulation</a>()</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    {</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>        <span class="keyword">auto</span> config = <a class="code hl_function" href="class_foundation_1_1_config.html#ae80d467bdba7b08c87bc9c98fd5311b9">Foundation::Config::getConfig</a>();</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        <span class="keywordflow">switch</span> (config-&gt;systemCreationMode)</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        {</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a170e02e86972c2be8559884cc3c12254">Foundation::Mode::RANDOM</a>:</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        {</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>            std::random_device rd;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>            std::mt19937::result_type seed = rd() ^ (</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                (std::mt19937::result_type)</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                std::chrono::duration_cast&lt;std::chrono::seconds&gt;(</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                    std::chrono::system_clock::now().time_since_epoch()</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>                ).count() +</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="foldopen" id="foldopen00023" data-start="{" data-end="}">
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">   23</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">GravitySimulator::initSimulation</a>()</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        <span class="keyword">auto</span> config = <a class="code hl_function" href="class_foundation_1_1_config.html#ae80d467bdba7b08c87bc9c98fd5311b9">Foundation::Config::getConfig</a>();</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>        <span class="keywordflow">switch</span> (config-&gt;_systemCreationMode)</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>        {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a170e02e86972c2be8559884cc3c12254">Foundation::Mode::RANDOM</a>:</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>        {</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>            std::random_device rd;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>            std::mt19937::result_type seed = rd() ^ (</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>                (std::mt19937::result_type)</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>                std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>                    std::chrono::high_resolution_clock::now().time_since_epoch()</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>                ).count());</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>            std::mt19937 gen(seed);</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>            std::uniform_real_distribution distrib(0.0f, 1.0f);</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>            nlohmann::json j = nlohmann::json{ };</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>            _objects-&gt;emplace_back(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>            _objects-&gt;emplace_back(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; config-&gt;numObjects; i++)</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>            {</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                <span class="keywordtype">float</span> x = distrib(gen) * 2e10f - 1e10f;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                <span class="keywordtype">float</span> y = distrib(gen) * 2e10f - 1e10f;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                <span class="keywordtype">float</span> z = distrib(gen) * 2e10f - 1e10f;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>                _objects-&gt;emplace_back(glm::vec3{ x,y,z }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f);</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                j.emplace_back(_objects-&gt;back());</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>            }</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>            </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>            std::string data = j.dump();</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>            <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a> file = <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a>{ <span class="stringliteral">&quot;./scenes/last.json&quot;</span>, <span class="keyword">false</span>};</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>            file.<a class="code hl_function" href="class_foundation_1_1_file.html#af458d1fbb53c914d409f1195fcf95862">write</a>(data);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        }</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Foundation::Mode::FILE</a>:</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>            <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a> file = <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a>(std::string(<span class="stringliteral">&quot;./scenes/&quot;</span>).append(config-&gt;fichero));</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>            std::vector&lt;char&gt; aux = file.<a class="code hl_function" href="class_foundation_1_1_file.html#adb7480e31861e7c59d40348e59140a31">read</a>();</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>            std::string data = std::string{ aux.data()};</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>            data.erase(aux.size());</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>            nlohmann::json j = nlohmann::json::parse(data);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>            <span class="keywordflow">for</span> (<span class="keyword">auto</span> <span class="keywordtype">object</span> : j)</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>            {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a> obj = <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a>(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 0.0f, 0.0f);</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                <a class="code hl_function" href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">Engine::Physic::from_json</a>(<span class="keywordtype">object</span>, obj);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                _objects-&gt;emplace_back(obj);</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            }</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        }</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        }</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        _stateMachine-&gt;_objects = _objects;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        std::unique_ptr&lt;Engine::Physic::CollisionDetectionInterface&gt; collisionAlgorithm;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        std::shared_ptr&lt;Engine::Physic::OctTree&gt; tree = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>        <span class="keywordflow">switch</span>(config-&gt;collisionAlgorithm)</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        {</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::Algorithm::BRUTE_FORCE</a>:</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>            collisionAlgorithm = std::make_unique&lt;Engine::Physic::bruteForceDetection&gt;();</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::Algorithm::OCTREE</a>:</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>            tree = std::make_shared&lt;Engine::Physic::OctTree&gt;(_objects);</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>            collisionAlgorithm = std::make_unique&lt;Engine::Physic::OctTreeCollisionDetection&gt;(tree);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>                std::chrono::duration_cast&lt;std::chrono::seconds&gt;(</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>                    std::chrono::system_clock::now().time_since_epoch()</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>                ).count() +</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>                (std::mt19937::result_type)</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>                std::chrono::duration_cast&lt;std::chrono::microseconds&gt;(</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                    std::chrono::high_resolution_clock::now().time_since_epoch()</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                ).count());</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>            std::mt19937 gen(seed);</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>            std::uniform_real_distribution distrib(0.0f, 1.0f);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>            nlohmann::json j = nlohmann::json{ };</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>            _objects-&gt;emplace_back(glm::vec3{0,0,0}, glm::vec3{0,0,0}, 6e27f, 12371e3f);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>            _objects-&gt;emplace_back(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; config-&gt;_numObjects; i++)</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>            {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                <span class="keywordtype">float</span> x = distrib(gen) * 2e10f - 1e10f;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>                <span class="keywordtype">float</span> y = distrib(gen) * 2e10f - 1e10f;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>                <span class="keywordtype">float</span> z = distrib(gen) * 2e10f - 1e10f;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>                _objects-&gt;emplace_back(glm::vec3{ x,y,z }, glm::vec3{ 0,0,0 }, 6e27f, 12371e3f);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>                j.emplace_back(_objects-&gt;back());</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>            }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>            </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>            std::string data = j.dump();</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>            <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a> file = <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a>{ <span class="stringliteral">&quot;./scenes/last.json&quot;</span>, <span class="keyword">false</span>};</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>            file.<a class="code hl_function" href="class_foundation_1_1_file.html#af458d1fbb53c914d409f1195fcf95862">write</a>(data);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        }</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Foundation::Mode::FILE</a>:</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>            <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a> file = <a class="code hl_class" href="class_foundation_1_1_file.html">Foundation::File</a>(std::string(<span class="stringliteral">&quot;./scenes/&quot;</span>).append(config-&gt;_fichero));</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>            std::vector&lt;char&gt; aux = file.<a class="code hl_function" href="class_foundation_1_1_file.html#adb7480e31861e7c59d40348e59140a31">read</a>();</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>            std::string data = std::string( aux.data(),aux.size());</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>            data.erase(aux.size());</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>            nlohmann::json j = nlohmann::json::parse(data);</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>            <span class="keywordflow">for</span> (<span class="keyword">auto</span> <span class="keywordtype">object</span> : j)</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            {</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>                <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a> obj = <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a>(glm::vec3{ 0,0,0 }, glm::vec3{ 0,0,0 }, 0.0f, 0.0f);</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                <a class="code hl_function" href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">Engine::Physic::from_json</a>(<span class="keywordtype">object</span>, obj);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>                _objects-&gt;emplace_back(obj);</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>            }</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        }</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>        }</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        _stateMachine-&gt;_objects = _objects;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>        std::unique_ptr&lt;Engine::Physic::CollisionDetectionInterface&gt; collisionAlgorithm;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        std::shared_ptr&lt;Engine::Physic::OctTree&gt; tree = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        <span class="keywordflow">switch</span>(config-&gt;_collisionAlgorithm)</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::Algorithm::BRUTE_FORCE</a>:</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>            collisionAlgorithm = std::make_unique&lt;Engine::Physic::bruteForceDetection&gt;();</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        }</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>        std::unique_ptr&lt;Engine::Physic::SolverInterface&gt; solverAlgorithm;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>        <span class="keywordflow">switch</span> (config-&gt;collisionAlgorithm)</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>        {</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::Algorithm::BRUTE_FORCE</a>:</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>            solverAlgorithm = std::make_unique&lt;Engine::Physic::BruteForceSolver&gt;();</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::Algorithm::OCTREE</a>:</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>            <span class="keywordflow">if</span>(tree == <span class="keyword">nullptr</span>) tree = std::make_shared&lt;Engine::Physic::OctTree&gt;(_objects);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>            solverAlgorithm = std::make_unique&lt;Engine::Physic::OctTreeSolver&gt;(tree);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::Algorithm::OCTREE</a>:</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>            tree = std::make_shared&lt;Engine::Physic::OctTree&gt;(_objects);</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>            collisionAlgorithm = std::make_unique&lt;Engine::Physic::OctTreeCollisionDetection&gt;(tree);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>        }</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        std::unique_ptr&lt;Engine::Physic::SolverInterface&gt; solverAlgorithm;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>        <span class="keywordflow">switch</span> (config-&gt;_collisionAlgorithm)</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        {</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::Algorithm::BRUTE_FORCE</a>:</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>            solverAlgorithm = std::make_unique&lt;Engine::Physic::BruteForceSolver&gt;();</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>            <span class="keywordflow">break</span>;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>        }</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>        _physicSystem = <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_system.html">Engine::Physic::PhysicSystem</a>{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        _renderer-&gt;updateObjects();</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    }</div>
-</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>        <span class="keywordflow">case</span> <a class="code hl_enumvalue" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::Algorithm::OCTREE</a>:</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>            <span class="keywordflow">if</span>(tree == <span class="keyword">nullptr</span>) tree = std::make_shared&lt;Engine::Physic::OctTree&gt;(_objects);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>            solverAlgorithm = std::make_unique&lt;Engine::Physic::OctTreeSolver&gt;(tree);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        }</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="foldopen" id="foldopen00106" data-start="{" data-end="}">
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">  106</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">GravitySimulator::endSimulation</a>()</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    {</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>        _objects-&gt;clear();</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>        _renderer-&gt;updateObjects();</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    }</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>        _physicSystem = <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_system.html">Engine::Physic::PhysicSystem</a>{ std::move(collisionAlgorithm), std::move(solverAlgorithm) };</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        _renderer-&gt;updateObjects();</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    }</div>
 </div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
-<div class="foldopen" id="foldopen00113" data-start="{" data-end="}">
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">  113</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">GravitySimulator::run</a>()</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    {</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        <a class="code hl_class" href="class_foundation_1_1_timers.html">Foundation::Timers</a>* timers = <a class="code hl_function" href="class_foundation_1_1_timers.html#aa6b9c89d5453ff5239ad1f2aace4aa23">Foundation::Timers::getTimers</a>();</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        <span class="keywordtype">float</span> elapsed_time_ms = 0;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>        <span class="keywordflow">while</span> (!glfwWindowShouldClose(_window.getWindow())) {</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>            glfwPollEvents();</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>            timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>            _physicSystem.update(elapsed_time_ms,_objects);</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>            timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>            timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>, <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>            _renderer-&gt;drawFrame();</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>            timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>            _frameTime = timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5">getElapsedTime</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>);</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>            _tickTime = timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5">getElapsedTime</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>);</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>            elapsed_time_ms = _frameTime + _tickTime;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>        }</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>        _renderer-&gt;wait();</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    }</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
+<div class="foldopen" id="foldopen00110" data-start="{" data-end="}">
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">  110</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">GravitySimulator::endSimulation</a>()</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    {</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>        </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        std::unique_lock lk(_endMutex);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        _end = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        _endSync.wait(lk, [<span class="keyword">this</span>]() {<span class="keywordflow">return</span> _ended; });</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        _objects-&gt;clear();</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        _renderer-&gt;updateObjects();</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>        _renderer-&gt;getCamera()-&gt;reset();</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        _physicSystem = <a class="code hl_class" href="class_engine_1_1_physic_1_1_physic_system.html">Engine::Physic::PhysicSystem</a>();</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>        _end = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>        _endedSync.notify_one();</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>        </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    }</div>
 </div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>}</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="foldopen" id="foldopen00126" data-start="{" data-end="}">
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno"><a class="line" href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">  126</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">GravitySimulator::run</a>()</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    {</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>        </div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>        </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>        <span class="keywordtype">bool</span> exit = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>        enki::TaskSet physicsTask(1, [&amp;exit, <span class="keyword">this</span>](enki::TaskSetPartition range_, uint32_t threadnum_)</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            {</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>                <a class="code hl_class" href="class_foundation_1_1_timers.html">Foundation::Timers</a>* timers = <a class="code hl_function" href="class_foundation_1_1_timers.html#aa6b9c89d5453ff5239ad1f2aace4aa23">Foundation::Timers::getTimers</a>();</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>                <span class="keywordflow">while</span> (!exit)</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>                {</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>                    timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>                    _physicSystem.update(_tickTime, _objects);</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>                    timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>                    _tickTime = timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5">getElapsedTime</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a>);</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>                    <span class="keywordflow">if</span> (_end)</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>                    {</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>                        std::unique_lock lk(_endedMutex);</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>                        _ended = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>                        _endSync.notify_one();</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>                        </div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>                        _endedSync.wait(lk, [<span class="keyword">this</span>]() { <span class="keywordflow">return</span> !_end; });</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>                    }</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>                }</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>            }</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        );</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>        enki::TaskSet graphicsTask( 1, [&amp;exit,<span class="keyword">this</span>](enki::TaskSetPartition range_, uint32_t threadnum_)</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>            {</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>                <a class="code hl_class" href="class_foundation_1_1_timers.html">Foundation::Timers</a>* timers = <a class="code hl_function" href="class_foundation_1_1_timers.html#aa6b9c89d5453ff5239ad1f2aace4aa23">Foundation::Timers::getTimers</a>();</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>                </div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>                <span class="keywordflow">while</span> (!exit)</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>                {</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>                    timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>, <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>                    _renderer-&gt;drawFrame();</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>                    timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">setTimer</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>                    _frameTime = timers-&gt;<a class="code hl_function" href="class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5">getElapsedTime</a>(<a class="code hl_enumvalue" href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a>);</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>                    </div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>                }</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>                _renderer-&gt;wait();</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>            }</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>        );</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>        _taskScheduler.AddTaskSetToPipe(&amp;physicsTask);</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>        _taskScheduler.AddTaskSetToPipe(&amp;graphicsTask);</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>        <span class="keywordflow">while</span> (!glfwWindowShouldClose(_window.getWindow())) {</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>            glfwPollEvents();</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        }</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>        exit = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        _taskScheduler.WaitforAll();</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>        </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    }</div>
 </div>
-<div class="ttc" id="a_brute_force_solver_8h_html"><div class="ttname"><a href="_brute_force_solver_8h.html">BruteForceSolver.h</a></div><div class="ttdoc">Implementa un solver de simulaci髇 f韘ica usando el enfoque de fuerza bruta.</div></div>
-<div class="ttc" id="a_config_8h_html"><div class="ttname"><a href="_config_8h.html">Config.h</a></div><div class="ttdoc">Gestiona la configuraci髇 de la aplicaci髇, permitiendo obtener par醡etros como el modo de creaci髇 del sistema,...</div></div>
-<div class="ttc" id="a_gravity_simulator_8h_html"><div class="ttname"><a href="_gravity_simulator_8h.html">GravitySimulator.h</a></div><div class="ttdoc">Header para la simulaci髇 de gravedad.</div></div>
-<div class="ttc" id="a_oct_tree_8h_html"><div class="ttname"><a href="_oct_tree_8h.html">OctTree.h</a></div><div class="ttdoc">Define la clase OctTree para gestionar la partici髇 espacial de objetos f韘icos mediante un 醨bol octal.</div></div>
-<div class="ttc" id="a_oct_tree_collision_detection_8h_html"><div class="ttname"><a href="_oct_tree_collision_detection_8h.html">OctTreeCollisionDetection.h</a></div><div class="ttdoc">Implementa una detecci髇 de colisiones utilizando un 醨bol octal (OctTree) para optimizar la simulaci髇.</div></div>
-<div class="ttc" id="a_oct_tree_solver_8h_html"><div class="ttname"><a href="_oct_tree_solver_8h.html">OctTreeSolver.h</a></div><div class="ttdoc">Implementa un solver de simulaci髇 f韘ica utilizando un 醨bol octal para resolver las interacciones entre ob...</div></div>
-<div class="ttc" id="a_timers_8h_html"><div class="ttname"><a href="_timers_8h.html">Timers.h</a></div><div class="ttdoc">Proporciona utilidades de temporizaci髇 para varios procesos, como tiempos de tick, frame y depuraci髇.</div></div>
-<div class="ttc" id="abrute_force_detection_8h_html"><div class="ttname"><a href="brute_force_detection_8h.html">bruteForceDetection.h</a></div><div class="ttdoc">Implementa la detecci髇 de colisiones utilizando el m閠odo de fuerza bruta.</div></div>
-<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_a39cc5fb22799b46513b335c8404e829f"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">Application::GravitySimulator::endSimulation</a></div><div class="ttdeci">void endSimulation()</div><div class="ttdoc">Finaliza la simulaci髇.</div><div class="ttdef"><b>Definition</b> <a href="#l00106">GravitySimulator.cpp:106</a></div></div>
-<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_a95b5ddd5a478431f60978d52093c96bb"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">Application::GravitySimulator::run</a></div><div class="ttdeci">void run()</div><div class="ttdoc">Ejecuta la simulaci髇.</div><div class="ttdef"><b>Definition</b> <a href="#l00113">GravitySimulator.cpp:113</a></div></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    </div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>}</div>
+</div>
+<div class="ttc" id="a_brute_force_solver_8h_html"><div class="ttname"><a href="_brute_force_solver_8h.html">BruteForceSolver.h</a></div><div class="ttdoc">Implementa un solver de simulaci贸n f铆sica usando el enfoque de fuerza bruta.</div></div>
+<div class="ttc" id="a_config_8h_html"><div class="ttname"><a href="_config_8h.html">Config.h</a></div><div class="ttdoc">Gestiona la configuraci贸n de la aplicaci贸n, permitiendo obtener par谩metros como el modo de creaci贸n d...</div></div>
+<div class="ttc" id="a_gravity_simulator_8h_html"><div class="ttname"><a href="_gravity_simulator_8h.html">GravitySimulator.h</a></div><div class="ttdoc">Header para la simulaci贸n de gravedad.</div></div>
+<div class="ttc" id="a_oct_tree_8h_html"><div class="ttname"><a href="_oct_tree_8h.html">OctTree.h</a></div><div class="ttdoc">Define la clase OctTree para gestionar la partici贸n espacial de objetos f铆sicos mediante un 谩rbol oct...</div></div>
+<div class="ttc" id="a_oct_tree_collision_detection_8h_html"><div class="ttname"><a href="_oct_tree_collision_detection_8h.html">OctTreeCollisionDetection.h</a></div><div class="ttdoc">Implementa una detecci贸n de colisiones utilizando un 谩rbol octal (OctTree) para optimizar la simulaci...</div></div>
+<div class="ttc" id="a_oct_tree_solver_8h_html"><div class="ttname"><a href="_oct_tree_solver_8h.html">OctTreeSolver.h</a></div><div class="ttdoc">Implementa un solver de simulaci贸n f铆sica utilizando un 谩rbol octal para resolver las interacciones e...</div></div>
+<div class="ttc" id="a_timers_8h_html"><div class="ttname"><a href="_timers_8h.html">Timers.h</a></div><div class="ttdoc">Proporciona utilidades de temporizaci贸n para varios procesos, como tiempos de tick,...</div></div>
+<div class="ttc" id="abrute_force_detection_8h_html"><div class="ttname"><a href="brute_force_detection_8h.html">bruteForceDetection.h</a></div><div class="ttdoc">Implementa la detecci贸n de colisiones utilizando el m茅todo de fuerza bruta.</div></div>
+<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_a39cc5fb22799b46513b335c8404e829f"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#a39cc5fb22799b46513b335c8404e829f">Application::GravitySimulator::endSimulation</a></div><div class="ttdeci">void endSimulation()</div><div class="ttdoc">Finaliza la simulaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="#l00110">GravitySimulator.cpp:110</a></div></div>
+<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_a95b5ddd5a478431f60978d52093c96bb"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#a95b5ddd5a478431f60978d52093c96bb">Application::GravitySimulator::run</a></div><div class="ttdeci">void run()</div><div class="ttdoc">Ejecuta la simulaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="#l00126">GravitySimulator.cpp:126</a></div></div>
 <div class="ttc" id="aclass_application_1_1_gravity_simulator_html_acaa5144e3aa81ffa78af17b6ef313c5c"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#acaa5144e3aa81ffa78af17b6ef313c5c">Application::GravitySimulator::GravitySimulator</a></div><div class="ttdeci">GravitySimulator()</div><div class="ttdoc">Constructor por defecto de GravitySimulator.</div><div class="ttdef"><b>Definition</b> <a href="#l00012">GravitySimulator.cpp:12</a></div></div>
-<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_afc3198768b2b854471bc0f8dc97bd1fb"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">Application::GravitySimulator::initSimulation</a></div><div class="ttdeci">void initSimulation()</div><div class="ttdoc">Inicializa la simulaci髇.</div><div class="ttdef"><b>Definition</b> <a href="#l00020">GravitySimulator.cpp:20</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a></div><div class="ttdoc">Representa un objeto f韘ico en la simulaci髇.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8h_source.html#l00022">PhysicObject.h:23</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html">Engine::Physic::PhysicSystem</a></div><div class="ttdoc">Sistema f韘ico encargado de actualizar la simulaci髇 mediante la detecci髇 de colisiones y la resoluci髇 de fuer...</div><div class="ttdef"><b>Definition</b> <a href="_physic_system_8h_source.html#l00022">PhysicSystem.h:23</a></div></div>
-<div class="ttc" id="aclass_foundation_1_1_config_html_ae80d467bdba7b08c87bc9c98fd5311b9"><div class="ttname"><a href="class_foundation_1_1_config.html#ae80d467bdba7b08c87bc9c98fd5311b9">Foundation::Config::getConfig</a></div><div class="ttdeci">static Config * getConfig()</div><div class="ttdoc">Obtiene la instancia 鷑ica de Config.</div><div class="ttdef"><b>Definition</b> <a href="_config_8cpp_source.html#l00005">Config.cpp:5</a></div></div>
+<div class="ttc" id="aclass_application_1_1_gravity_simulator_html_afc3198768b2b854471bc0f8dc97bd1fb"><div class="ttname"><a href="class_application_1_1_gravity_simulator.html#afc3198768b2b854471bc0f8dc97bd1fb">Application::GravitySimulator::initSimulation</a></div><div class="ttdeci">void initSimulation()</div><div class="ttdoc">Inicializa la simulaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">GravitySimulator.cpp:23</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_object_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a></div><div class="ttdoc">Representa un objeto f铆sico en la simulaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8h_source.html#l00020">PhysicObject.h:21</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html">Engine::Physic::PhysicSystem</a></div><div class="ttdoc">Sistema f铆sico encargado de actualizar la simulaci贸n mediante la detecci贸n de colisiones y la resoluc...</div><div class="ttdef"><b>Definition</b> <a href="_physic_system_8h_source.html#l00026">PhysicSystem.h:27</a></div></div>
+<div class="ttc" id="aclass_foundation_1_1_config_html_ae80d467bdba7b08c87bc9c98fd5311b9"><div class="ttname"><a href="class_foundation_1_1_config.html#ae80d467bdba7b08c87bc9c98fd5311b9">Foundation::Config::getConfig</a></div><div class="ttdeci">static Config * getConfig()</div><div class="ttdoc">Obtiene la instancia 煤nica de Config.</div><div class="ttdef"><b>Definition</b> <a href="_config_8cpp_source.html#l00005">Config.cpp:5</a></div></div>
 <div class="ttc" id="aclass_foundation_1_1_file_html"><div class="ttname"><a href="class_foundation_1_1_file.html">Foundation::File</a></div><div class="ttdoc">Clase que gestiona la lectura y escritura de archivos.</div><div class="ttdef"><b>Definition</b> <a href="_file_8h_source.html#l00020">File.h:21</a></div></div>
 <div class="ttc" id="aclass_foundation_1_1_file_html_adb7480e31861e7c59d40348e59140a31"><div class="ttname"><a href="class_foundation_1_1_file.html#adb7480e31861e7c59d40348e59140a31">Foundation::File::read</a></div><div class="ttdeci">std::vector&lt; char &gt; read()</div><div class="ttdoc">Lee todo el contenido del archivo.</div><div class="ttdef"><b>Definition</b> <a href="_file_8cpp_source.html#l00029">File.cpp:29</a></div></div>
 <div class="ttc" id="aclass_foundation_1_1_file_html_af458d1fbb53c914d409f1195fcf95862"><div class="ttname"><a href="class_foundation_1_1_file.html#af458d1fbb53c914d409f1195fcf95862">Foundation::File::write</a></div><div class="ttdeci">void write(std::string const &amp;data)</div><div class="ttdoc">Escribe datos en el archivo.</div><div class="ttdef"><b>Definition</b> <a href="_file_8cpp_source.html#l00036">File.cpp:36</a></div></div>
@@ -274,14 +318,14 @@ $(function(){initNavTree('_gravity_simulator_8cpp_source.html',''); initResizabl
 <div class="ttc" id="aclass_foundation_1_1_timers_html_a94602b05412b4bf4428709555b15b0d5"><div class="ttname"><a href="class_foundation_1_1_timers.html#a94602b05412b4bf4428709555b15b0d5">Foundation::Timers::getElapsedTime</a></div><div class="ttdeci">float getElapsedTime(Timer timer) const</div><div class="ttdoc">Obtiene el tiempo transcurrido de un temporizador.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8cpp_source.html#l00028">Timers.cpp:28</a></div></div>
 <div class="ttc" id="aclass_foundation_1_1_timers_html_aa6b9c89d5453ff5239ad1f2aace4aa23"><div class="ttname"><a href="class_foundation_1_1_timers.html#aa6b9c89d5453ff5239ad1f2aace4aa23">Foundation::Timers::getTimers</a></div><div class="ttdeci">static Timers * getTimers()</div><div class="ttdoc">Recupera la instancia singleton de Timers.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8cpp_source.html#l00004">Timers.cpp:4</a></div></div>
 <div class="ttc" id="aclass_foundation_1_1_timers_html_ae2eb7b23762783829a97b6f5fbfa96d7"><div class="ttname"><a href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">Foundation::Timers::setTimer</a></div><div class="ttdeci">void setTimer(Timer timer, bool start)</div><div class="ttdoc">Inicia o detiene un temporizador especificado.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8cpp_source.html#l00010">Timers.cpp:10</a></div></div>
-<div class="ttc" id="anamespace_application_html"><div class="ttname"><a href="namespace_application.html">Application</a></div><div class="ttdoc">Espacio de nombres que contiene la aplicaci髇 y sus componentes.</div><div class="ttdef"><b>Definition</b> <a href="#l00010">GravitySimulator.cpp:11</a></div></div>
+<div class="ttc" id="anamespace_application_html"><div class="ttname"><a href="namespace_application.html">Application</a></div><div class="ttdoc">Espacio de nombres que contiene las clases de la capa Application.</div><div class="ttdef"><b>Definition</b> <a href="#l00010">GravitySimulator.cpp:11</a></div></div>
 <div class="ttc" id="anamespace_engine_1_1_physic_html_ac69b2a15f80a2c1d50fd735c508a100d"><div class="ttname"><a href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">Engine::Physic::from_json</a></div><div class="ttdeci">void from_json(const nlohmann::json &amp;j, PhysicObject &amp;o)</div><div class="ttdoc">Deserializa un objeto PhysicObject desde formato JSON.</div><div class="ttdef"><b>Definition</b> <a href="_physic_object_8cpp_source.html#l00039">PhysicObject.cpp:39</a></div></div>
 <div class="ttc" id="anamespace_foundation_html_a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d"><div class="ttname"><a href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::Algorithm::BRUTE_FORCE</a></div><div class="ttdeci">@ BRUTE_FORCE</div><div class="ttdef"><b>Definition</b> <a href="_config_8h_source.html#l00022">Config.h:22</a></div></div>
 <div class="ttc" id="anamespace_foundation_html_a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a"><div class="ttname"><a href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::Algorithm::OCTREE</a></div><div class="ttdeci">@ OCTREE</div><div class="ttdef"><b>Definition</b> <a href="_config_8h_source.html#l00023">Config.h:23</a></div></div>
 <div class="ttc" id="anamespace_foundation_html_a94d46abbd3a8a631c951ebfe5cce8207a170e02e86972c2be8559884cc3c12254"><div class="ttname"><a href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a170e02e86972c2be8559884cc3c12254">Foundation::Mode::RANDOM</a></div><div class="ttdeci">@ RANDOM</div><div class="ttdef"><b>Definition</b> <a href="_config_8h_source.html#l00035">Config.h:35</a></div></div>
 <div class="ttc" id="anamespace_foundation_html_a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719"><div class="ttname"><a href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Foundation::Mode::FILE</a></div><div class="ttdeci">@ FILE</div><div class="ttdef"><b>Definition</b> <a href="_config_8h_source.html#l00036">Config.h:36</a></div></div>
 <div class="ttc" id="anamespace_foundation_html_ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0"><div class="ttname"><a href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7a1de1c752385bf565da9d1ca8e85b58f0">Foundation::Timer::TICK</a></div><div class="ttdeci">@ TICK</div><div class="ttdoc">Temporizador usado para ticks del sistema.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8h_source.html#l00021">Timers.h:21</a></div></div>
-<div class="ttc" id="anamespace_foundation_html_ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184"><div class="ttname"><a href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a></div><div class="ttdeci">@ FRAME</div><div class="ttdoc">Temporizador usado para la medici髇 de tiempos de frame.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8h_source.html#l00022">Timers.h:22</a></div></div>
+<div class="ttc" id="anamespace_foundation_html_ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184"><div class="ttname"><a href="namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7ac57e921596445b99ab85558984966184">Foundation::Timer::FRAME</a></div><div class="ttdeci">@ FRAME</div><div class="ttdoc">Temporizador usado para la medici贸n de tiempos de frame.</div><div class="ttdef"><b>Definition</b> <a href="_timers_8h_source.html#l00022">Timers.h:22</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

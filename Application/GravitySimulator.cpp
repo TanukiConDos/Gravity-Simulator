@@ -24,7 +24,7 @@ namespace Application
     {
 
         auto config = Foundation::Config::getConfig();
-        switch (config->systemCreationMode)
+        switch (config->_systemCreationMode)
         {
         case Foundation::Mode::RANDOM:
         {
@@ -44,7 +44,7 @@ namespace Application
 
             _objects->emplace_back(glm::vec3{0,0,0}, glm::vec3{0,0,0}, 6e27f, 12371e3f);
             _objects->emplace_back(glm::vec3{ 0,383400e3f,0 }, glm::vec3{ 20e3f,0,0 }, 7.35e25f, 6737e3f);
-            for (int i = 0; i < config->numObjects; i++)
+            for (int i = 0; i < config->_numObjects; i++)
             {
                 float x = distrib(gen) * 2e10f - 1e10f;
                 float y = distrib(gen) * 2e10f - 1e10f;
@@ -61,7 +61,7 @@ namespace Application
         case Foundation::Mode::FILE:
         {
 
-            Foundation::File file = Foundation::File(std::string("./scenes/").append(config->fichero));
+            Foundation::File file = Foundation::File(std::string("./scenes/").append(config->_fichero));
             std::vector<char> aux = file.read();
             std::string data = std::string( aux.data(),aux.size());
             data.erase(aux.size());
@@ -78,7 +78,7 @@ namespace Application
         _stateMachine->_objects = _objects;
         std::unique_ptr<Engine::Physic::CollisionDetectionInterface> collisionAlgorithm;
         std::shared_ptr<Engine::Physic::OctTree> tree = nullptr;
-        switch(config->collisionAlgorithm)
+        switch(config->_collisionAlgorithm)
         {
         case Foundation::Algorithm::BRUTE_FORCE:
             collisionAlgorithm = std::make_unique<Engine::Physic::bruteForceDetection>();
@@ -91,7 +91,7 @@ namespace Application
 
 
         std::unique_ptr<Engine::Physic::SolverInterface> solverAlgorithm;
-        switch (config->collisionAlgorithm)
+        switch (config->_collisionAlgorithm)
         {
         case Foundation::Algorithm::BRUTE_FORCE:
             solverAlgorithm = std::make_unique<Engine::Physic::BruteForceSolver>();

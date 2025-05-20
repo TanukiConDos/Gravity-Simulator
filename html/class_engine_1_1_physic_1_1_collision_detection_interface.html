@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -106,11 +106,11 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_collision_detection_interf
   <div class="summary">
 <a href="#pub-methods">M茅todos p煤blicos</a> &#124;
 <a href="class_engine_1_1_physic_1_1_collision_detection_interface-members.html">Lista de todos los miembros</a>  </div>
-  <div class="headertitle"><div class="title">Referencia de la clase Engine::Physic::CollisionDetectionInterface</div></div>
+  <div class="headertitle"><div class="title">Referencia de la clase Engine::Physic::CollisionDetectionInterface<span class="mlabels"><span class="mlabel abstract">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>Interfaz para implementar algoritmos de detecci髇 de colisiones.  
+<p>Interfaz para implementar algoritmos de detecci贸n de colisiones.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_collision_detection_interface_8h_source.html">CollisionDetectionInterface.h</a>&gt;</code></p>
@@ -122,18 +122,46 @@ Diagrama de herencia de Engine::Physic::CollisionDetectionInterface</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 M茅todos p煤blicos</h2></td></tr>
-<tr class="memitem:addf38ca222d9edc009353a2f91940ad6" id="r_addf38ca222d9edc009353a2f91940ad6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#addf38ca222d9edc009353a2f91940ad6">detection</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)</td></tr>
-<tr class="memdesc:addf38ca222d9edc009353a2f91940ad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detecta colisiones entre objetos f韘icos.  <br /></td></tr>
-<tr class="separator:addf38ca222d9edc009353a2f91940ad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ee21c62e7c89d91c1043cfcc4b5148d" id="r_a1ee21c62e7c89d91c1043cfcc4b5148d"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1ee21c62e7c89d91c1043cfcc4b5148d">~CollisionDetectionInterface</a> ()=default</td></tr>
+<tr class="separator:a1ee21c62e7c89d91c1043cfcc4b5148d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b805aec3304874c9f470e849de0b416" id="r_a8b805aec3304874c9f470e849de0b416"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b805aec3304874c9f470e849de0b416">detection</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)=0</td></tr>
+<tr class="memdesc:a8b805aec3304874c9f470e849de0b416"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detecta colisiones entre objetos f铆sicos.  <br /></td></tr>
+<tr class="separator:a8b805aec3304874c9f470e849de0b416"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Interfaz para implementar algoritmos de detecci髇 de colisiones. </p>
-<p>Las clases que hereden de esta interfaz deben sobrescribir el m閠odo <a class="el" href="#addf38ca222d9edc009353a2f91940ad6" title="Detecta colisiones entre objetos f韘icos.">detection()</a> para procesar la detecci髇 de colisiones de acuerdo al intervalo de tiempo especificado y el conjunto de objetos f韘icos. </p>
+<div class="textblock"><p>Interfaz para implementar algoritmos de detecci贸n de colisiones. </p>
+<p>Las clases que hereden de esta interfaz deben sobrescribir el m茅todo <a class="el" href="#a8b805aec3304874c9f470e849de0b416" title="Detecta colisiones entre objetos f铆sicos.">detection()</a> para procesar la detecci贸n de colisiones de acuerdo al intervalo de tiempo especificado y el conjunto de objetos f铆sicos. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_collision_detection_interface_8h_source.html#l00023">23</a> del archivo <a class="el" href="_collision_detection_interface_8h_source.html">CollisionDetectionInterface.h</a>.</p>
-</div><h2 class="groupheader">Documentaci贸n de funciones miembro</h2>
-<a id="addf38ca222d9edc009353a2f91940ad6" name="addf38ca222d9edc009353a2f91940ad6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#addf38ca222d9edc009353a2f91940ad6">&#9670;&#160;</a></span>detection()</h2>
+</div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
+<a id="a1ee21c62e7c89d91c1043cfcc4b5148d" name="a1ee21c62e7c89d91c1043cfcc4b5148d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ee21c62e7c89d91c1043cfcc4b5148d">&#9670;&#160;</a></span>~CollisionDetectionInterface()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual Engine::Physic::CollisionDetectionInterface::~CollisionDetectionInterface </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel virtual">virtual</span><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Documentaci贸n de funciones miembro</h2>
+<a id="a8b805aec3304874c9f470e849de0b416" name="a8b805aec3304874c9f470e849de0b416"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b805aec3304874c9f470e849de0b416">&#9670;&#160;</a></span>detection()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -154,22 +182,22 @@ M茅todos p煤blicos</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel virtual">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel pure-virtual">pure virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p>Detecta colisiones entre objetos f韘icos. </p>
-<p>Este m閠odo eval鷄 las colisiones aplicables en funci髇 del intervalo de tiempo transcurrido y el vector de objetos proporcionado. Las clases derivadas deben implementar su l骻ica de detecci髇 de colisiones en este m閠odo.</p>
+<p>Detecta colisiones entre objetos f铆sicos. </p>
+<p>Este m茅todo eval煤a las colisiones aplicables en funci贸n del intervalo de tiempo transcurrido y el vector de objetos proporcionado. Las clases derivadas deben implementar su l贸gica de detecci贸n de colisiones en este m茅todo.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f韘icos a evaluar. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f铆sicos a evaluar. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Reimplementado en <a class="el" href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">Engine::Physic::bruteForceDetection</a> y <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a1ae53a9983c8ea1a98a13eb06212665d">Engine::Physic::OctTreeCollisionDetection</a>.</p>
+<p>Implementado en <a class="el" href="class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170">Engine::Physic::bruteForceDetection</a> y <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_collision_detection.html#a1ae53a9983c8ea1a98a13eb06212665d">Engine::Physic::OctTreeCollisionDetection</a>.</p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_collision_detection_interface_8cpp_source.html#l00003">3</a> del archivo <a class="el" href="_collision_detection_interface_8cpp_source.html">CollisionDetectionInterface.cpp</a>.</p>
 

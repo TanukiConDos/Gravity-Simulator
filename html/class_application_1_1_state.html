@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,7 +111,7 @@ $(function(){initNavTree('class_application_1_1_state.html',''); initResizable(t
 </div><!--header-->
 <div class="contents">
 
-<p>Clase base para los diferentes estados de la aplicaci髇.  
+<p>Clase base para los diferentes estados de la aplicaci贸n.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_state_8h_source.html">State.h</a>&gt;</code></p>
@@ -123,27 +123,54 @@ Diagrama de herencia de Application::State</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 M茅todos p煤blicos</h2></td></tr>
+<tr class="memitem:a5dea8d489150f1beadc44ecf67f3e6f6" id="r_a5dea8d489150f1beadc44ecf67f3e6f6"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5dea8d489150f1beadc44ecf67f3e6f6">~State</a> ()=default</td></tr>
+<tr class="separator:a5dea8d489150f1beadc44ecf67f3e6f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a374a363a3447f88efa91946a66616f2e" id="r_a374a363a3447f88efa91946a66616f2e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a374a363a3447f88efa91946a66616f2e">State</a> (std::shared_ptr&lt; <a class="el" href="class_application_1_1_state_machine.html">StateMachine</a> &gt; context)</td></tr>
-<tr class="memdesc:a374a363a3447f88efa91946a66616f2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el estado con el contexto de la m醧uina de estados.  <br /></td></tr>
+<tr class="memdesc:a374a363a3447f88efa91946a66616f2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el estado con el contexto de la m谩quina de estados.  <br /></td></tr>
 <tr class="separator:a374a363a3447f88efa91946a66616f2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83e454182a3d5b4a978173bc925ce22e" id="r_a83e454182a3d5b4a978173bc925ce22e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83e454182a3d5b4a978173bc925ce22e">frame</a> ()</td></tr>
-<tr class="memdesc:a83e454182a3d5b4a978173bc925ce22e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ejecuta la l骻ica que debe ocurrir en cada frame.  <br /></td></tr>
+<tr class="memdesc:a83e454182a3d5b4a978173bc925ce22e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ejecuta la l贸gica que debe ocurrir en cada frame.  <br /></td></tr>
 <tr class="separator:a83e454182a3d5b4a978173bc925ce22e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74c9c9b7ae13eb1b8d9ecc1e261b4668" id="r_a74c9c9b7ae13eb1b8d9ecc1e261b4668"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74c9c9b7ae13eb1b8d9ecc1e261b4668">changeState</a> (<a class="el" href="namespace_application.html#ab7d42aa28fd48ab53086f1139e6ed92a">Action</a> action)</td></tr>
-<tr class="memdesc:a74c9c9b7ae13eb1b8d9ecc1e261b4668"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gestiona la transici髇 a otro estado basado en la acci髇.  <br /></td></tr>
+<tr class="memdesc:a74c9c9b7ae13eb1b8d9ecc1e261b4668"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gestiona la transici贸n a otro estado basado en la acci贸n.  <br /></td></tr>
 <tr class="separator:a74c9c9b7ae13eb1b8d9ecc1e261b4668"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Atributos protegidos</h2></td></tr>
 <tr class="memitem:ab9eb01f0a4cc9e9325f433421c9a18b0" id="r_ab9eb01f0a4cc9e9325f433421c9a18b0"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="class_application_1_1_state_machine.html">StateMachine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab9eb01f0a4cc9e9325f433421c9a18b0">_context</a></td></tr>
-<tr class="memdesc:ab9eb01f0a4cc9e9325f433421c9a18b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contexto (m醧uina de estados) de este estado.  <br /></td></tr>
+<tr class="memdesc:ab9eb01f0a4cc9e9325f433421c9a18b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contexto (m谩quina de estados) de este estado.  <br /></td></tr>
 <tr class="separator:ab9eb01f0a4cc9e9325f433421c9a18b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Clase base para los diferentes estados de la aplicaci髇. </p>
+<div class="textblock"><p>Clase base para los diferentes estados de la aplicaci贸n. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00099">99</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
+<a id="a5dea8d489150f1beadc44ecf67f3e6f6" name="a5dea8d489150f1beadc44ecf67f3e6f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dea8d489150f1beadc44ecf67f3e6f6">&#9670;&#160;</a></span>~State()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual Application::State::~State </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel virtual">virtual</span><span class="mlabel default">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a374a363a3447f88efa91946a66616f2e" name="a374a363a3447f88efa91946a66616f2e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a374a363a3447f88efa91946a66616f2e">&#9670;&#160;</a></span>State()</h2>
 
@@ -167,15 +194,15 @@ Atributos protegidos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Constructor que inicializa el estado con el contexto de la m醧uina de estados. </p>
+<p>Constructor que inicializa el estado con el contexto de la m谩quina de estados. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">context</td><td>Puntero compartido al objeto <a class="el" href="class_application_1_1_state_machine.html" title="Gestiona la transici髇 y ejecuci髇 de estados en la aplicaci髇.">StateMachine</a>. </td></tr>
+    <tr><td class="paramname">context</td><td>Puntero compartido al objeto <a class="el" href="class_application_1_1_state_machine.html" title="Gestiona la transici贸n y ejecuci贸n de estados en la aplicaci贸n.">StateMachine</a>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00106">106</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00108">108</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 <div class="dynheader">
 Gr谩fico de llamadas a esta funci贸n:</div>
 <div class="dyncontent">
@@ -208,17 +235,17 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Gestiona la transici髇 a otro estado basado en la acci髇. </p>
+<p>Gestiona la transici贸n a otro estado basado en la acci贸n. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">action</td><td>Acci髇 que determina el cambio de estado. </td></tr>
+    <tr><td class="paramname">action</td><td>Acci贸n que determina el cambio de estado. </td></tr>
   </table>
   </dd>
 </dl>
 
 <p>Reimplementado en <a class="el" href="class_application_1_1_config.html#adaf5f54bfda9ff9e98d78594ccf5115b">Application::Config</a>, <a class="el" href="class_application_1_1_debug.html#a8f52395578500119e864f51f536b6279">Application::Debug</a>, <a class="el" href="class_application_1_1_main_menu.html#a6fd7e0167eacf6a7bd06a1c1da6f46ea">Application::MainMenu</a> y <a class="el" href="class_application_1_1_object_selected.html#a5891edbdee992c14084ca8528eb4367c">Application::ObjectSelected</a>.</p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00117">117</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00119">119</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 
 </div>
 </div>
@@ -245,11 +272,11 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Ejecuta la l骻ica que debe ocurrir en cada frame. </p>
+<p>Ejecuta la l贸gica que debe ocurrir en cada frame. </p>
 
 <p>Reimplementado en <a class="el" href="class_application_1_1_config.html#a291cc3a874949e121dcf83a3f90681bc">Application::Config</a>, <a class="el" href="class_application_1_1_debug.html#a26339829cae3b768474358c34eb8ab23">Application::Debug</a>, <a class="el" href="class_application_1_1_main_menu.html#a868fe54ddb269b9ab03f0d7d068dd698">Application::MainMenu</a> y <a class="el" href="class_application_1_1_object_selected.html#a30dd507edcc6c76dd65cc0cf9dda010a">Application::ObjectSelected</a>.</p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00111">111</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00113">113</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 
 </div>
 </div>
@@ -274,9 +301,9 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Contexto (m醧uina de estados) de este estado. </p>
+<p>Contexto (m谩quina de estados) de este estado. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00121">121</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_state_8h_source.html#l00123">123</a> del archivo <a class="el" href="_state_8h_source.html">State.h</a>.</p>
 
 </div>
 </div>

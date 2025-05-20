@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -112,104 +112,98 @@ $(function(){initNavTree('_swap_chain_8h_source.html',''); initResizable(true); 
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &quot;<a class="code" href="_g_p_u_8h.html">GPU.h</a>&quot;</span></div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine.html">Engine</a></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>{</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>    <span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Graphic</a></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    {</div>
-<div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html">   22</a></span>        <span class="keyword">class </span><a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">   25</a></span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#ada54413ee41d9c1b3a3b049ba8e3c178">   26</a></span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp; <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#ada54413ee41d9c1b3a3b049ba8e3c178">operator= </a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>            </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>(<a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; gpu, <a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; window);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>            </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>            <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7cc184155cce03ba34b43dbf60f4a406">~SwapChain</a>();</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#ab4e9e801b223ca12168c7673394309c8">recreateSwapChain</a>();</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>            </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>            VkResult <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a1f6157fce0293ca975b52fa779a440ab">adquireNextImage</a>(uint32_t imageIndex);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>            </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aac415748bec27da1e4b831136cf9ffc9">resetFences</a>(uint32_t currentFrame);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>            </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>            <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aedc7dad3cb5e073f4145e1d6a1e55fd3">beginRenderPass</a>(VkCommandBuffer commandBuffer, uint32_t imageIndex);</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">   76</a></span>            VkExtent2D <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">getExtent</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _swapChainExtent; }</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>            </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>            VkResult <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aba7cce27b1e374aba727f863a42f1bc8">queueSubmit</a>(VkCommandBuffer commandBuffer, uint32_t currentFrame);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>            </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">   92</a></span>            VkRenderPass <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">getRenderPass</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _renderPass; }</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>            <a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; _gpu;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>            <a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; _window;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>            VkSwapchainKHR _swapChain = VK_NULL_HANDLE;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>            VkSwapchainKHR _oldSwapchain = VK_NULL_HANDLE;</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>            std::vector&lt;VkImage&gt; _swapChainImages;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>            VkFormat _swapChainImageFormat;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>            VkExtent2D _swapChainExtent;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>            std::vector&lt;VkImageView&gt; _swapChainImageViews;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>            VkRenderPass _renderPass;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>            std::vector&lt;VkFramebuffer&gt; _swapChainFramebuffers;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>            VkImage _depthImage;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>            VkDeviceMemory _depthImageMemory;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>            VkImageView _depthImageView;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>            std::vector&lt;VkSemaphore&gt; _imageAvailableSemaphores;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>            std::vector&lt;VkSemaphore&gt; _renderFinishedSemaphores;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>            std::vector&lt;VkFence&gt; _inFlightFences;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span></div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>            VkExtent2D chooseSwapExtent(<span class="keyword">const</span> VkSurfaceCapabilitiesKHR&amp; capabilities);</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>            </div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>            VkPresentModeKHR chooseSwapPresentMode(<span class="keyword">const</span> std::vector&lt;VkPresentModeKHR&gt;&amp; availablePresentModes);</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>            </div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>            VkSurfaceFormatKHR chooseSwapSurfaceFormat(<span class="keyword">const</span> std::vector&lt;VkSurfaceFormatKHR&gt;&amp; availableFormats);</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span></div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>            <span class="keywordtype">void</span> createSwapChain();</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>            </div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>            <span class="keywordtype">void</span> createImageViews();</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>            </div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>            <span class="keywordtype">void</span> cleanupSwapChain();</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>            </div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>            VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>            </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>            <span class="keywordtype">void</span> createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, </div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>                VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage&amp; image, VkDeviceMemory&amp; imageMemory);</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>            </div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>            VkFormat findSupportedFormat(<span class="keyword">const</span> std::vector&lt;VkFormat&gt;&amp; candidates, VkImageTiling tiling, VkFormatFeatureFlags features);</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>            </div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>            <span class="keywordtype">void</span> createDepthResources();</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span></div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>            <span class="keywordtype">void</span> createRenderPass();</div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>            </div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>            <span class="keywordtype">void</span> createFramebuffers();</div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>            </div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>            VkFormat findDepthFormat();</div>
-<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>            </div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>            <span class="keywordtype">bool</span> hasStencilComponent(VkFormat format);</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>            </div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>            <span class="keywordtype">void</span> createSyncObjects();</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        };</div>
+<div class="foldopen" id="foldopen00020" data-start="{" data-end="};">
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html">   20</a></span>    <span class="keyword">class </span><a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">   23</a></span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#ada54413ee41d9c1b3a3b049ba8e3c178">   24</a></span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp; <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#ada54413ee41d9c1b3a3b049ba8e3c178">operator= </a>(<span class="keyword">const</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>            </div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">SwapChain</a>(<a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; gpu, <a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; window);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>            </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7cc184155cce03ba34b43dbf60f4a406">~SwapChain</a>();</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#ab4e9e801b223ca12168c7673394309c8">recreateSwapChain</a>();</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>            </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        VkResult <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a1f6157fce0293ca975b52fa779a440ab">adquireNextImage</a>(uint32_t imageIndex);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>            </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aac415748bec27da1e4b831136cf9ffc9">resetFences</a>(uint32_t currentFrame);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>            </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aedc7dad3cb5e073f4145e1d6a1e55fd3">beginRenderPass</a>(VkCommandBuffer commandBuffer, uint32_t imageIndex);</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>            </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">   74</a></span>        VkExtent2D <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">getExtent</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _swapChainExtent; }</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>            </div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        VkResult <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#aba7cce27b1e374aba727f863a42f1bc8">queueSubmit</a>(VkCommandBuffer commandBuffer, uint32_t currentFrame);</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>            </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">   90</a></span>        VkRenderPass <a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">getRenderPass</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _renderPass; }</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        <a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; _gpu;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        <a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; _window;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        VkSwapchainKHR _swapChain = VK_NULL_HANDLE;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>        VkSwapchainKHR _oldSwapchain = VK_NULL_HANDLE;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        std::vector&lt;VkImage&gt; _swapChainImages;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>        VkFormat _swapChainImageFormat;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>        VkExtent2D _swapChainExtent;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        std::vector&lt;VkImageView&gt; _swapChainImageViews;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>        VkRenderPass _renderPass;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>        std::vector&lt;VkFramebuffer&gt; _swapChainFramebuffers;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        VkImage _depthImage;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        VkDeviceMemory _depthImageMemory;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        VkImageView _depthImageView;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        std::vector&lt;VkSemaphore&gt; _imageAvailableSemaphores;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>        std::vector&lt;VkSemaphore&gt; _renderFinishedSemaphores;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>        std::vector&lt;VkFence&gt; _inFlightFences;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>        VkExtent2D chooseSwapExtent(<span class="keyword">const</span> VkSurfaceCapabilitiesKHR&amp; capabilities);</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            </div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>        VkPresentModeKHR chooseSwapPresentMode(<span class="keyword">const</span> std::vector&lt;VkPresentModeKHR&gt;&amp; availablePresentModes);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>            </div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>        VkSurfaceFormatKHR chooseSwapSurfaceFormat(<span class="keyword">const</span> std::vector&lt;VkSurfaceFormatKHR&gt;&amp; availableFormats);</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span></div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        <span class="keywordtype">void</span> createSwapChain();</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>            </div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>        <span class="keywordtype">void</span> createImageViews();</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>            </div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>        <span class="keywordtype">void</span> cleanupSwapChain();</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>            </div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>            </div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>        <span class="keywordtype">void</span> createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, </div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>            VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage&amp; image, VkDeviceMemory&amp; imageMemory);</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>            </div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>        VkFormat findSupportedFormat(<span class="keyword">const</span> std::vector&lt;VkFormat&gt;&amp; candidates, VkImageTiling tiling, VkFormatFeatureFlags features);</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>            </div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        <span class="keywordtype">void</span> createDepthResources();</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span></div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>        <span class="keywordtype">void</span> createRenderPass();</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>            </div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>        <span class="keywordtype">void</span> createFramebuffers();</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>            </div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>        VkFormat findDepthFormat();</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>            </div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        <span class="keywordtype">bool</span> hasStencilComponent(VkFormat format);</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>            </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>        <span class="keywordtype">void</span> createSyncObjects();</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    };</div>
 </div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    }</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>}</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
-<div class="ttc" id="a_g_p_u_8h_html"><div class="ttname"><a href="_g_p_u_8h.html">GPU.h</a></div><div class="ttdoc">Gestiona los recursos de la GPU y la interacci髇 con Vulkan, utilizando la ventana provista.</div></div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>}</div>
+<div class="ttc" id="a_g_p_u_8h_html"><div class="ttname"><a href="_g_p_u_8h.html">GPU.h</a></div><div class="ttdoc">Gestiona los recursos de la GPU y la interacci贸n con Vulkan, utilizando la ventana provista.</div></div>
 <div class="ttc" id="a_window_8h_html"><div class="ttname"><a href="_window_8h.html">Window.h</a></div><div class="ttdoc">Define la clase Window para gestionar la ventana y sus eventos.</div></div>
 <div class="ttc" id="aclass_application_1_1_window_html"><div class="ttname"><a href="class_application_1_1_window.html">Application::Window</a></div><div class="ttdoc">Clase que gestiona la ventana y sus eventos.</div><div class="ttdef"><b>Definition</b> <a href="_window_8h_source.html#l00018">Window.h:18</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></div><div class="ttdoc">Clase que administra recursos de la GPU y la interacci髇 con Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00052">GPU.h:53</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a1f6157fce0293ca975b52fa779a440ab"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a1f6157fce0293ca975b52fa779a440ab">Engine::Graphic::SwapChain::adquireNextImage</a></div><div class="ttdeci">VkResult adquireNextImage(uint32_t imageIndex)</div><div class="ttdoc">Adquiere la siguiente imagen disponible del swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00273">SwapChain.cpp:273</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></div><div class="ttdoc">Clase que administra recursos de la GPU y la interacci贸n con Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00050">GPU.h:51</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a1f6157fce0293ca975b52fa779a440ab"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a1f6157fce0293ca975b52fa779a440ab">Engine::Graphic::SwapChain::adquireNextImage</a></div><div class="ttdeci">VkResult adquireNextImage(uint32_t imageIndex)</div><div class="ttdoc">Adquiere la siguiente imagen disponible del swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00271">SwapChain.cpp:271</a></div></div>
 <div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a208b59075013656b07465a27246085c4"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">Engine::Graphic::SwapChain::SwapChain</a></div><div class="ttdeci">SwapChain(const SwapChain &amp;)=delete</div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a7154543ac7fe70f803abd029461f36f6"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">Engine::Graphic::SwapChain::getExtent</a></div><div class="ttdeci">VkExtent2D getExtent() const</div><div class="ttdoc">Obtiene las dimensiones actuales del swap chain.</div><div class="ttdef"><b>Definition</b> <a href="#l00076">SwapChain.h:76</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a7cc184155cce03ba34b43dbf60f4a406"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a7cc184155cce03ba34b43dbf60f4a406">Engine::Graphic::SwapChain::~SwapChain</a></div><div class="ttdeci">~SwapChain()</div><div class="ttdoc">Destructor que limpia los recursos asignados al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00074">SwapChain.cpp:74</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a8e9760de56d7458d4305bf4f4cbdd300"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">Engine::Graphic::SwapChain::getRenderPass</a></div><div class="ttdeci">VkRenderPass getRenderPass() const</div><div class="ttdoc">Obtiene el render pass asociado al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="#l00092">SwapChain.h:92</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aac415748bec27da1e4b831136cf9ffc9"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aac415748bec27da1e4b831136cf9ffc9">Engine::Graphic::SwapChain::resetFences</a></div><div class="ttdeci">void resetFences(uint32_t currentFrame)</div><div class="ttdoc">Reinicia los fences de sincronizaci髇 para el frame actual.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00281">SwapChain.cpp:281</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_ab4e9e801b223ca12168c7673394309c8"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#ab4e9e801b223ca12168c7673394309c8">Engine::Graphic::SwapChain::recreateSwapChain</a></div><div class="ttdeci">void recreateSwapChain()</div><div class="ttdoc">Recrea el swap chain, 鷗il cuando ocurre un cambio en la ventana o superficie.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00259">SwapChain.cpp:259</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aba7cce27b1e374aba727f863a42f1bc8"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aba7cce27b1e374aba727f863a42f1bc8">Engine::Graphic::SwapChain::queueSubmit</a></div><div class="ttdeci">VkResult queueSubmit(VkCommandBuffer commandBuffer, uint32_t currentFrame)</div><div class="ttdoc">Env韆 el buffer de comandos a la cola de presentaci髇.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00412">SwapChain.cpp:412</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a7154543ac7fe70f803abd029461f36f6"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a7154543ac7fe70f803abd029461f36f6">Engine::Graphic::SwapChain::getExtent</a></div><div class="ttdeci">VkExtent2D getExtent() const</div><div class="ttdoc">Obtiene las dimensiones actuales del swap chain.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">SwapChain.h:74</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a7cc184155cce03ba34b43dbf60f4a406"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a7cc184155cce03ba34b43dbf60f4a406">Engine::Graphic::SwapChain::~SwapChain</a></div><div class="ttdeci">~SwapChain()</div><div class="ttdoc">Destructor que limpia los recursos asignados al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00072">SwapChain.cpp:72</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a8e9760de56d7458d4305bf4f4cbdd300"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">Engine::Graphic::SwapChain::getRenderPass</a></div><div class="ttdeci">VkRenderPass getRenderPass() const</div><div class="ttdoc">Obtiene el render pass asociado al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="#l00090">SwapChain.h:90</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aac415748bec27da1e4b831136cf9ffc9"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aac415748bec27da1e4b831136cf9ffc9">Engine::Graphic::SwapChain::resetFences</a></div><div class="ttdeci">void resetFences(uint32_t currentFrame)</div><div class="ttdoc">Reinicia los fences de sincronizaci贸n para el frame actual.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00279">SwapChain.cpp:279</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_ab4e9e801b223ca12168c7673394309c8"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#ab4e9e801b223ca12168c7673394309c8">Engine::Graphic::SwapChain::recreateSwapChain</a></div><div class="ttdeci">void recreateSwapChain()</div><div class="ttdoc">Recrea el swap chain, 煤til cuando ocurre un cambio en la ventana o superficie.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00257">SwapChain.cpp:257</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aba7cce27b1e374aba727f863a42f1bc8"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aba7cce27b1e374aba727f863a42f1bc8">Engine::Graphic::SwapChain::queueSubmit</a></div><div class="ttdeci">VkResult queueSubmit(VkCommandBuffer commandBuffer, uint32_t currentFrame)</div><div class="ttdoc">Env铆a el buffer de comandos a la cola de presentaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00410">SwapChain.cpp:410</a></div></div>
 <div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_ada54413ee41d9c1b3a3b049ba8e3c178"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#ada54413ee41d9c1b3a3b049ba8e3c178">Engine::Graphic::SwapChain::operator=</a></div><div class="ttdeci">SwapChain &amp; operator=(const SwapChain &amp;)=delete</div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aedc7dad3cb5e073f4145e1d6a1e55fd3"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aedc7dad3cb5e073f4145e1d6a1e55fd3">Engine::Graphic::SwapChain::beginRenderPass</a></div><div class="ttdeci">void beginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex)</div><div class="ttdoc">Inicia el render pass en el buffer de comandos.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00286">SwapChain.cpp:286</a></div></div>
-<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
-<div class="ttc" id="anamespace_engine_html"><div class="ttname"><a href="namespace_engine.html">Engine</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_aedc7dad3cb5e073f4145e1d6a1e55fd3"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#aedc7dad3cb5e073f4145e1d6a1e55fd3">Engine::Graphic::SwapChain::beginRenderPass</a></div><div class="ttdeci">void beginRenderPass(VkCommandBuffer commandBuffer, uint32_t imageIndex)</div><div class="ttdoc">Inicia el render pass en el buffer de comandos.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8cpp_source.html#l00284">SwapChain.cpp:284</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdoc">Espacio de nombres que contiene las clases del motor gr谩fico.</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

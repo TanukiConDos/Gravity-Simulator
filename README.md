@@ -44,7 +44,6 @@ Una vez configurada la simulación podemos pulsar en iniciar simulación. Esto n
    - [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) con soporte para C++ y C++20.
    - Descargar e instalar [Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows).
    - Descargar e instalar [GLFW](https://www.glfw.org/download.html).
-   - Descargar e instalar [GLM](https://github.com/g-truc/glm/releases).
 
 2. **Preparación del entorno:**
 
@@ -53,7 +52,8 @@ Una vez configurada la simulación podemos pulsar en iniciar simulación. Esto n
    y añade las rutas a la carpeta include de las librerías.
 
    A continuación, ve a `Propiedades de la solución -> Configuración de propiedades -> Vinculador -> Directorios de bibliotecas adicionales` y añade las rutas a las carpetas lib de las librerías.
-
+   Después, ve a `Propiedades de la solución -> Configuración de propiedades -> Vinculador -> Entrada -> Dependencias adicionales` y añade las librerías vulkan-1.lib y glfw3.lib.
+   Por ultimo, edita el script compilar.bat en la carpeta `Engine/Graphic/shader` cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK.
    Ya puedes compilar el proyecto y ejecutarlo.
 
    Para la ejecución de los test se debe añadir la ruta de la librería GLM a los directorios de inclusión adicionales siguiendo el mismo procedimiento que antes en el projecto de test.

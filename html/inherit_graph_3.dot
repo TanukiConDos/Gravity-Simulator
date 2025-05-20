@@ -5,5 +5,5 @@ digraph "Gráfico de jerarquía de clases"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="Application::StateMachine",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_state_machine.html",tooltip="Gestiona la transici�n y ejecuci�n de estados en la aplicaci�n."];
+  Node0 [id="Node000000",label="Application::StateMachine",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_state_machine.html",tooltip="Gestiona la transición y ejecución de estados en la aplicación."];
 }

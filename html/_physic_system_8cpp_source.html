@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -114,26 +114,26 @@ $(function(){initNavTree('_physic_system_8cpp_source.html',''); initResizable(tr
 <div class="foldopen" id="foldopen00006" data-start="{" data-end="}">
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_system.html#a9c0942d2137819ef80910b149e7ee676">    6</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_system.html#a9c0942d2137819ef80910b149e7ee676">PhysicSystem::update</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects)</div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>    {</div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        <span class="keywordflow">if</span> (collitionDetectionAlgorithm == <span class="keyword">nullptr</span> &amp;&amp; solverAlgorithm == <span class="keyword">nullptr</span>) <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>        collitionDetectionAlgorithm-&gt;detection(deltaTime,objects);</div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>        solverAlgorithm-&gt;solve(deltaTime,objects);</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        <span class="keywordflow">if</span> (_collitionDetectionAlgorithm == <span class="keyword">nullptr</span> &amp;&amp; _solverAlgorithm == <span class="keyword">nullptr</span>) <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>        _collitionDetectionAlgorithm-&gt;detection(deltaTime,objects);</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>        _solverAlgorithm-&gt;solve(deltaTime,objects);</div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>    }</div>
 </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="foldopen" id="foldopen00013" data-start="{" data-end="}">
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_physic_system.html#ae63e0757c9719ffaed5933f7ad327f56">   13</a></span>    <a class="code hl_function" href="class_engine_1_1_physic_1_1_physic_system.html#a9b9e1dc79a77230bf12698a8823aaaed">PhysicSystem::PhysicSystem</a>(std::unique_ptr&lt;CollisionDetectionInterface&gt; collitionDetectionAlgorithm,</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>        std::unique_ptr&lt;SolverInterface&gt; solverAlgorithm):</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>        collitionDetectionAlgorithm(std::move(collitionDetectionAlgorithm)),</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>        solverAlgorithm(std::move(solverAlgorithm))</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>        _collitionDetectionAlgorithm(std::move(collitionDetectionAlgorithm)),</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>        _solverAlgorithm(std::move(solverAlgorithm))</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    {</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    }</div>
 </div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>}</div>
-<div class="ttc" id="a_physic_system_8h_html"><div class="ttname"><a href="_physic_system_8h.html">PhysicSystem.h</a></div><div class="ttdoc">Gestiona la simulaci�n f�sica utilizando un algoritmo de detecci�n de colisiones y un solver para actualizar ...</div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html_a16f77480f2c32307f07d7745643ab729"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html#a16f77480f2c32307f07d7745643ab729">Engine::Physic::PhysicSystem::UNIVERSAL_GRAVITATION</a></div><div class="ttdeci">static const float UNIVERSAL_GRAVITATION</div><div class="ttdoc">Constante de gravitaci�n universal utilizada en los c�lculos f�sicos.</div><div class="ttdef"><b>Definition</b> <a href="_physic_system_8h_source.html#l00026">PhysicSystem.h:26</a></div></div>
+<div class="ttc" id="a_physic_system_8h_html"><div class="ttname"><a href="_physic_system_8h.html">PhysicSystem.h</a></div><div class="ttdoc">Gestiona la simulación física utilizando un algoritmo de detección de colisiones y un solver para act...</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html_a16f77480f2c32307f07d7745643ab729"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html#a16f77480f2c32307f07d7745643ab729">Engine::Physic::PhysicSystem::UNIVERSAL_GRAVITATION</a></div><div class="ttdeci">static const float UNIVERSAL_GRAVITATION</div><div class="ttdoc">Constante de gravitación universal utilizada en los cálculos físicos.</div><div class="ttdef"><b>Definition</b> <a href="_physic_system_8h_source.html#l00030">PhysicSystem.h:30</a></div></div>
 <div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html_a9b9e1dc79a77230bf12698a8823aaaed"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html#a9b9e1dc79a77230bf12698a8823aaaed">Engine::Physic::PhysicSystem::PhysicSystem</a></div><div class="ttdeci">PhysicSystem()=default</div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html_a9c0942d2137819ef80910b149e7ee676"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html#a9c0942d2137819ef80910b149e7ee676">Engine::Physic::PhysicSystem::update</a></div><div class="ttdeci">void update(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects)</div><div class="ttdoc">Actualiza la simulaci�n f�sica.</div><div class="ttdef"><b>Definition</b> <a href="#l00006">PhysicSystem.cpp:6</a></div></div>
-<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_physic_system_html_a9c0942d2137819ef80910b149e7ee676"><div class="ttname"><a href="class_engine_1_1_physic_1_1_physic_system.html#a9c0942d2137819ef80910b149e7ee676">Engine::Physic::PhysicSystem::update</a></div><div class="ttdeci">void update(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects)</div><div class="ttdoc">Actualiza la simulación física.</div><div class="ttdef"><b>Definition</b> <a href="#l00006">PhysicSystem.cpp:6</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdoc">Espacio de nombres que contiene las clases del motor de físicas.</div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

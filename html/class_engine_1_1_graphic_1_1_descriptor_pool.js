@@ -6,5 +6,6 @@ var class_engine_1_1_graphic_1_1_descriptor_pool =
     [ "getDescriptorPool", "class_engine_1_1_graphic_1_1_descriptor_pool.html#af9907b9ded57cb016164f46f9a2912af", null ],
     [ "getDescriptorSets", "class_engine_1_1_graphic_1_1_descriptor_pool.html#a5e6cce23a33ab0377f3d46ea497c3446", null ],
     [ "operator=", "class_engine_1_1_graphic_1_1_descriptor_pool.html#a082e98594eb164ebafe683688025a5e3", null ],
+    [ "sendUniformBufferToGPU", "class_engine_1_1_graphic_1_1_descriptor_pool.html#a36f81bdfa4dc27ceb22d3ccdfa13865a", null ],
     [ "updateUniformBuffer", "class_engine_1_1_graphic_1_1_descriptor_pool.html#a6ad6eea7ffe60749efc6dfe1620301f8", null ]
 ];

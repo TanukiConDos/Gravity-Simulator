@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -112,7 +112,7 @@ $(function(){initNavTree('class_foundation_1_1_config.html',''); initResizable(t
 </div><!--header-->
 <div class="contents">
 
-<p>Clase que maneja la configuraci髇 global de la aplicaci髇.  
+<p>Clase que maneja la configuraci贸n global de la aplicaci贸n.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_config_8h_source.html">Config.h</a>&gt;</code></p>
@@ -127,33 +127,33 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 M茅todos p煤blicos est谩ticos</h2></td></tr>
 <tr class="memitem:ae80d467bdba7b08c87bc9c98fd5311b9" id="r_ae80d467bdba7b08c87bc9c98fd5311b9"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="class_foundation_1_1_config.html">Config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae80d467bdba7b08c87bc9c98fd5311b9">getConfig</a> ()</td></tr>
-<tr class="memdesc:ae80d467bdba7b08c87bc9c98fd5311b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la instancia 鷑ica de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci髇 global de la aplicaci髇.">Config</a>.  <br /></td></tr>
+<tr class="memdesc:ae80d467bdba7b08c87bc9c98fd5311b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene la instancia 煤nica de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci贸n global de la aplicaci贸n.">Config</a>.  <br /></td></tr>
 <tr class="separator:ae80d467bdba7b08c87bc9c98fd5311b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Atributos p煤blicos</h2></td></tr>
-<tr class="memitem:a8291eef732210623da419da54fa89d12" id="r_a8291eef732210623da419da54fa89d12"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">Mode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8291eef732210623da419da54fa89d12">systemCreationMode</a> = <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Mode::FILE</a></td></tr>
-<tr class="memdesc:a8291eef732210623da419da54fa89d12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Modo de creaci髇 del sistema; por defecto se carga desde archivo.  <br /></td></tr>
-<tr class="separator:a8291eef732210623da419da54fa89d12"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb4896e19c5afa7da4f05a60e663e4b0" id="r_adb4896e19c5afa7da4f05a60e663e4b0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adb4896e19c5afa7da4f05a60e663e4b0">numObjects</a> = 998</td></tr>
-<tr class="memdesc:adb4896e19c5afa7da4f05a60e663e4b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">N鷐ero de objetos a simular.  <br /></td></tr>
-<tr class="separator:adb4896e19c5afa7da4f05a60e663e4b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a169c8b26d922e173f63f15bdaee87e15" id="r_a169c8b26d922e173f63f15bdaee87e15"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a169c8b26d922e173f63f15bdaee87e15">time</a> = 1000</td></tr>
-<tr class="memdesc:a169c8b26d922e173f63f15bdaee87e15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tiempo de simulaci髇.  <br /></td></tr>
-<tr class="separator:a169c8b26d922e173f63f15bdaee87e15"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed8e5e245fe0f5b319fd09fb7d40d0af" id="r_aed8e5e245fe0f5b319fd09fb7d40d0af"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aed8e5e245fe0f5b319fd09fb7d40d0af">fichero</a> [100] = &quot;tierra.json&quot;</td></tr>
-<tr class="memdesc:aed8e5e245fe0f5b319fd09fb7d40d0af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nombre del archivo de datos (por defecto "tierra.json").  <br /></td></tr>
-<tr class="separator:aed8e5e245fe0f5b319fd09fb7d40d0af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44bf4bb98e7747da31608c2e7757b168" id="r_a44bf4bb98e7747da31608c2e7757b168"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a44bf4bb98e7747da31608c2e7757b168">collisionAlgorithm</a> = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td></tr>
-<tr class="memdesc:a44bf4bb98e7747da31608c2e7757b168"><td class="mdescLeft">&#160;</td><td class="mdescRight">Algoritmo utilizado para la detecci髇 de colisiones (por defecto fuerza bruta).  <br /></td></tr>
-<tr class="separator:a44bf4bb98e7747da31608c2e7757b168"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afed3c793ab6edf87d1b35cf40bd00cb0" id="r_afed3c793ab6edf87d1b35cf40bd00cb0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afed3c793ab6edf87d1b35cf40bd00cb0">SolverAlgorithm</a> = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td></tr>
-<tr class="memdesc:afed3c793ab6edf87d1b35cf40bd00cb0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Algoritmo utilizado para la resoluci髇 de fuerzas (por defecto fuerza bruta).  <br /></td></tr>
-<tr class="separator:afed3c793ab6edf87d1b35cf40bd00cb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2c41bcd63663c7b455880350ee35a96" id="r_ac2c41bcd63663c7b455880350ee35a96"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">Mode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac2c41bcd63663c7b455880350ee35a96">_systemCreationMode</a> = <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Mode::FILE</a></td></tr>
+<tr class="memdesc:ac2c41bcd63663c7b455880350ee35a96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Modo de creaci贸n del sistema; por defecto se carga desde archivo.  <br /></td></tr>
+<tr class="separator:ac2c41bcd63663c7b455880350ee35a96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab03e1a1f9126c79cd4a156a623d45dc4" id="r_ab03e1a1f9126c79cd4a156a623d45dc4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab03e1a1f9126c79cd4a156a623d45dc4">_numObjects</a> = 998</td></tr>
+<tr class="memdesc:ab03e1a1f9126c79cd4a156a623d45dc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">N煤mero de objetos a simular.  <br /></td></tr>
+<tr class="separator:ab03e1a1f9126c79cd4a156a623d45dc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23239c21924d731b23be132c4046e0b2" id="r_a23239c21924d731b23be132c4046e0b2"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a23239c21924d731b23be132c4046e0b2">_time</a> = 1000</td></tr>
+<tr class="memdesc:a23239c21924d731b23be132c4046e0b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tiempo de simulaci贸n.  <br /></td></tr>
+<tr class="separator:a23239c21924d731b23be132c4046e0b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12bed0552347ced68fabc47949f59aaa" id="r_a12bed0552347ced68fabc47949f59aaa"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12bed0552347ced68fabc47949f59aaa">_fichero</a> [100] = &quot;tierra.json&quot;</td></tr>
+<tr class="memdesc:a12bed0552347ced68fabc47949f59aaa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nombre del archivo de datos (por defecto "tierra.json").  <br /></td></tr>
+<tr class="separator:a12bed0552347ced68fabc47949f59aaa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09844e98c6ce9b36ab47d4654e696ff6" id="r_a09844e98c6ce9b36ab47d4654e696ff6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a09844e98c6ce9b36ab47d4654e696ff6">_collisionAlgorithm</a> = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td></tr>
+<tr class="memdesc:a09844e98c6ce9b36ab47d4654e696ff6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Algoritmo utilizado para la detecci贸n de colisiones (por defecto fuerza bruta).  <br /></td></tr>
+<tr class="separator:a09844e98c6ce9b36ab47d4654e696ff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6cd1fdb20876a6b6be1f731aefea9a68" id="r_a6cd1fdb20876a6b6be1f731aefea9a68"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6cd1fdb20876a6b6be1f731aefea9a68">_SolverAlgorithm</a> = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td></tr>
+<tr class="memdesc:a6cd1fdb20876a6b6be1f731aefea9a68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Algoritmo utilizado para la resoluci贸n de fuerzas (por defecto fuerza bruta).  <br /></td></tr>
+<tr class="separator:a6cd1fdb20876a6b6be1f731aefea9a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Clase que maneja la configuraci髇 global de la aplicaci髇. </p>
-<p>Esta clase utiliza el patr髇 singleton para asegurar que s髄o exista una instancia de configuraci髇. Se definen par醡etros tales como el modo de creaci髇 del sistema, el n鷐ero de objetos, el tiempo de simulaci髇, el archivo de datos a cargar y los algoritmos utilizados para la detecci髇 de colisiones y la resoluci髇. </p>
+<div class="textblock"><p>Clase que maneja la configuraci贸n global de la aplicaci贸n. </p>
+<p>Esta clase utiliza el patr贸n singleton para asegurar que s贸lo exista una instancia de configuraci贸n. Se definen par谩metros tales como el modo de creaci贸n del sistema, el n煤mero de objetos, el tiempo de simulaci贸n, el archivo de datos a cargar y los algoritmos utilizados para la detecci贸n de colisiones y la resoluci贸n. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00047">47</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
@@ -216,8 +216,8 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene la instancia 鷑ica de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci髇 global de la aplicaci髇.">Config</a>. </p>
-<dl class="section return"><dt>Devuelve</dt><dd>Config* Puntero a la instancia de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci髇 global de la aplicaci髇.">Config</a>. </dd></dl>
+<p>Obtiene la instancia 煤nica de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci贸n global de la aplicaci贸n.">Config</a>. </p>
+<dl class="section return"><dt>Devuelve</dt><dd>Config* Puntero a la instancia de <a class="el" href="class_foundation_1_1_config.html" title="Clase que maneja la configuraci贸n global de la aplicaci贸n.">Config</a>. </dd></dl>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8cpp_source.html#l00005">5</a> del archivo <a class="el" href="_config_8cpp_source.html">Config.cpp</a>.</p>
 <div class="dynheader">
@@ -264,32 +264,32 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </div>
 </div>
 <h2 class="groupheader">Documentaci贸n de datos miembro</h2>
-<a id="a44bf4bb98e7747da31608c2e7757b168" name="a44bf4bb98e7747da31608c2e7757b168"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44bf4bb98e7747da31608c2e7757b168">&#9670;&#160;</a></span>collisionAlgorithm</h2>
+<a id="a09844e98c6ce9b36ab47d4654e696ff6" name="a09844e98c6ce9b36ab47d4654e696ff6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09844e98c6ce9b36ab47d4654e696ff6">&#9670;&#160;</a></span>_collisionAlgorithm</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a> Foundation::Config::collisionAlgorithm = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td>
+          <td class="memname"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a> Foundation::Config::_collisionAlgorithm = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Algoritmo utilizado para la detecci髇 de colisiones (por defecto fuerza bruta). </p>
+<p>Algoritmo utilizado para la detecci贸n de colisiones (por defecto fuerza bruta). </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00068">68</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 
 </div>
 </div>
-<a id="aed8e5e245fe0f5b319fd09fb7d40d0af" name="aed8e5e245fe0f5b319fd09fb7d40d0af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed8e5e245fe0f5b319fd09fb7d40d0af">&#9670;&#160;</a></span>fichero</h2>
+<a id="a12bed0552347ced68fabc47949f59aaa" name="a12bed0552347ced68fabc47949f59aaa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12bed0552347ced68fabc47949f59aaa">&#9670;&#160;</a></span>_fichero</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">char Foundation::Config::fichero[100] = &quot;tierra.json&quot;</td>
+          <td class="memname">char Foundation::Config::_fichero[100] = &quot;tierra.json&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -300,73 +300,73 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 
 </div>
 </div>
-<a id="adb4896e19c5afa7da4f05a60e663e4b0" name="adb4896e19c5afa7da4f05a60e663e4b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adb4896e19c5afa7da4f05a60e663e4b0">&#9670;&#160;</a></span>numObjects</h2>
+<a id="ab03e1a1f9126c79cd4a156a623d45dc4" name="ab03e1a1f9126c79cd4a156a623d45dc4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab03e1a1f9126c79cd4a156a623d45dc4">&#9670;&#160;</a></span>_numObjects</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int Foundation::Config::numObjects = 998</td>
+          <td class="memname">int Foundation::Config::_numObjects = 998</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>N鷐ero de objetos a simular. </p>
+<p>N煤mero de objetos a simular. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00062">62</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 
 </div>
 </div>
-<a id="afed3c793ab6edf87d1b35cf40bd00cb0" name="afed3c793ab6edf87d1b35cf40bd00cb0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afed3c793ab6edf87d1b35cf40bd00cb0">&#9670;&#160;</a></span>SolverAlgorithm</h2>
+<a id="a6cd1fdb20876a6b6be1f731aefea9a68" name="a6cd1fdb20876a6b6be1f731aefea9a68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cd1fdb20876a6b6be1f731aefea9a68">&#9670;&#160;</a></span>_SolverAlgorithm</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a> Foundation::Config::SolverAlgorithm = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td>
+          <td class="memname"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Algorithm</a> Foundation::Config::_SolverAlgorithm = <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Algorithm::BRUTE_FORCE</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Algoritmo utilizado para la resoluci髇 de fuerzas (por defecto fuerza bruta). </p>
+<p>Algoritmo utilizado para la resoluci贸n de fuerzas (por defecto fuerza bruta). </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00070">70</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 
 </div>
 </div>
-<a id="a8291eef732210623da419da54fa89d12" name="a8291eef732210623da419da54fa89d12"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8291eef732210623da419da54fa89d12">&#9670;&#160;</a></span>systemCreationMode</h2>
+<a id="ac2c41bcd63663c7b455880350ee35a96" name="ac2c41bcd63663c7b455880350ee35a96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2c41bcd63663c7b455880350ee35a96">&#9670;&#160;</a></span>_systemCreationMode</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">Mode</a> Foundation::Config::systemCreationMode = <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Mode::FILE</a></td>
+          <td class="memname"><a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">Mode</a> Foundation::Config::_systemCreationMode = <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Mode::FILE</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Modo de creaci髇 del sistema; por defecto se carga desde archivo. </p>
+<p>Modo de creaci贸n del sistema; por defecto se carga desde archivo. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00060">60</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 
 </div>
 </div>
-<a id="a169c8b26d922e173f63f15bdaee87e15" name="a169c8b26d922e173f63f15bdaee87e15"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a169c8b26d922e173f63f15bdaee87e15">&#9670;&#160;</a></span>time</h2>
+<a id="a23239c21924d731b23be132c4046e0b2" name="a23239c21924d731b23be132c4046e0b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23239c21924d731b23be132c4046e0b2">&#9670;&#160;</a></span>_time</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">float Foundation::Config::time = 1000</td>
+          <td class="memname">float Foundation::Config::_time = 1000</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Tiempo de simulaci髇. </p>
+<p>Tiempo de simulaci贸n. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_config_8h_source.html#l00064">64</a> del archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 

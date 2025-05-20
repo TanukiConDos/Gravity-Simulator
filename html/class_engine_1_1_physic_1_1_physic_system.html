@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,7 +111,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_physic_system.html',''); i
 </div><!--header-->
 <div class="contents">
 
-<p>Sistema f韘ico encargado de actualizar la simulaci髇 mediante la detecci髇 de colisiones y la resoluci髇 de fuerzas.  
+<p>Sistema f铆sico encargado de actualizar la simulaci贸n mediante la detecci贸n de colisiones y la resoluci贸n de fuerzas.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_physic_system_8h_source.html">PhysicSystem.h</a>&gt;</code></p>
@@ -119,10 +119,10 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_physic_system.html',''); i
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 M茅todos p煤blicos</h2></td></tr>
 <tr class="memitem:a9c0942d2137819ef80910b149e7ee676" id="r_a9c0942d2137819ef80910b149e7ee676"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9c0942d2137819ef80910b149e7ee676">update</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)</td></tr>
-<tr class="memdesc:a9c0942d2137819ef80910b149e7ee676"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza la simulaci髇 f韘ica.  <br /></td></tr>
+<tr class="memdesc:a9c0942d2137819ef80910b149e7ee676"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza la simulaci贸n f铆sica.  <br /></td></tr>
 <tr class="separator:a9c0942d2137819ef80910b149e7ee676"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae63e0757c9719ffaed5933f7ad327f56" id="r_ae63e0757c9719ffaed5933f7ad327f56"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae63e0757c9719ffaed5933f7ad327f56">PhysicSystem</a> (std::unique_ptr&lt; <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">CollisionDetectionInterface</a> &gt; narrowCollitionDetectionAlgorithm, std::unique_ptr&lt; <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html">SolverInterface</a> &gt; solverAlgorithm)</td></tr>
-<tr class="memdesc:ae63e0757c9719ffaed5933f7ad327f56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el sistema f韘ico.  <br /></td></tr>
+<tr class="memdesc:ae63e0757c9719ffaed5933f7ad327f56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el sistema f铆sico.  <br /></td></tr>
 <tr class="separator:ae63e0757c9719ffaed5933f7ad327f56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b9e1dc79a77230bf12698a8823aaaed" id="r_a9b9e1dc79a77230bf12698a8823aaaed"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9b9e1dc79a77230bf12698a8823aaaed">PhysicSystem</a> ()=default</td></tr>
 <tr class="separator:a9b9e1dc79a77230bf12698a8823aaaed"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -130,14 +130,14 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Atributos p煤blicos est谩ticos</h2></td></tr>
 <tr class="memitem:a16f77480f2c32307f07d7745643ab729" id="r_a16f77480f2c32307f07d7745643ab729"><td class="memItemLeft" align="right" valign="top">static const float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a16f77480f2c32307f07d7745643ab729">UNIVERSAL_GRAVITATION</a> = 6.6743e-11f</td></tr>
-<tr class="memdesc:a16f77480f2c32307f07d7745643ab729"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constante de gravitaci髇 universal utilizada en los c醠culos f韘icos.  <br /></td></tr>
+<tr class="memdesc:a16f77480f2c32307f07d7745643ab729"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constante de gravitaci贸n universal utilizada en los c谩lculos f铆sicos.  <br /></td></tr>
 <tr class="separator:a16f77480f2c32307f07d7745643ab729"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Sistema f韘ico encargado de actualizar la simulaci髇 mediante la detecci髇 de colisiones y la resoluci髇 de fuerzas. </p>
-<p>La clase utiliza una instancia de <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html" title="Interfaz para implementar algoritmos de detecci髇 de colisiones.">CollisionDetectionInterface</a> para detectar colisiones entre objetos f韘icos y una instancia de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaci髇 f韘ica.">SolverInterface</a> para resolver las interacciones y actualizar el estado de dichos objetos. </p>
+<div class="textblock"><p>Sistema f铆sico encargado de actualizar la simulaci贸n mediante la detecci贸n de colisiones y la resoluci贸n de fuerzas. </p>
+<p>La clase utiliza una instancia de <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html" title="Interfaz para implementar algoritmos de detecci贸n de colisiones.">CollisionDetectionInterface</a> para detectar colisiones entre objetos f铆sicos y una instancia de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaci贸n f铆sica.">SolverInterface</a> para resolver las interacciones y actualizar el estado de dichos objetos. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_physic_system_8h_source.html#l00022">22</a> del archivo <a class="el" href="_physic_system_8h_source.html">PhysicSystem.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_physic_system_8h_source.html#l00026">26</a> del archivo <a class="el" href="_physic_system_8h_source.html">PhysicSystem.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
 <a id="ae63e0757c9719ffaed5933f7ad327f56" name="ae63e0757c9719ffaed5933f7ad327f56"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae63e0757c9719ffaed5933f7ad327f56">&#9670;&#160;</a></span>PhysicSystem() <span class="overload">[1/2]</span></h2>
@@ -158,12 +158,12 @@ Atributos p煤blicos est谩ticos</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Constructor que inicializa el sistema f韘ico. </p>
-<p>Recibe instancias 鷑icas de algoritmos para la detecci髇 de colisiones y resoluci髇, que ser醤 utilizados en la simulaci髇.</p>
+<p>Constructor que inicializa el sistema f铆sico. </p>
+<p>Recibe instancias 煤nicas de algoritmos para la detecci贸n de colisiones y resoluci贸n, que ser谩n utilizados en la simulaci贸n.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">narrowCollitionDetectionAlgorithm</td><td>Instancia 鷑ica del algoritmo de detecci髇 de colisiones. </td></tr>
-    <tr><td class="paramname">solverAlgorithm</td><td>Instancia 鷑ica del algoritmo que resuelve la simulaci髇 f韘ica. </td></tr>
+    <tr><td class="paramname">narrowCollitionDetectionAlgorithm</td><td>Instancia 煤nica del algoritmo de detecci贸n de colisiones. </td></tr>
+    <tr><td class="paramname">solverAlgorithm</td><td>Instancia 煤nica del algoritmo que resuelve la simulaci贸n f铆sica. </td></tr>
   </table>
   </dd>
 </dl>
@@ -217,12 +217,12 @@ Atributos p煤blicos est谩ticos</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Actualiza la simulaci髇 f韘ica. </p>
-<p>Este m閠odo ejecuta la detecci髇 de colisiones y, posteriormente, utiliza el solver para resolver las interacciones entre los objetos f韘icos, bas醤dose en el intervalo de tiempo transcurrido.</p>
+<p>Actualiza la simulaci贸n f铆sica. </p>
+<p>Este m茅todo ejecuta la detecci贸n de colisiones y, posteriormente, utiliza el solver para resolver las interacciones entre los objetos f铆sicos, bas谩ndose en el intervalo de tiempo transcurrido.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f韘icos a actualizar. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f铆sicos a actualizar. </td></tr>
   </table>
   </dd>
 </dl>
@@ -252,9 +252,9 @@ Atributos p煤blicos est谩ticos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Constante de gravitaci髇 universal utilizada en los c醠culos f韘icos. </p>
+<p>Constante de gravitaci贸n universal utilizada en los c谩lculos f铆sicos. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_physic_system_8h_source.html#l00026">26</a> del archivo <a class="el" href="_physic_system_8h_source.html">PhysicSystem.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_physic_system_8h_source.html#l00030">30</a> del archivo <a class="el" href="_physic_system_8h_source.html">PhysicSystem.h</a>.</p>
 
 </div>
 </div>

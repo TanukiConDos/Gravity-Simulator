@@ -9,9 +9,9 @@ digraph "Application::Window::Window"
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node2 [id="Node000002",label="Application::Window\l::framebufferResizeCallback",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#ad2dfa5a5442c970b1007465b352c7edb",tooltip="Callback para el redimensionado del framebuffer."];
   Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="Application::Window\l::Window",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#a4e6e9b428039985395e5c7904d7f1e71",tooltip="Constructor que crea la ventana con dimensiones específicas."];
+  Node3 [id="Node000003",label="Application::Window\l::Window",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#a4e6e9b428039985395e5c7904d7f1e71",tooltip="Constructor que crea la ventana con dimensiones especÃ­ficas."];
   Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node4 [id="Node000004",label="Application::Window\l::key_callback",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#a3ae703776f61c7fa8c84b179bc481669",tooltip="Callback para eventos de teclado."];
+  Node4 [id="Node000004",label="Application::Window\l::keyCallback",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#a5c68c8220ebe7c6c7001ac2e6f6e1659",tooltip="Callback para eventos de teclado."];
   Node4 -> Node3 [id="edge4_Node000004_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node1 -> Node5 [id="edge5_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node5 [id="Node000005",label="Application::Window\l::operator=",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_window.html#a128d2d242fa2ea89f66d2043fccda326",tooltip=" "];

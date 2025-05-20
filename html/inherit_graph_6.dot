@@ -5,5 +5,5 @@ digraph "Gráfico de jerarquía de clases"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="Engine::Graphic::Camera",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_graphic_1_1_camera.html",tooltip="Clase que controla la posici�n, orientaci�n y proyecci�n de la c�mara."];
+  Node0 [id="Node000000",label="Engine::Graphic::Camera",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_graphic_1_1_camera.html",tooltip="Clase que controla la posición, orientación y proyección de la cámara."];
 }

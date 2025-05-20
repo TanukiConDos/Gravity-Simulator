@@ -5,5 +5,5 @@ digraph "Gráfico de jerarquía de clases"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="detail::iterator_types\l\< It, void_t\< typename\l It::difference_type, typename\l It::value_type, typename It\l::pointer, typename It::reference,\l typename It::iterator_category \> \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$structdetail_1_1iterator__types_3_01_it_00_01void__t_3_01typename_01_it_1_1difference__type_00_064dac4a14931e9e3b7bc8e1311de4a39.html",tooltip=" "];
+  Node0 [id="Node000000",label="std::tr1::gtest_internal\l::TupleElement\< true, 4,\l GTEST_10_TUPLE_(T) \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$structstd_1_1tr1_1_1gtest__internal_1_1_tuple_element_3_01true_00_014_00_01_g_t_e_s_t__10___t_u_p_l_e___07_t_08_01_4.html",tooltip=" "];
 }

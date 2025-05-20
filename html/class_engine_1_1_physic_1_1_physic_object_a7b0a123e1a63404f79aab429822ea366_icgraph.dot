@@ -5,9 +5,11 @@ digraph "Engine::Physic::PhysicObject::PhysicObject"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="RL";
-  Node1 [id="Node000001",label="Engine::Physic::PhysicObject\l::PhysicObject",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa un objeto físico."];
+  Node1 [id="Node000001",label="Engine::Physic::PhysicObject\l::PhysicObject",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa un objeto fÃ­sico."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Engine::Physic::PhysicObject\l::collision",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec",tooltip="Gestiona la colisión con otro objeto físico."];
+  Node2 [id="Node000002",label="Engine::Physic::PhysicObject\l::collision",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec",tooltip="Gestiona la colisiÃ³n con otro objeto fÃ­sico."];
   Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="Engine::Physic::bruteForce\lDetection::detection",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170",tooltip="Detecta colisiones entre objetos físicos."];
+  Node3 [id="Node000003",label="Engine::Physic::bruteForce\lDetection::detection",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1brute_force_detection.html#aa3e17cd0701ff552e8646b2b5f65b170",tooltip="Detecta colisiones entre objetos fÃ­sicos."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="TEST",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$_physic_object_test_8cpp.html#a8a9e5a6dafa592d684dba6cd01bdfab7",tooltip=" "];
 }

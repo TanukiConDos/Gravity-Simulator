@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_buffer.html',''); initRes
 </div><!--header-->
 <div class="contents">
 
-<p>Clase para la gesti髇 de buffers de Vulkan.  
+<p>Clase para la gesti贸n de buffers de Vulkan.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_buffer_8h_source.html">Buffer.h</a>&gt;</code></p>
@@ -143,12 +143,15 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="memitem:a8430371858aaab5258c6129b30d8e92b" id="r_a8430371858aaab5258c6129b30d8e92b"><td class="memItemLeft" align="right" valign="top">VkBuffer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8430371858aaab5258c6129b30d8e92b">getBuffer</a> () const</td></tr>
 <tr class="memdesc:a8430371858aaab5258c6129b30d8e92b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el handle del buffer de Vulkan.  <br /></td></tr>
 <tr class="separator:a8430371858aaab5258c6129b30d8e92b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c7b8f717b7de24211b68cade56a4997" id="r_a6c7b8f717b7de24211b68cade56a4997"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c7b8f717b7de24211b68cade56a4997">sendToGPU</a> ()</td></tr>
+<tr class="memdesc:a6c7b8f717b7de24211b68cade56a4997"><td class="mdescLeft">&#160;</td><td class="mdescRight">Env铆a el contenido del buffer a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>.  <br /></td></tr>
+<tr class="separator:a6c7b8f717b7de24211b68cade56a4997"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Clase para la gesti髇 de buffers de Vulkan. </p>
-<p>Esta clase se encarga de crear un buffer en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>, mapear su memoria y escribir datos en 閘. </p>
+<div class="textblock"><p>Clase para la gesti贸n de buffers de Vulkan. </p>
+<p>Esta clase se encarga de crear un buffer en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>, mapear su memoria y escribir datos en 茅l. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8h_source.html#l00020">20</a> del archivo <a class="el" href="_buffer_8h_source.html">Buffer.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8h_source.html#l00018">18</a> del archivo <a class="el" href="_buffer_8h_source.html">Buffer.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
 <a id="a105ba0c3805ca7651dd4904106550d83" name="a105ba0c3805ca7651dd4904106550d83"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a105ba0c3805ca7651dd4904106550d83">&#9670;&#160;</a></span>Buffer() <span class="overload">[1/4]</span></h2>
@@ -272,18 +275,18 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </div><div class="memdoc">
 
 <p>Crea un buffer de Vulkan. </p>
-<p>Inicializa el buffer utilizando la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>, definiendo el tama駉 de la instancia, las banderas de uso y las propiedades de memoria.</p>
+<p>Inicializa el buffer utilizando la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>, definiendo el tama帽o de la instancia, las banderas de uso y las propiedades de memoria.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci髇 con Vulkan.">GPU</a>. </td></tr>
-    <tr><td class="paramname">instanceSize</td><td>Tama駉 del buffer. </td></tr>
+    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. </td></tr>
+    <tr><td class="paramname">instanceSize</td><td>Tama帽o del buffer. </td></tr>
     <tr><td class="paramname">usageFlags</td><td>Banderas de uso del buffer. </td></tr>
     <tr><td class="paramname">memoryPropertyFlags</td><td>Propiedades de la memoria. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00007">7</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00005">5</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
 <div class="dynheader">
 Gr谩fico de llamadas de esta funci贸n:</div>
 <div class="dyncontent">
@@ -310,7 +313,7 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Destructor. </p>
 <p>Libera los recursos asociados al buffer. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00011">11</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00016">16</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
 
 </div>
 </div>
@@ -341,7 +344,7 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Obtiene el handle del buffer de Vulkan. </p>
 <dl class="section return"><dt>Devuelve</dt><dd>VkBuffer Handle del buffer. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8h_source.html#l00077">77</a> del archivo <a class="el" href="_buffer_8h_source.html">Buffer.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8h_source.html#l00075">75</a> del archivo <a class="el" href="_buffer_8h_source.html">Buffer.h</a>.</p>
 
 </div>
 </div>
@@ -368,14 +371,14 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 <p>Permite acceder a la memoria del buffer para escribir datos.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">size</td><td>Tama駉 a mapear, por defecto VK_WHOLE_SIZE. </td></tr>
+    <tr><td class="paramname">size</td><td>Tama帽o a mapear, por defecto VK_WHOLE_SIZE. </td></tr>
     <tr><td class="paramname">offset</td><td>Desplazamiento desde el inicio, por defecto 0. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Devuelve</dt><dd>VkResult Resultado de la operaci髇 de mapeo. </dd></dl>
+<dl class="section return"><dt>Devuelve</dt><dd>VkResult Resultado de la operaci贸n de mapeo. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00022">22</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00027">27</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
 <div class="dynheader">
 Gr谩fico de llamadas a esta funci贸n:</div>
 <div class="dyncontent">
@@ -444,6 +447,28 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 
 </div>
 </div>
+<a id="a6c7b8f717b7de24211b68cade56a4997" name="a6c7b8f717b7de24211b68cade56a4997"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c7b8f717b7de24211b68cade56a4997">&#9670;&#160;</a></span>sendToGPU()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Engine::Graphic::Buffer::sendToGPU </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Env铆a el contenido del buffer a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a>. </p>
+<p>Este m茅todo actualiza el buffer de la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci贸n con Vulkan.">GPU</a> con los datos actualmente mapeados en la memoria. </p>
+
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00046">46</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a40c11af96378442470d068511d31d105" name="a40c11af96378442470d068511d31d105"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a40c11af96378442470d068511d31d105">&#9670;&#160;</a></span>writeData()</h2>
 
@@ -469,17 +494,17 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </div><div class="memdoc">
 
 <p>Escribe datos en el buffer mapeado. </p>
-<p>Copia la informaci髇 proporcionada a la memoria del buffer.</p>
+<p>Copia la informaci贸n proporcionada a la memoria del buffer.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">data</td><td>Puntero a los datos a escribir. </td></tr>
-    <tr><td class="paramname">size</td><td>Tama駉 de los datos, por defecto VK_WHOLE_SIZE. </td></tr>
+    <tr><td class="paramname">size</td><td>Tama帽o de los datos, por defecto VK_WHOLE_SIZE. </td></tr>
     <tr><td class="paramname">offset</td><td>Desplazamiento donde iniciar la escritura, por defecto 0. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00027">27</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_buffer_8cpp_source.html#l00032">32</a> del archivo <a class="el" href="_buffer_8cpp_source.html">Buffer.cpp</a>.</p>
 
 </div>
 </div>

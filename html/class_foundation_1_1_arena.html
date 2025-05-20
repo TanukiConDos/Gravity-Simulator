@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -128,7 +128,7 @@ Métodos públicos</h2></td></tr>
 <tr class="memdesc:a6df218018e1dee004c050815451695b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <br /></td></tr>
 <tr class="separator:a6df218018e1dee004c050815451695b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc76d04206f6b3d29078a9ddf8b6e94e" id="r_acc76d04206f6b3d29078a9ddf8b6e94e"><td class="memItemLeft" align="right" valign="top">T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc76d04206f6b3d29078a9ddf8b6e94e">alloc</a> (int num)</td></tr>
-<tr class="memdesc:acc76d04206f6b3d29078a9ddf8b6e94e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asigna memoria para un n�mero de objetos.  <br /></td></tr>
+<tr class="memdesc:acc76d04206f6b3d29078a9ddf8b6e94e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asigna memoria para un número de objetos.  <br /></td></tr>
 <tr class="separator:acc76d04206f6b3d29078a9ddf8b6e94e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a82992f80e421ad60d3ad4480fd44744b" id="r_a82992f80e421ad60d3ad4480fd44744b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a82992f80e421ad60d3ad4480fd44744b">clear</a> ()</td></tr>
 <tr class="memdesc:a82992f80e421ad60d3ad4480fd44744b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reinicializa la arena, permitiendo reutilizar la memoria asignada.  <br /></td></tr>
@@ -137,7 +137,7 @@ Métodos públicos</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename T&gt;<br />
 class Foundation::Arena&lt; T &gt;</div><p>Clase plantilla que gestiona asignaciones en bloques de memoria. </p>
-<p>La clase <a class="el" href="class_foundation_1_1_arena.html" title="Clase plantilla que gestiona asignaciones en bloques de memoria.">Arena</a> reserva memoria en bloques y permite la asignaci�n de objetos utilizando una estrategia de arena.</p>
+<p>La clase <a class="el" href="class_foundation_1_1_arena.html" title="Clase plantilla que gestiona asignaciones en bloques de memoria.">Arena</a> reserva memoria en bloques y permite la asignación de objetos utilizando una estrategia de arena.</p>
 <dl class="tparams"><dt>Parámetros de plantilla</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>Tipo de objeto a asignar. </td></tr>
@@ -213,12 +213,12 @@ template&lt;typename T&gt; </div>
 <p>Inicializa la arena con una capacidad determinada para el bloque inicial.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">capacity</td><td>N�mero de objetos que se pueden asignar en el primer bloque. </td></tr>
+    <tr><td class="paramname">capacity</td><td>Número de objetos que se pueden asignar en el primer bloque. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00130">130</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00131">131</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
 
 </div>
 </div>
@@ -272,16 +272,16 @@ template&lt;typename T&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Asigna memoria para un n�mero de objetos. </p>
+<p>Asigna memoria para un número de objetos. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">num</td><td>N�mero de objetos a asignar. </td></tr>
+    <tr><td class="paramname">num</td><td>Número de objetos a asignar. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Devuelve</dt><dd>T* Puntero a la memoria asignada. </dd></dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00138">138</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00139">139</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
 
 </div>
 </div>
@@ -304,7 +304,7 @@ template&lt;typename T&gt; </div>
 
 <p>Reinicializa la arena, permitiendo reutilizar la memoria asignada. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00144">144</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_arena_8h_source.html#l00145">145</a> del archivo <a class="el" href="_arena_8h_source.html">Arena.h</a>.</p>
 
 </div>
 </div>

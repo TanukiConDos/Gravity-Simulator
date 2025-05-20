@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,12 +111,16 @@ $(function(){initNavTree('_oct_tree_solver_8cpp_source.html',''); initResizable(
 <div class="foldopen" id="foldopen00003" data-start="{" data-end="}">
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">    3</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver::solve</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects)</div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span>{</div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span>    _tree-&gt;update();</div>
-<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span>    _tree-&gt;barnesHut(deltaTime);</div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>}</div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span>    _tree-&gt;update(deltaTime);</div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> objectId = 0; objectId &lt; objects-&gt;size(); objectId++)</div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>    {</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        glm::vec3 force = _tree-&gt;barnesHut(objectId);</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>        objects-&gt;at(objectId).update(deltaTime,force);</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>    }</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>}</div>
 </div>
-<div class="ttc" id="a_oct_tree_solver_8h_html"><div class="ttname"><a href="_oct_tree_solver_8h.html">OctTreeSolver.h</a></div><div class="ttdoc">Implementa un solver de simulación física utilizando un árbol octal para resolver las interacciones entre ob...</div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_oct_tree_solver_html_ada7b732a8b8598c2f21f93071b6b1626"><div class="ttname"><a href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver::solve</a></div><div class="ttdeci">void solve(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects) final</div><div class="ttdoc">Resuelve la simulación física utilizando el árbol octal.</div><div class="ttdef"><b>Definition</b> <a href="#l00003">OctTreeSolver.cpp:3</a></div></div>
+<div class="ttc" id="a_oct_tree_solver_8h_html"><div class="ttname"><a href="_oct_tree_solver_8h.html">OctTreeSolver.h</a></div><div class="ttdoc">Implementa un solver de simulaciÃ³n fÃ­sica utilizando un Ã¡rbol octal para resolver las interacciones e...</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_oct_tree_solver_html_ada7b732a8b8598c2f21f93071b6b1626"><div class="ttname"><a href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver::solve</a></div><div class="ttdeci">void solve(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects) final</div><div class="ttdoc">Resuelve la simulaciÃ³n fÃ­sica utilizando el Ã¡rbol octal.</div><div class="ttdef"><b>Definition</b> <a href="#l00003">OctTreeSolver.cpp:3</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

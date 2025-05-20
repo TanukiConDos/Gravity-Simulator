@@ -10,6 +10,10 @@
 #include "SolverInterface.h"
 #include <iostream>
 
+ /**
+  * @namespace Engine::Physic
+  * @brief Espacio de nombres que contiene las clases del motor de físicas.
+  */
 namespace Engine::Physic
 {
 	/**
@@ -49,9 +53,9 @@ namespace Engine::Physic
 		PhysicSystem() = default;
 	private:
 		/// Algoritmo de detección de colisiones utilizado en la simulación.
-		std::unique_ptr<CollisionDetectionInterface> collitionDetectionAlgorithm;
+		std::unique_ptr<CollisionDetectionInterface> _collitionDetectionAlgorithm;
 		/// Algoritmo solver utilizado para actualizar los estados de los objetos físicos.
-		std::unique_ptr<SolverInterface> solverAlgorithm;
+		std::unique_ptr<SolverInterface> _solverAlgorithm;
 	};
 }
 

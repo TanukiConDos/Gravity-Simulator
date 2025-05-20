@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_camera.html',''); initRes
 </div><!--header-->
 <div class="contents">
 
-<p>Clase que controla la posici髇, orientaci髇 y proyecci髇 de la c醡ara.  
+<p>Clase que controla la posici贸n, orientaci贸n y proyecci贸n de la c谩mara.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_camera_8h_source.html">Camera.h</a>&gt;</code></p>
@@ -125,29 +125,32 @@ M茅todos p煤blicos</h2></td></tr>
 <tr class="memdesc:a8e6f69428ec6d75729db7663ff394b67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <br /></td></tr>
 <tr class="separator:a8e6f69428ec6d75729db7663ff394b67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a165ed44297114961b4324ba2332c8293" id="r_a165ed44297114961b4324ba2332c8293"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a165ed44297114961b4324ba2332c8293">getDir</a> () const</td></tr>
-<tr class="memdesc:a165ed44297114961b4324ba2332c8293"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector de direcci髇 de la c醡ara.  <br /></td></tr>
+<tr class="memdesc:a165ed44297114961b4324ba2332c8293"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector de direcci贸n de la c谩mara.  <br /></td></tr>
 <tr class="separator:a165ed44297114961b4324ba2332c8293"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab20f738d60df34b4fc377229baaf701d" id="r_ab20f738d60df34b4fc377229baaf701d"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab20f738d60df34b4fc377229baaf701d">getUp</a> () const</td></tr>
-<tr class="memdesc:ab20f738d60df34b4fc377229baaf701d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector "up" de la c醡ara.  <br /></td></tr>
+<tr class="memdesc:ab20f738d60df34b4fc377229baaf701d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector "up" de la c谩mara.  <br /></td></tr>
 <tr class="separator:ab20f738d60df34b4fc377229baaf701d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a202a4dd502c4bb635082069079bb53" id="r_a6a202a4dd502c4bb635082069079bb53"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6a202a4dd502c4bb635082069079bb53">getLeft</a> () const</td></tr>
-<tr class="memdesc:a6a202a4dd502c4bb635082069079bb53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector hacia la izquierda de la c醡ara.  <br /></td></tr>
+<tr class="memdesc:a6a202a4dd502c4bb635082069079bb53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el vector hacia la izquierda de la c谩mara.  <br /></td></tr>
 <tr class="separator:a6a202a4dd502c4bb635082069079bb53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e5749d1bcb9318cd020bd60e39711d8" id="r_a5e5749d1bcb9318cd020bd60e39711d8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e5749d1bcb9318cd020bd60e39711d8">transform</a> (<a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html">UniformBufferObject</a> &amp;ubo) const</td></tr>
-<tr class="memdesc:a5e5749d1bcb9318cd020bd60e39711d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transforma un <a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html" title="Estructura utilizada para almacenar las matrices de transformaci髇 y estado de selecci髇.">UniformBufferObject</a> utilizando la matriz de vista y proyecci髇 de la c醡ara.  <br /></td></tr>
+<tr class="memdesc:a5e5749d1bcb9318cd020bd60e39711d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transforma un <a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html" title="Estructura utilizada para almacenar las matrices de transformaci贸n y estado de selecci贸n.">UniformBufferObject</a> utilizando la matriz de vista y proyecci贸n de la c谩mara.  <br /></td></tr>
 <tr class="separator:a5e5749d1bcb9318cd020bd60e39711d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a027f58fcf53928d08ce4dcda44e4a4b4" id="r_a027f58fcf53928d08ce4dcda44e4a4b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a027f58fcf53928d08ce4dcda44e4a4b4">move</a> (glm::vec3 translation)</td></tr>
-<tr class="memdesc:a027f58fcf53928d08ce4dcda44e4a4b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Desplaza la posici髇 de la c醡ara.  <br /></td></tr>
+<tr class="memdesc:a027f58fcf53928d08ce4dcda44e4a4b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Desplaza la posici贸n de la c谩mara.  <br /></td></tr>
 <tr class="separator:a027f58fcf53928d08ce4dcda44e4a4b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3868fdfede93434c747cf6645fd72728" id="r_a3868fdfede93434c747cf6645fd72728"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3868fdfede93434c747cf6645fd72728">rotate</a> (float degrees, bool vertical)</td></tr>
-<tr class="memdesc:a3868fdfede93434c747cf6645fd72728"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rota la c醡ara.  <br /></td></tr>
+<tr class="memdesc:a3868fdfede93434c747cf6645fd72728"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rota la c谩mara.  <br /></td></tr>
 <tr class="separator:a3868fdfede93434c747cf6645fd72728"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27744119d00e7eb93082c16f5a590e6a" id="r_a27744119d00e7eb93082c16f5a590e6a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a27744119d00e7eb93082c16f5a590e6a">reset</a> ()</td></tr>
+<tr class="memdesc:a27744119d00e7eb93082c16f5a590e6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reinicia la posici贸n y orientaci贸n de la c谩mara a sus valores predeterminados.  <br /></td></tr>
+<tr class="separator:a27744119d00e7eb93082c16f5a590e6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Clase que controla la posici髇, orientaci髇 y proyecci髇 de la c醡ara. </p>
-<p>La c醡ara se inicializa a partir de un <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci髇 en Vulkan.">SwapChain</a> para obtener las dimensiones de la ventana, y proporciona m閠odos para obtener vectores direccionales, transformar UniformBufferObjects, mover y rotar la c醡ara. </p>
+<div class="textblock"><p>Clase que controla la posici贸n, orientaci贸n y proyecci贸n de la c谩mara. </p>
+<p>La c谩mara se inicializa a partir de un <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci贸n en Vulkan.">SwapChain</a> para obtener las dimensiones de la ventana, y proporciona m茅todos para obtener vectores direccionales, transformar UniformBufferObjects, mover y rotar la c谩mara. </p>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00021">21</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00019">19</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de constructores y destructores</h2>
 <a id="a2088fb45fa0c92ff80807f1aeff05b00" name="a2088fb45fa0c92ff80807f1aeff05b00"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2088fb45fa0c92ff80807f1aeff05b00">&#9670;&#160;</a></span>Camera() <span class="overload">[1/2]</span></h2>
@@ -210,7 +213,7 @@ Gr谩fico de llamadas a esta funci贸n:</div>
 <p>Constructor. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">swapchain</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci髇 en Vulkan.">SwapChain</a> que se utiliza para configurar la proyecci髇. </td></tr>
+    <tr><td class="paramname">swapchain</td><td>Referencia al <a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html" title="Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci贸n en Vulkan.">SwapChain</a> que se utiliza para configurar la proyecci贸n. </td></tr>
   </table>
   </dd>
 </dl>
@@ -248,10 +251,10 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene el vector de direcci髇 de la c醡ara. </p>
-<dl class="section return"><dt>Devuelve</dt><dd>glm::vec3 Vector direcci髇. </dd></dl>
+<p>Obtiene el vector de direcci贸n de la c谩mara. </p>
+<dl class="section return"><dt>Devuelve</dt><dd>glm::vec3 Vector direcci贸n. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00037">37</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00035">35</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -278,10 +281,10 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene el vector hacia la izquierda de la c醡ara. </p>
+<p>Obtiene el vector hacia la izquierda de la c谩mara. </p>
 <dl class="section return"><dt>Devuelve</dt><dd>glm::vec3 Vector izquierda. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00049">49</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00047">47</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -308,10 +311,10 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Obtiene el vector "up" de la c醡ara. </p>
+<p>Obtiene el vector "up" de la c谩mara. </p>
 <dl class="section return"><dt>Devuelve</dt><dd>glm::vec3 Vector hacia arriba. </dd></dl>
 
-<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00043">43</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8h_source.html#l00041">41</a> del archivo <a class="el" href="_camera_8h_source.html">Camera.h</a>.</p>
 
 </div>
 </div>
@@ -330,10 +333,10 @@ Gr谩fico de llamadas de esta funci贸n:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Desplaza la posici髇 de la c醡ara. </p>
+<p>Desplaza la posici贸n de la c谩mara. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">translation</td><td>Vector de translaci髇 que se suma a la posici髇 actual. </td></tr>
+    <tr><td class="paramname">translation</td><td>Vector de translaci贸n que se suma a la posici贸n actual. </td></tr>
   </table>
   </dd>
 </dl>
@@ -372,6 +375,27 @@ Gr谩fico de llamadas de esta funci贸n:</div>
 
 </div>
 </div>
+<a id="a27744119d00e7eb93082c16f5a590e6a" name="a27744119d00e7eb93082c16f5a590e6a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27744119d00e7eb93082c16f5a590e6a">&#9670;&#160;</a></span>reset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Engine::Graphic::Camera::reset </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reinicia la posici贸n y orientaci贸n de la c谩mara a sus valores predeterminados. </p>
+
+<p class="definition">Definici贸n en la l铆nea <a class="el" href="_camera_8cpp_source.html#l00031">31</a> del archivo <a class="el" href="_camera_8cpp_source.html">Camera.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a3868fdfede93434c747cf6645fd72728" name="a3868fdfede93434c747cf6645fd72728"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3868fdfede93434c747cf6645fd72728">&#9670;&#160;</a></span>rotate()</h2>
 
@@ -391,11 +415,11 @@ Gr谩fico de llamadas de esta funci贸n:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Rota la c醡ara. </p>
+<p>Rota la c谩mara. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">degrees</td><td>羘gulo de rotaci髇 en grados. </td></tr>
-    <tr><td class="paramname">vertical</td><td>true para una rotaci髇 vertical; false para horizontal. </td></tr>
+    <tr><td class="paramname">degrees</td><td>脕ngulo de rotaci贸n en grados. </td></tr>
+    <tr><td class="paramname">vertical</td><td>true para una rotaci贸n vertical; false para horizontal. </td></tr>
   </table>
   </dd>
 </dl>
@@ -419,7 +443,7 @@ Gr谩fico de llamadas de esta funci贸n:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Transforma un <a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html" title="Estructura utilizada para almacenar las matrices de transformaci髇 y estado de selecci髇.">UniformBufferObject</a> utilizando la matriz de vista y proyecci髇 de la c醡ara. </p>
+<p>Transforma un <a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html" title="Estructura utilizada para almacenar las matrices de transformaci贸n y estado de selecci贸n.">UniformBufferObject</a> utilizando la matriz de vista y proyecci贸n de la c谩mara. </p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">ubo</td><td>Objeto de buffer uniforme a actualizar. </td></tr>

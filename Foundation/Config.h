@@ -57,17 +57,17 @@ namespace Foundation
 		static Config* getConfig();
 		
 		/// Modo de creación del sistema; por defecto se carga desde archivo.
-		Mode systemCreationMode = Mode::FILE;
+		Mode _systemCreationMode = Mode::FILE;
 		/// Número de objetos a simular.
-		int numObjects = 998;
+		int _numObjects = 998;
 		/// Tiempo de simulación.
-		float time = 1000;
+		float _time = 1000;
 		/// Nombre del archivo de datos (por defecto "tierra.json").
-		char fichero[100] = "tierra.json";
+		char _fichero[100] = "tierra.json";
 		/// Algoritmo utilizado para la detección de colisiones (por defecto fuerza bruta).
-		Algorithm collisionAlgorithm = Algorithm::BRUTE_FORCE;
+		Algorithm _collisionAlgorithm = Algorithm::BRUTE_FORCE;
 		/// Algoritmo utilizado para la resolución de fuerzas (por defecto fuerza bruta).
-		Algorithm SolverAlgorithm = Algorithm::BRUTE_FORCE;
+		Algorithm _SolverAlgorithm = Algorithm::BRUTE_FORCE;
 	private:
 		/**
 		 * @brief Constructor privado para implementar el patrón singleton.

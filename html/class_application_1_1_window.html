@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -122,7 +122,7 @@ Métodos públicos</h2></td></tr>
 <tr class="memdesc:a7328cefe7f392055b6676d1328abf796"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor por defecto.  <br /></td></tr>
 <tr class="separator:a7328cefe7f392055b6676d1328abf796"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e6e9b428039985395e5c7904d7f1e71" id="r_a4e6e9b428039985395e5c7904d7f1e71"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4e6e9b428039985395e5c7904d7f1e71">Window</a> (int width, int height)</td></tr>
-<tr class="memdesc:a4e6e9b428039985395e5c7904d7f1e71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que crea la ventana con dimensiones espec�ficas.  <br /></td></tr>
+<tr class="memdesc:a4e6e9b428039985395e5c7904d7f1e71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que crea la ventana con dimensiones específicas.  <br /></td></tr>
 <tr class="separator:a4e6e9b428039985395e5c7904d7f1e71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba13c45f814d790bd5123e7eaca5e865" id="r_aba13c45f814d790bd5123e7eaca5e865"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aba13c45f814d790bd5123e7eaca5e865">~Window</a> ()</td></tr>
 <tr class="memdesc:aba13c45f814d790bd5123e7eaca5e865"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <br /></td></tr>
@@ -143,16 +143,16 @@ Métodos públicos</h2></td></tr>
 <tr class="memdesc:ae523f7e4277116da0e21dd3715740011"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marca la ventana como redimensionada.  <br /></td></tr>
 <tr class="separator:ae523f7e4277116da0e21dd3715740011"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a54ce6c6776da898645a277fadf251071" id="r_a54ce6c6776da898645a277fadf251071"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a54ce6c6776da898645a277fadf251071">checkMinimized</a> ()</td></tr>
-<tr class="memdesc:a54ce6c6776da898645a277fadf251071"><td class="mdescLeft">&#160;</td><td class="mdescRight">Comprueba si la ventana est� minimizada.  <br /></td></tr>
+<tr class="memdesc:a54ce6c6776da898645a277fadf251071"><td class="mdescLeft">&#160;</td><td class="mdescRight">Comprueba si la ventana está minimizada.  <br /></td></tr>
 <tr class="separator:a54ce6c6776da898645a277fadf251071"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac821395acd42206d95c4d33ebdea2152" id="r_ac821395acd42206d95c4d33ebdea2152"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac821395acd42206d95c4d33ebdea2152">getSize</a> (int &amp;width, int &amp;height)</td></tr>
-<tr class="memdesc:ac821395acd42206d95c4d33ebdea2152"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el tama�o actual de la ventana.  <br /></td></tr>
+<tr class="memdesc:ac821395acd42206d95c4d33ebdea2152"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el tamaño actual de la ventana.  <br /></td></tr>
 <tr class="separator:ac821395acd42206d95c4d33ebdea2152"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7181186bf0573d0c14fc901ff44c1c3a" id="r_a7181186bf0573d0c14fc901ff44c1c3a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7181186bf0573d0c14fc901ff44c1c3a">createSurface</a> (VkInstance instance)</td></tr>
 <tr class="memdesc:a7181186bf0573d0c14fc901ff44c1c3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Crea la superficie Vulkan de la ventana.  <br /></td></tr>
 <tr class="separator:a7181186bf0573d0c14fc901ff44c1c3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab0b5a0115435a16a1c0d85e52621df85" id="r_ab0b5a0115435a16a1c0d85e52621df85"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab0b5a0115435a16a1c0d85e52621df85">attachCameraToEvent</a> (<a class="el" href="class_engine_1_1_graphic_1_1_camera.html">Engine::Graphic::Camera</a> *camera)</td></tr>
-<tr class="memdesc:ab0b5a0115435a16a1c0d85e52621df85"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asocia una c�mara a los eventos de entrada.  <br /></td></tr>
+<tr class="memdesc:ab0b5a0115435a16a1c0d85e52621df85"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asocia una cámara a los eventos de entrada.  <br /></td></tr>
 <tr class="separator:ab0b5a0115435a16a1c0d85e52621df85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
@@ -160,9 +160,9 @@ Métodos públicos estáticos</h2></td></tr>
 <tr class="memitem:ad2dfa5a5442c970b1007465b352c7edb" id="r_ad2dfa5a5442c970b1007465b352c7edb"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2dfa5a5442c970b1007465b352c7edb">framebufferResizeCallback</a> (GLFWwindow *window, int width, int height)</td></tr>
 <tr class="memdesc:ad2dfa5a5442c970b1007465b352c7edb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback para el redimensionado del framebuffer.  <br /></td></tr>
 <tr class="separator:ad2dfa5a5442c970b1007465b352c7edb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ae703776f61c7fa8c84b179bc481669" id="r_a3ae703776f61c7fa8c84b179bc481669"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ae703776f61c7fa8c84b179bc481669">key_callback</a> (GLFWwindow *window, int key, int scancode, int action, int mods)</td></tr>
-<tr class="memdesc:a3ae703776f61c7fa8c84b179bc481669"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback para eventos de teclado.  <br /></td></tr>
-<tr class="separator:a3ae703776f61c7fa8c84b179bc481669"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c68c8220ebe7c6c7001ac2e6f6e1659" id="r_a5c68c8220ebe7c6c7001ac2e6f6e1659"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5c68c8220ebe7c6c7001ac2e6f6e1659">keyCallback</a> (GLFWwindow *window, int key, int scancode, int action, int mods)</td></tr>
+<tr class="memdesc:a5c68c8220ebe7c6c7001ac2e6f6e1659"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback para eventos de teclado.  <br /></td></tr>
+<tr class="separator:a5c68c8220ebe7c6c7001ac2e6f6e1659"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
 <div class="textblock"><p>Clase que gestiona la ventana y sus eventos. </p>
@@ -212,7 +212,7 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Constructor que crea la ventana con dimensiones espec�ficas. </p>
+<p>Constructor que crea la ventana con dimensiones específicas. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">width</td><td>Ancho de la ventana. </td></tr>
@@ -305,10 +305,10 @@ Gráfico de llamadas de esta función:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Asocia una c�mara a los eventos de entrada. </p>
+<p>Asocia una cámara a los eventos de entrada. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">camera</td><td>Puntero a la c�mara. </td></tr>
+    <tr><td class="paramname">camera</td><td>Puntero a la cámara. </td></tr>
   </table>
   </dd>
 </dl>
@@ -332,7 +332,7 @@ Gráfico de llamadas de esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Comprueba si la ventana est� minimizada. </p>
+<p>Comprueba si la ventana está minimizada. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_window_8cpp_source.html#l00079">79</a> del archivo <a class="el" href="_window_8cpp_source.html">Window.cpp</a>.</p>
 
@@ -475,7 +475,7 @@ Gráfico de llamadas a esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Obtiene el tama�o actual de la ventana. </p>
+<p>Obtiene el tamaño actual de la ventana. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">width</td><td>Referencia al ancho. </td></tr>
@@ -542,8 +542,8 @@ Gráfico de llamadas a esta función:</div>
 
 </div>
 </div>
-<a id="a3ae703776f61c7fa8c84b179bc481669" name="a3ae703776f61c7fa8c84b179bc481669"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ae703776f61c7fa8c84b179bc481669">&#9670;&#160;</a></span>key_callback()</h2>
+<a id="a5c68c8220ebe7c6c7001ac2e6f6e1659" name="a5c68c8220ebe7c6c7001ac2e6f6e1659"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c68c8220ebe7c6c7001ac2e6f6e1659">&#9670;&#160;</a></span>keyCallback()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -552,7 +552,7 @@ Gráfico de llamadas a esta función:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Application::Window::key_callback </td>
+          <td class="memname">void Application::Window::keyCallback </td>
           <td>(</td>
           <td class="paramtype">GLFWwindow *</td>          <td class="paramname"><span class="paramname"><em>window</em></span>, </td>
         </tr>
@@ -588,9 +588,9 @@ Gráfico de llamadas a esta función:</div>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">window</td><td>Puntero a la ventana GLFW. </td></tr>
-    <tr><td class="paramname">key</td><td>C�digo de la tecla. </td></tr>
-    <tr><td class="paramname">scancode</td><td>C�digo de escaneo. </td></tr>
-    <tr><td class="paramname">action</td><td>Acci�n del evento. </td></tr>
+    <tr><td class="paramname">key</td><td>Código de la tecla. </td></tr>
+    <tr><td class="paramname">scancode</td><td>Código de escaneo. </td></tr>
+    <tr><td class="paramname">action</td><td>Acción del evento. </td></tr>
     <tr><td class="paramname">mods</td><td>Modificadores. </td></tr>
   </table>
   </dd>
@@ -600,12 +600,12 @@ Gráfico de llamadas a esta función:</div>
 <div class="dynheader">
 Gráfico de llamadas de esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_application_1_1_window_a3ae703776f61c7fa8c84b179bc481669_cgraph.png" border="0" usemap="#aclass_application_1_1_window_a3ae703776f61c7fa8c84b179bc481669_cgraph" alt=""/></div>
+<div class="center"><img src="class_application_1_1_window_a5c68c8220ebe7c6c7001ac2e6f6e1659_cgraph.png" border="0" usemap="#aclass_application_1_1_window_a5c68c8220ebe7c6c7001ac2e6f6e1659_cgraph" alt=""/></div>
 </div>
 <div class="dynheader">
 Gráfico de llamadas a esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_application_1_1_window_a3ae703776f61c7fa8c84b179bc481669_icgraph.png" border="0" usemap="#aclass_application_1_1_window_a3ae703776f61c7fa8c84b179bc481669_icgraph" alt=""/></div>
+<div class="center"><img src="class_application_1_1_window_a5c68c8220ebe7c6c7001ac2e6f6e1659_icgraph.png" border="0" usemap="#aclass_application_1_1_window_a5c68c8220ebe7c6c7001ac2e6f6e1659_icgraph" alt=""/></div>
 </div>
 
 </div>

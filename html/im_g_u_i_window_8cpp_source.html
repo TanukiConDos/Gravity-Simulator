@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -108,107 +108,103 @@ $(function(){initNavTree('im_g_u_i_window_8cpp_source.html',''); initResizable(t
 <div class="contents">
 <a href="im_g_u_i_window_8cpp.html">Ir a la documentaci贸n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#include &quot;<a class="code" href="im_g_u_i_window_8h.html">imGUIWindow.h</a>&quot;</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span> </div>
-<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine.html">Engine</a></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span>{</div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span>    <span class="keyword">namespace </span><a class="code hl_namespace" href="namespace_engine_1_1_graphic.html">Graphic</a></div>
+<div class="foldopen" id="foldopen00005" data-start="{" data-end="}">
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#ac334cd23a37a431211a80737d3827d2f">    5</a></span>    <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9171af21410d34b33b35913d07330cec">ImGUIWindow::ImGUIWindow</a>(<a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; window, <a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; gpu,<a class="code hl_class" href="class_engine_1_1_graphic_1_1_swap_chain.html">SwapChain</a>&amp; swapChain, <a class="code hl_class" href="class_engine_1_1_graphic_1_1_pipeline.html">Pipeline</a>&amp; pipeline,VkInstance instance,<span class="keywordtype">float</span>* frameTime, <span class="keywordtype">float</span>* tickTime)</div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span>    {</div>
-<div class="foldopen" id="foldopen00007" data-start="{" data-end="}">
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#ac334cd23a37a431211a80737d3827d2f">    7</a></span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9171af21410d34b33b35913d07330cec">ImGUIWindow::ImGUIWindow</a>(<a class="code hl_class" href="class_application_1_1_window.html">Application::Window</a>&amp; window, <a class="code hl_class" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a>&amp; gpu,<a class="code hl_class" href="class_engine_1_1_graphic_1_1_swap_chain.html">SwapChain</a>&amp; swapChain, <a class="code hl_class" href="class_engine_1_1_graphic_1_1_pipeline.html">Pipeline</a>&amp; pipeline,VkInstance instance,<span class="keywordtype">float</span>* frameTime, <span class="keywordtype">float</span>* tickTime)</div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        {</div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>            _stateMachine-&gt;_frameTime = frameTime;</div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>            _stateMachine-&gt;_tickTime = tickTime;</div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>            std::array&lt;VkDescriptorPoolSize,11&gt; pool_sizes = { VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>            VkDescriptorPoolCreateInfo pool_info = {};</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>            pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>            pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>            pool_info.maxSets = 1000;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>            pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>            pool_info.pPoolSizes = pool_sizes.data();</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>            </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>            <span class="keywordflow">if</span> (vkCreateDescriptorPool(gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">getDevice</a>(), &amp;pool_info, <span class="keyword">nullptr</span>, &amp;_imguiPool) != VK_SUCCESS) {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>                <span class="keywordflow">throw</span> std::runtime_error(<span class="stringliteral">&quot;failed to create descriptor pool!&quot;</span>);</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>            }</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>            IMGUI_CHECKVERSION();</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>            ImGui::CreateContext();</div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>        _stateMachine-&gt;_frameTime = frameTime;</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span>        _stateMachine-&gt;_tickTime = tickTime;</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>        std::array&lt;VkDescriptorPoolSize,11&gt; pool_sizes = { VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 } };</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>        VkDescriptorPoolCreateInfo pool_info = {};</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>        pool_info.maxSets = 1000;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>        pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>        pool_info.pPoolSizes = pool_sizes.data();</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>            </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>        <span class="keywordflow">if</span> (vkCreateDescriptorPool(gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">getDevice</a>(), &amp;pool_info, <span class="keyword">nullptr</span>, &amp;_imguiPool) != VK_SUCCESS) {</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>            <span class="keywordflow">throw</span> std::runtime_error(<span class="stringliteral">&quot;failed to create descriptor pool!&quot;</span>);</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>        }</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>        IMGUI_CHECKVERSION();</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>        ImGui::CreateContext();</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        ImGui::StyleColorsDark();</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>            ImGui::StyleColorsDark();</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>            ImGui_ImplGlfw_InitForVulkan(window.<a class="code hl_function" href="class_application_1_1_window.html#a0894597d7c39be5ac303ee241e7d08a0">getWindow</a>(), <span class="keyword">true</span>);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>            ImGui_ImplVulkan_InitInfo init_info = {};</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>            init_info.Instance = instance;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>            init_info.PhysicalDevice = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#af42e75ac35e357d9c56d45bc81a820e3">getPhysicalDevice</a>();</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>            init_info.Device = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">getDevice</a>();</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>            init_info.QueueFamily = 0;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>            init_info.Queue = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#aad52d7ebec691a67d69aaa7961bd998f">getGraphicsQueue</a>();</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>            init_info.PipelineCache = VK_NULL_HANDLE;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>            init_info.DescriptorPool = _imguiPool;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>            init_info.RenderPass = swapChain.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">getRenderPass</a>();</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>            init_info.Subpass = 0;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>            init_info.MinImageCount = 3;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>            init_info.ImageCount = 3;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>            init_info.Allocator = VK_NULL_HANDLE;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>            init_info.CheckVkResultFn = VK_NULL_HANDLE;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>            ImGui_ImplVulkan_Init(&amp;init_info);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>        }</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>        ImGui_ImplGlfw_InitForVulkan(window.<a class="code hl_function" href="class_application_1_1_window.html#a0894597d7c39be5ac303ee241e7d08a0">getWindow</a>(), <span class="keyword">true</span>);</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>        ImGui_ImplVulkan_InitInfo init_info = {};</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>        init_info.Instance = instance;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>        init_info.PhysicalDevice = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#af42e75ac35e357d9c56d45bc81a820e3">getPhysicalDevice</a>();</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>        init_info.Device = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">getDevice</a>();</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>        init_info.QueueFamily = 0;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>        init_info.Queue = gpu.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_g_p_u.html#aad52d7ebec691a67d69aaa7961bd998f">getGraphicsQueue</a>();</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>        init_info.PipelineCache = VK_NULL_HANDLE;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>        init_info.DescriptorPool = _imguiPool;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        init_info.RenderPass = swapChain.<a class="code hl_function" href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">getRenderPass</a>();</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        init_info.Subpass = 0;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        init_info.MinImageCount = 3;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        init_info.ImageCount = 3;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        init_info.Allocator = VK_NULL_HANDLE;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>        init_info.CheckVkResultFn = VK_NULL_HANDLE;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>        ImGui_ImplVulkan_Init(&amp;init_info);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    }</div>
 </div>
-<div class="foldopen" id="foldopen00058" data-start="{" data-end="}">
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">   58</a></span>        <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">ImGUIWindow::~ImGUIWindow</a>()</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>            ImGui_ImplVulkan_Shutdown();</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>            ImGui_ImplGlfw_Shutdown();</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>            ImGui::DestroyContext();</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        }</div>
+<div class="foldopen" id="foldopen00056" data-start="{" data-end="}">
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">   56</a></span>    <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">ImGUIWindow::~ImGUIWindow</a>()</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        ImGui_ImplVulkan_Shutdown();</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        ImGui_ImplGlfw_Shutdown();</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        ImGui::DestroyContext();</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    }</div>
 </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="foldopen" id="foldopen00065" data-start="{" data-end="}">
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">   65</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">ImGUIWindow::startFrame</a>()</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>            ImGui_ImplVulkan_NewFrame();</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>            ImGui_ImplGlfw_NewFrame();</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>            ImGui::NewFrame();</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>            _stateMachine-&gt;frame();</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>            ImGui::Render();</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="foldopen" id="foldopen00063" data-start="{" data-end="}">
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">   63</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">ImGUIWindow::startFrame</a>()</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    {</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        ImGui_ImplVulkan_NewFrame();</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        ImGui_ImplGlfw_NewFrame();</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        ImGui::NewFrame();</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        _stateMachine-&gt;frame();</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>        ImGui::Render();</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    }</div>
 </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="foldopen" id="foldopen00074" data-start="{" data-end="}">
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">   74</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">ImGUIWindow::draw</a>(VkCommandBuffer commandBuffer)</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        {</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>        }</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="foldopen" id="foldopen00072" data-start="{" data-end="}">
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">   72</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">ImGUIWindow::draw</a>(VkCommandBuffer commandBuffer)</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    {</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    }</div>
 </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    }</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>}</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
 <div class="ttc" id="aclass_application_1_1_window_html"><div class="ttname"><a href="class_application_1_1_window.html">Application::Window</a></div><div class="ttdoc">Clase que gestiona la ventana y sus eventos.</div><div class="ttdef"><b>Definition</b> <a href="_window_8h_source.html#l00018">Window.h:18</a></div></div>
 <div class="ttc" id="aclass_application_1_1_window_html_a0894597d7c39be5ac303ee241e7d08a0"><div class="ttname"><a href="class_application_1_1_window.html#a0894597d7c39be5ac303ee241e7d08a0">Application::Window::getWindow</a></div><div class="ttdeci">GLFWwindow * getWindow()</div><div class="ttdef"><b>Definition</b> <a href="_window_8cpp_source.html#l00075">Window.cpp:75</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></div><div class="ttdoc">Clase que administra recursos de la GPU y la interacci髇 con Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00052">GPU.h:53</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_a71e06e900cb62b0e705845e6b6db1449"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">Engine::Graphic::GPU::getDevice</a></div><div class="ttdeci">VkDevice getDevice()</div><div class="ttdoc">Obtiene el dispositivo l骻ico.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00081">GPU.h:81</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_aad52d7ebec691a67d69aaa7961bd998f"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#aad52d7ebec691a67d69aaa7961bd998f">Engine::Graphic::GPU::getGraphicsQueue</a></div><div class="ttdeci">VkQueue getGraphicsQueue()</div><div class="ttdoc">Obtiene la cola de gr醘icos.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00118">GPU.h:118</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_af42e75ac35e357d9c56d45bc81a820e3"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#af42e75ac35e357d9c56d45bc81a820e3">Engine::Graphic::GPU::getPhysicalDevice</a></div><div class="ttdeci">VkPhysicalDevice getPhysicalDevice()</div><div class="ttdoc">Obtiene el dispositivo f韘ico.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00086">GPU.h:86</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a503e28ff50ea0cf053f89ce4ab8e27c4"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">Engine::Graphic::ImGUIWindow::~ImGUIWindow</a></div><div class="ttdeci">~ImGUIWindow()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition</b> <a href="#l00058">imGUIWindow.cpp:58</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html">Engine::Graphic::GPU</a></div><div class="ttdoc">Clase que administra recursos de la GPU y la interacci贸n con Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00050">GPU.h:51</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_a71e06e900cb62b0e705845e6b6db1449"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449">Engine::Graphic::GPU::getDevice</a></div><div class="ttdeci">VkDevice getDevice()</div><div class="ttdoc">Obtiene el dispositivo l贸gico.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00079">GPU.h:79</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_aad52d7ebec691a67d69aaa7961bd998f"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#aad52d7ebec691a67d69aaa7961bd998f">Engine::Graphic::GPU::getGraphicsQueue</a></div><div class="ttdeci">VkQueue getGraphicsQueue()</div><div class="ttdoc">Obtiene la cola de gr谩ficos.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00116">GPU.h:116</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_g_p_u_html_af42e75ac35e357d9c56d45bc81a820e3"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_g_p_u.html#af42e75ac35e357d9c56d45bc81a820e3">Engine::Graphic::GPU::getPhysicalDevice</a></div><div class="ttdeci">VkPhysicalDevice getPhysicalDevice()</div><div class="ttdoc">Obtiene el dispositivo f铆sico.</div><div class="ttdef"><b>Definition</b> <a href="_g_p_u_8h_source.html#l00084">GPU.h:84</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a503e28ff50ea0cf053f89ce4ab8e27c4"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a503e28ff50ea0cf053f89ce4ab8e27c4">Engine::Graphic::ImGUIWindow::~ImGUIWindow</a></div><div class="ttdeci">~ImGUIWindow()</div><div class="ttdoc">Destructor.</div><div class="ttdef"><b>Definition</b> <a href="#l00056">imGUIWindow.cpp:56</a></div></div>
 <div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a9171af21410d34b33b35913d07330cec"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9171af21410d34b33b35913d07330cec">Engine::Graphic::ImGUIWindow::ImGUIWindow</a></div><div class="ttdeci">ImGUIWindow(const ImGUIWindow &amp;)=delete</div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a97066e3a1d80e5ca0dd787d2e1772735"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">Engine::Graphic::ImGUIWindow::draw</a></div><div class="ttdeci">void draw(VkCommandBuffer commandBuffer)</div><div class="ttdoc">Renderiza la interfaz ImGui.</div><div class="ttdef"><b>Definition</b> <a href="#l00074">imGUIWindow.cpp:74</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a9ca05f8fa30f8ee342d254eb0d34948a"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">Engine::Graphic::ImGUIWindow::startFrame</a></div><div class="ttdeci">void startFrame()</div><div class="ttdoc">Inicia el frame de ImGui.</div><div class="ttdef"><b>Definition</b> <a href="#l00065">imGUIWindow.cpp:65</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_pipeline_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_pipeline.html">Engine::Graphic::Pipeline</a></div><div class="ttdoc">Clase encargada de construir y gestionar el pipeline gr醘ico de Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_pipeline_8h_source.html#l00022">Pipeline.h:23</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html">Engine::Graphic::SwapChain</a></div><div class="ttdoc">Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci髇 en Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8h_source.html#l00022">SwapChain.h:23</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a8e9760de56d7458d4305bf4f4cbdd300"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">Engine::Graphic::SwapChain::getRenderPass</a></div><div class="ttdeci">VkRenderPass getRenderPass() const</div><div class="ttdoc">Obtiene el render pass asociado al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8h_source.html#l00092">SwapChain.h:92</a></div></div>
-<div class="ttc" id="aim_g_u_i_window_8h_html"><div class="ttname"><a href="im_g_u_i_window_8h.html">imGUIWindow.h</a></div><div class="ttdoc">Integra ImGui en la aplicaci髇, gestionando la interfaz gr醘ica.</div></div>
-<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
-<div class="ttc" id="anamespace_engine_html"><div class="ttname"><a href="namespace_engine.html">Engine</a></div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a97066e3a1d80e5ca0dd787d2e1772735"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a97066e3a1d80e5ca0dd787d2e1772735">Engine::Graphic::ImGUIWindow::draw</a></div><div class="ttdeci">void draw(VkCommandBuffer commandBuffer)</div><div class="ttdoc">Renderiza la interfaz ImGui.</div><div class="ttdef"><b>Definition</b> <a href="#l00072">imGUIWindow.cpp:72</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_im_g_u_i_window_html_a9ca05f8fa30f8ee342d254eb0d34948a"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">Engine::Graphic::ImGUIWindow::startFrame</a></div><div class="ttdeci">void startFrame()</div><div class="ttdoc">Inicia el frame de ImGui.</div><div class="ttdef"><b>Definition</b> <a href="#l00063">imGUIWindow.cpp:63</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_pipeline_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_pipeline.html">Engine::Graphic::Pipeline</a></div><div class="ttdoc">Clase encargada de construir y gestionar el pipeline gr谩fico de Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_pipeline_8h_source.html#l00020">Pipeline.h:21</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html">Engine::Graphic::SwapChain</a></div><div class="ttdoc">Clase que gestiona el swap chain, render pass, framebuffers y recursos de sincronizaci贸n en Vulkan.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8h_source.html#l00020">SwapChain.h:21</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_graphic_1_1_swap_chain_html_a8e9760de56d7458d4305bf4f4cbdd300"><div class="ttname"><a href="class_engine_1_1_graphic_1_1_swap_chain.html#a8e9760de56d7458d4305bf4f4cbdd300">Engine::Graphic::SwapChain::getRenderPass</a></div><div class="ttdeci">VkRenderPass getRenderPass() const</div><div class="ttdoc">Obtiene el render pass asociado al swap chain.</div><div class="ttdef"><b>Definition</b> <a href="_swap_chain_8h_source.html#l00090">SwapChain.h:90</a></div></div>
+<div class="ttc" id="aim_g_u_i_window_8h_html"><div class="ttname"><a href="im_g_u_i_window_8h.html">imGUIWindow.h</a></div><div class="ttdoc">Integra ImGui en la aplicaci贸n, gestionando la interfaz gr谩fica.</div></div>
+<div class="ttc" id="anamespace_engine_1_1_graphic_html"><div class="ttname"><a href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></div><div class="ttdoc">Espacio de nombres que contiene las clases del motor gr谩fico.</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00007">input.h:8</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

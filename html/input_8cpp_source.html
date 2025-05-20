@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -108,7 +108,7 @@ $(function(){initNavTree('input_8cpp_source.html',''); initResizable(true); });
 <div class="contents">
 <a href="input_8cpp.html">Ir a la documentaci贸n de este archivo.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#include &quot;<a class="code" href="input_8h.html">input.h</a>&quot;</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#include &quot;<a class="code" href="_camera_8h.html">../Engine/Graphic/Camera.h</a>&quot;</span></div>
-<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="preprocessor">#include &quot;../../External/glm/glm.hpp&quot;</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
 <div class="foldopen" id="foldopen00005" data-start="{" data-end="}">
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno"><a class="line" href="class_application_1_1_input_event.html#a6075c40d5eee91a9ca8723c34e38a73a">    5</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="class_application_1_1_input_event.html#a6075c40d5eee91a9ca8723c34e38a73a">Application::InputEvent::submit</a>(<a class="code hl_enumeration" href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714">InputAction</a> action)</div>
@@ -152,10 +152,10 @@ $(function(){initNavTree('input_8cpp_source.html',''); initResizable(true); });
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    }</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>}</div>
 </div>
-<div class="ttc" id="a_camera_8h_html"><div class="ttname"><a href="_camera_8h.html">Camera.h</a></div><div class="ttdoc">Gestiona la c醡ara de la escena, proporcionando m閠odos para actualizar la vista y la proyecci髇.</div></div>
-<div class="ttc" id="aclass_application_1_1_input_event_html_a6075c40d5eee91a9ca8723c34e38a73a"><div class="ttname"><a href="class_application_1_1_input_event.html#a6075c40d5eee91a9ca8723c34e38a73a">Application::InputEvent::submit</a></div><div class="ttdeci">void submit(InputAction action)</div><div class="ttdoc">Env韆 una acci髇 de entrada.</div><div class="ttdef"><b>Definition</b> <a href="#l00005">input.cpp:5</a></div></div>
-<div class="ttc" id="ainput_8h_html"><div class="ttname"><a href="input_8h.html">input.h</a></div><div class="ttdoc">Define acciones de entrada y eventos para la aplicaci髇.</div></div>
-<div class="ttc" id="anamespace_application_html_a618a24f55d5f9d99cdf69b6c98337714"><div class="ttname"><a href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714">Application::InputAction</a></div><div class="ttdeci">InputAction</div><div class="ttdoc">Enumera las acciones de entrada disponibles en la aplicaci髇.</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00032">input.h:33</a></div></div>
+<div class="ttc" id="a_camera_8h_html"><div class="ttname"><a href="_camera_8h.html">Camera.h</a></div><div class="ttdoc">Gestiona la c谩mara de la escena, proporcionando m茅todos para actualizar la vista y la proyecci贸n.</div></div>
+<div class="ttc" id="aclass_application_1_1_input_event_html_a6075c40d5eee91a9ca8723c34e38a73a"><div class="ttname"><a href="class_application_1_1_input_event.html#a6075c40d5eee91a9ca8723c34e38a73a">Application::InputEvent::submit</a></div><div class="ttdeci">void submit(InputAction action)</div><div class="ttdoc">Env铆a una acci贸n de entrada.</div><div class="ttdef"><b>Definition</b> <a href="#l00005">input.cpp:5</a></div></div>
+<div class="ttc" id="ainput_8h_html"><div class="ttname"><a href="input_8h.html">input.h</a></div><div class="ttdoc">Define acciones de entrada y eventos para la aplicaci贸n.</div></div>
+<div class="ttc" id="anamespace_application_html_a618a24f55d5f9d99cdf69b6c98337714"><div class="ttname"><a href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714">Application::InputAction</a></div><div class="ttdeci">InputAction</div><div class="ttdoc">Enumera las acciones de entrada disponibles en la aplicaci贸n.</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00032">input.h:33</a></div></div>
 <div class="ttc" id="anamespace_application_html_a618a24f55d5f9d99cdf69b6c98337714a17761b6e1aa325666792190ae316e3cf"><div class="ttname"><a href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714a17761b6e1aa325666792190ae316e3cf">Application::InputAction::MOVE_BACKWARD</a></div><div class="ttdeci">@ MOVE_BACKWARD</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00035">input.h:35</a></div></div>
 <div class="ttc" id="anamespace_application_html_a618a24f55d5f9d99cdf69b6c98337714a17ac59a0d27b38c77bd02f3bcefd5728"><div class="ttname"><a href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714a17ac59a0d27b38c77bd02f3bcefd5728">Application::InputAction::ROTATE_RIGHT</a></div><div class="ttdeci">@ ROTATE_RIGHT</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00043">input.h:43</a></div></div>
 <div class="ttc" id="anamespace_application_html_a618a24f55d5f9d99cdf69b6c98337714a2e5c8c512cee5f6b910c378b538a13d5"><div class="ttname"><a href="namespace_application.html#a618a24f55d5f9d99cdf69b6c98337714a2e5c8c512cee5f6b910c378b538a13d5">Application::InputAction::ROTATE_UP</a></div><div class="ttdeci">@ ROTATE_UP</div><div class="ttdef"><b>Definition</b> <a href="input_8h_source.html#l00040">input.h:40</a></div></div>

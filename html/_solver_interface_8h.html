@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('_solver_interface_8h.html',''); initResizable(true); }
 </div><!--header-->
 <div class="contents">
 
-<p>Define una interfaz para implementar m閠odos de resoluci髇 de la simulaci髇 f韘ica.  
+<p>Define una interfaz para implementar m茅todos de resoluci贸n de la simulaci贸n f铆sica.  
 <a href="#details">M谩s...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>&quot;</code><br />
 <code>#include &lt;memory&gt;</code><br />
@@ -131,7 +131,7 @@ Gr谩fico de los archivos que directa o indirectamente incluyen a este archivo:</
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Clases</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html">Engine::Physic::SolverInterface</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interfaz para resolver la simulaci髇 f韘ica.  <a href="class_engine_1_1_physic_1_1_solver_interface.html#details">M谩s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interfaz para resolver la simulaci贸n f铆sica.  <a href="class_engine_1_1_physic_1_1_solver_interface.html#details">M谩s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
@@ -139,11 +139,12 @@ Espacios de nombres</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine.html">Engine</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_physic.html">Engine::Physic</a></td></tr>
+<tr class="memdesc:namespace_engine_1_1_physic"><td class="mdescLeft">&#160;</td><td class="mdescRight">Espacio de nombres que contiene las clases del motor de f铆sicas. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Define una interfaz para implementar m閠odos de resoluci髇 de la simulaci髇 f韘ica. </p>
-<p>Esta interfaz declara el m閠odo solve, que debe ser implementado por las clases derivadas para actualizar y resolver las interacciones entre objetos f韘icos en funci髇 del delta de tiempo. </p>
+<div class="textblock"><p>Define una interfaz para implementar m茅todos de resoluci贸n de la simulaci贸n f铆sica. </p>
+<p>Esta interfaz declara el m茅todo solve, que debe ser implementado por las clases derivadas para actualizar y resolver las interacciones entre objetos f铆sicos en funci贸n del delta de tiempo. </p>
 
 <p class="definition">Definici贸n en el archivo <a class="el" href="_solver_interface_8h_source.html">SolverInterface.h</a>.</p>
 </div></div><!-- contents -->

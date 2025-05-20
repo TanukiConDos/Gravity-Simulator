@@ -7,6 +7,7 @@ var class_engine_1_1_graphic_1_1_camera =
     [ "getUp", "class_engine_1_1_graphic_1_1_camera.html#ab20f738d60df34b4fc377229baaf701d", null ],
     [ "move", "class_engine_1_1_graphic_1_1_camera.html#a027f58fcf53928d08ce4dcda44e4a4b4", null ],
     [ "operator=", "class_engine_1_1_graphic_1_1_camera.html#ace8eddd50b90e25baea5cad7cbcbb712", null ],
+    [ "reset", "class_engine_1_1_graphic_1_1_camera.html#a27744119d00e7eb93082c16f5a590e6a", null ],
     [ "rotate", "class_engine_1_1_graphic_1_1_camera.html#a3868fdfede93434c747cf6645fd72728", null ],
     [ "transform", "class_engine_1_1_graphic_1_1_camera.html#a5e5749d1bcb9318cd020bd60e39711d8", null ]
 ];

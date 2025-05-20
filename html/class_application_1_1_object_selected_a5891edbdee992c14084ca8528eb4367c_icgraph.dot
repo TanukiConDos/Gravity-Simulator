@@ -5,7 +5,7 @@ digraph "Application::ObjectSelected::changeState"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="RL";
-  Node1 [id="Node000001",label="Application::ObjectSelected\l::changeState",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Gestiona la transición de estado basada en la acción cuando se ha seleccionado un objeto."];
+  Node1 [id="Node000001",label="Application::ObjectSelected\l::changeState",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Gestiona la transiciÃ³n de estado basada en la acciÃ³n cuando se ha seleccionado un objeto."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Application::ObjectSelected\l::frame",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_object_selected.html#a30dd507edcc6c76dd65cc0cf9dda010a",tooltip="Ejecuta la lógica del frame cuando se ha seleccionado un objeto."];
+  Node2 [id="Node000002",label="Application::ObjectSelected\l::frame",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_object_selected.html#a30dd507edcc6c76dd65cc0cf9dda010a",tooltip="Ejecuta la lÃ³gica del frame cuando se ha seleccionado un objeto."];
 }

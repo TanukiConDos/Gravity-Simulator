@@ -92,48 +92,48 @@ namespace Application
         ImVec2 size = ImGui::GetMainViewport()->Size;
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImGui::SetWindowPos(ImVec2{ (size[0] / 2) - (windowSize[0] / 2),(size[1] / 2) - (windowSize[1] / 2) });
-        ImGui::InputFloat("Multiplicador paso del tiempo", &config->time);
+        ImGui::InputFloat("Multiplicador paso del tiempo", &config->_time);
 
-        if (ImGui::BeginCombo("Modo de creacion de la escena", toString(config->systemCreationMode)))
+        if (ImGui::BeginCombo("Modo de creacion de la escena", toString(config->_systemCreationMode)))
         {
             for (int i = 0; i <= 1; i++)
             {
                 Foundation::Mode mode = static_cast<Foundation::Mode>(i);
-                bool isSelected = mode == config->systemCreationMode;
-                if (ImGui::Selectable(toString(mode), isSelected)) config->systemCreationMode = mode;
+                bool isSelected = mode == config->_systemCreationMode;
+                if (ImGui::Selectable(toString(mode), isSelected)) config->_systemCreationMode = mode;
                 if (isSelected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
-        if (config->systemCreationMode == Foundation::Mode::FILE)
+        if (config->_systemCreationMode == Foundation::Mode::FILE)
         {
      
-            ImGui::InputText("Fichero JSON", config->fichero, 100);
+            ImGui::InputText("Fichero JSON", config->_fichero, 100);
         }
-        if (config->systemCreationMode == Foundation::Mode::RANDOM)
+        if (config->_systemCreationMode == Foundation::Mode::RANDOM)
         {
-            ImGui::InputInt("Numero de objetos", &config->numObjects,0,0);
+            ImGui::InputInt("Numero de objetos", &config->_numObjects,0,0);
         }
 
-        if (ImGui::BeginCombo("Algoritmo de deteccion de colision", toString(config->collisionAlgorithm)))
+        if (ImGui::BeginCombo("Algoritmo de deteccion de colision", toString(config->_collisionAlgorithm)))
         {
             for (int i = 0; i <= 1; i++)
             {
                 Foundation::Algorithm algorithm = static_cast<Foundation::Algorithm>(i);
-                bool isSelected = algorithm == config->collisionAlgorithm;
-                if(ImGui::Selectable(toString(algorithm), isSelected)) config->collisionAlgorithm = algorithm;
+                bool isSelected = algorithm == config->_collisionAlgorithm;
+                if(ImGui::Selectable(toString(algorithm), isSelected)) config->_collisionAlgorithm = algorithm;
                 if (isSelected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
 
-        if (ImGui::BeginCombo("Algoritmo de resolucion", toString(config->SolverAlgorithm)))
+        if (ImGui::BeginCombo("Algoritmo de resolucion", toString(config->_SolverAlgorithm)))
         {
             for (int i = 0; i <= 1; i++)
             {
                 Foundation::Algorithm algorithm = static_cast<Foundation::Algorithm>(i);
-                bool isSelected = algorithm == config->SolverAlgorithm;
-                if(ImGui::Selectable(toString(algorithm), isSelected)) config->SolverAlgorithm = algorithm;
+                bool isSelected = algorithm == config->_SolverAlgorithm;
+                if(ImGui::Selectable(toString(algorithm), isSelected)) config->_SolverAlgorithm = algorithm;
                 if (isSelected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();

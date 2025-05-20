@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,7 +111,7 @@ $(function(){initNavTree('_config_8h.html',''); initResizable(true); });
 </div><!--header-->
 <div class="contents">
 
-<p>Gestiona la configuraci髇 de la aplicaci髇, permitiendo obtener par醡etros como el modo de creaci髇 del sistema, el n鷐ero de objetos, el tiempo de simulaci髇, el archivo de datos y los algoritmos para colisiones y resoluci髇.  
+<p>Gestiona la configuraci贸n de la aplicaci贸n, permitiendo obtener par谩metros como el modo de creaci贸n del sistema, el n煤mero de objetos, el tiempo de simulaci贸n, el archivo de datos y los algoritmos para colisiones y resoluci贸n.  
 <a href="#details">M谩s...</a></p>
 <div class="textblock"><code>#include &lt;map&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
@@ -131,13 +131,13 @@ Gr谩fico de los archivos que directa o indirectamente incluyen a este archivo:</
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Clases</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_foundation_1_1_config.html">Foundation::Config</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clase que maneja la configuraci髇 global de la aplicaci髇.  <a href="class_foundation_1_1_config.html#details">M谩s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clase que maneja la configuraci贸n global de la aplicaci贸n.  <a href="class_foundation_1_1_config.html#details">M谩s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
 Espacios de nombres</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_foundation.html">Foundation</a></td></tr>
-<tr class="memdesc:namespace_foundation"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contiene utilidades y clases fundamentales utilizadas en toda la aplicaci髇. <br /></td></tr>
+<tr class="memdesc:namespace_foundation"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contiene utilidades y clases fundamentales utilizadas en toda la aplicaci贸n. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
@@ -145,16 +145,16 @@ Enumeraciones</h2></td></tr>
 <tr class="memitem:a74732d168166d620ed486dbd800fe778" id="r_a74732d168166d620ed486dbd800fe778"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">Foundation::Algorithm</a> { <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a6ef113c006f2854dd4343c24cd2bd58d">Foundation::BRUTE_FORCE</a> = 0
 , <a class="el" href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778a889b5cd973f0712484588e2e7dbd861a">Foundation::OCTREE</a> = 1
  }</td></tr>
-<tr class="memdesc:a74732d168166d620ed486dbd800fe778"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumera los algoritmos disponibles para la detecci髇 de colisiones y resoluci髇 de fuerzas.  <a href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">M谩s...</a><br /></td></tr>
+<tr class="memdesc:a74732d168166d620ed486dbd800fe778"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumera los algoritmos disponibles para la detecci贸n de colisiones y resoluci贸n de fuerzas.  <a href="namespace_foundation.html#a74732d168166d620ed486dbd800fe778">M谩s...</a><br /></td></tr>
 <tr class="separator:a74732d168166d620ed486dbd800fe778"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94d46abbd3a8a631c951ebfe5cce8207" id="r_a94d46abbd3a8a631c951ebfe5cce8207"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">Foundation::Mode</a> { <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a170e02e86972c2be8559884cc3c12254">Foundation::RANDOM</a> = 0
 , <a class="el" href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207a9fc5887c030f7a3e19821ebec457e719">Foundation::FILE</a> = 1
  }</td></tr>
-<tr class="memdesc:a94d46abbd3a8a631c951ebfe5cce8207"><td class="mdescLeft">&#160;</td><td class="mdescRight">Define el modo de creaci髇 de sistemas para la simulaci髇.  <a href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">M谩s...</a><br /></td></tr>
+<tr class="memdesc:a94d46abbd3a8a631c951ebfe5cce8207"><td class="mdescLeft">&#160;</td><td class="mdescRight">Define el modo de creaci贸n de sistemas para la simulaci贸n.  <a href="namespace_foundation.html#a94d46abbd3a8a631c951ebfe5cce8207">M谩s...</a><br /></td></tr>
 <tr class="separator:a94d46abbd3a8a631c951ebfe5cce8207"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Gestiona la configuraci髇 de la aplicaci髇, permitiendo obtener par醡etros como el modo de creaci髇 del sistema, el n鷐ero de objetos, el tiempo de simulaci髇, el archivo de datos y los algoritmos para colisiones y resoluci髇. </p>
+<div class="textblock"><p>Gestiona la configuraci贸n de la aplicaci贸n, permitiendo obtener par谩metros como el modo de creaci贸n del sistema, el n煤mero de objetos, el tiempo de simulaci贸n, el archivo de datos y los algoritmos para colisiones y resoluci贸n. </p>
 
 <p class="definition">Definici贸n en el archivo <a class="el" href="_config_8h_source.html">Config.h</a>.</p>
 </div></div><!-- contents -->

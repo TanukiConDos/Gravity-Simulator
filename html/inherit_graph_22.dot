@@ -5,5 +5,5 @@ digraph "Gr√°fico de jerarqu√≠a de clases"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="Engine::Physic::PhysicSystem",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_physic_system.html",tooltip="Sistema fÌsico encargado de actualizar la simulaciÛn mediante la detecciÛn de colisiones y la resoluciÛn de fuer..."];
+  Node0 [id="Node000000",label="Engine::Physic::PhysicSystem",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_physic_1_1_physic_system.html",tooltip="Sistema f√≠sico encargado de actualizar la simulaci√≥n mediante la detecci√≥n de colisiones y la resoluc..."];
 }

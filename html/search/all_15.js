@@ -1,10 +1,6 @@
 var searchData=
 [
-  ['wait_0',['wait',['../class_engine_1_1_graphic_1_1_g_p_u.html#aa644a782f97bb1b56771c13d8eb9e919',1,'Engine::Graphic::GPU::wait()'],['../class_engine_1_1_graphic_1_1_renderer.html#a0fc557d57e2795b99d77bc2149dc1e70',1,'Engine::Graphic::Renderer::wait()']]],
-  ['width_1',['WIDTH',['../class_application_1_1_gravity_simulator.html#a6402ac6e309b36db234066df3c089311',1,'Application::GravitySimulator']]],
-  ['window_2',['Window',['../class_application_1_1_window.html',1,'Application::Window'],['../class_application_1_1_window.html#a7328cefe7f392055b6676d1328abf796',1,'Application::Window::Window()'],['../class_application_1_1_window.html#a4e6e9b428039985395e5c7904d7f1e71',1,'Application::Window::Window(int width, int height)'],['../class_application_1_1_window.html#a6aefa5113c98d81a9c28848d42d0d7d3',1,'Application::Window::Window(const Window &amp;)=delete']]],
-  ['window_2ecpp_3',['Window.cpp',['../_window_8cpp.html',1,'']]],
-  ['window_2eh_4',['Window.h',['../_window_8h.html',1,'']]],
-  ['write_5',['write',['../class_foundation_1_1_file.html#af458d1fbb53c914d409f1195fcf95862',1,'Foundation::File']]],
-  ['writedata_6',['writeData',['../class_engine_1_1_graphic_1_1_buffer.html#a40c11af96378442470d068511d31d105',1,'Engine::Graphic::Buffer']]]
+  ['vertex_0',['Vertex',['../struct_engine_1_1_graphic_1_1_vertex.html',1,'Engine::Graphic::Vertex'],['../struct_engine_1_1_graphic_1_1_vertex.html#adb6493d43a15f002cfdf349a4148a7a9',1,'Engine::Graphic::Vertex::Vertex()']]],
+  ['view_1',['view',['../struct_engine_1_1_graphic_1_1_uniform_buffer_object.html#a441ae666c2c3e42eb6d9696d4c5b1cad',1,'Engine::Graphic::UniformBufferObject']]],
+  ['vk_5fuse_5fplatform_5fwin32_5fkhr_2',['VK_USE_PLATFORM_WIN32_KHR',['../_g_p_u_8h.html#aea22151c1df842d43772ec5f931d2600',1,'GPU.h']]]
 ];

@@ -5,16 +5,16 @@ digraph "Engine::Graphic::Pipeline::Pipeline"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node1 [id="Node000001",label="Engine::Graphic::Pipeline\l::Pipeline",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa el pipeline gráfico."];
+  Node1 [id="Node000001",label="Engine::Graphic::Pipeline\l::Pipeline",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Constructor que inicializa el pipeline grÃ¡fico."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Engine::Graphic::Vertex\l::getAttributeDescriptions",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#a1a908468fa3f817d3754124525da0fe1",tooltip="Obtiene las descripciones de los atributos de entrada del vértice."];
+  Node2 [id="Node000002",label="Engine::Graphic::Vertex\l::getAttributeDescriptions",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#a1a908468fa3f817d3754124525da0fe1",tooltip="Obtiene las descripciones de los atributos de entrada del vÃ©rtice."];
   Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="Engine::Graphic::Vertex\l::Vertex",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#adb6493d43a15f002cfdf349a4148a7a9",tooltip="Constructor para inicializar un vértice."];
+  Node3 [id="Node000003",label="Engine::Graphic::Vertex\l::Vertex",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#adb6493d43a15f002cfdf349a4148a7a9",tooltip="Constructor para inicializar un vÃ©rtice."];
   Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
-  Node4 [id="Node000004",label="Engine::Graphic::Vertex\l::getBindingDescription",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#a47a48d58a0926e611825091860c70441",tooltip="Obtiene la descripción del binding de entrada de vértices."];
+  Node4 [id="Node000004",label="Engine::Graphic::Vertex\l::getBindingDescription",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$struct_engine_1_1_graphic_1_1_vertex.html#a47a48d58a0926e611825091860c70441",tooltip="Obtiene la descripciÃ³n del binding de entrada de vÃ©rtices."];
   Node4 -> Node3 [id="edge4_Node000004_Node000003",color="steelblue1",style="solid",tooltip=" "];
   Node1 -> Node5 [id="edge5_Node000001_Node000005",color="steelblue1",style="solid",tooltip=" "];
-  Node5 [id="Node000005",label="Engine::Graphic::GPU\l::getDevice",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449",tooltip="Obtiene el dispositivo lógico."];
+  Node5 [id="Node000005",label="Engine::Graphic::GPU\l::getDevice",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_engine_1_1_graphic_1_1_g_p_u.html#a71e06e900cb62b0e705845e6b6db1449",tooltip="Obtiene el dispositivo lÃ³gico."];
   Node1 -> Node6 [id="edge6_Node000001_Node000006",color="steelblue1",style="solid",tooltip=" "];
   Node6 [id="Node000006",label="Foundation::File::read",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_foundation_1_1_file.html#adb7480e31861e7c59d40348e59140a31",tooltip="Lee todo el contenido del archivo."];
 }

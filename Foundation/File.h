@@ -45,7 +45,7 @@ namespace Foundation
 		 *
 		 * @return size_t Tamaño del archivo en bytes.
 		 */
-		size_t getSize() const { return size; };
+		size_t getSize() const { return _size; };
 
 		/**
 		 * @brief Lee todo el contenido del archivo.
@@ -63,9 +63,9 @@ namespace Foundation
 
 	private:
 		/// Flujo de archivo utilizado para la lectura/escritura.
-		std::fstream file;
+		std::fstream _file;
 		/// Tamaño del archivo en bytes.
-		size_t size;
+		size_t _size;
 	};
 }
 

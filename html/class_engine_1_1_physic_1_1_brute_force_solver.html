@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_brute_force_solver.html','
 </div><!--header-->
 <div class="contents">
 
-<p>Solver que utiliza el m閠odo de fuerza bruta para actualizar la simulaci髇 f韘ica.  
+<p>Solver que utiliza el m茅todo de fuerza bruta para actualizar la simulaci贸n f铆sica.  
  <a href="#details">M谩s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_brute_force_solver_8h_source.html">BruteForceSolver.h</a>&gt;</code></p>
@@ -128,12 +128,15 @@ Diagrama de colaboraci贸n de Engine::Physic::BruteForceSolver:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 M茅todos p煤blicos</h2></td></tr>
 <tr class="memitem:af9fd2a6a140a2d8b76fa3428849a8d02" id="r_af9fd2a6a140a2d8b76fa3428849a8d02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af9fd2a6a140a2d8b76fa3428849a8d02">solve</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects) final</td></tr>
-<tr class="memdesc:af9fd2a6a140a2d8b76fa3428849a8d02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulaci髇 f韘ica mediante fuerza bruta.  <br /></td></tr>
+<tr class="memdesc:af9fd2a6a140a2d8b76fa3428849a8d02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulaci贸n f铆sica mediante fuerza bruta.  <br /></td></tr>
 <tr class="separator:af9fd2a6a140a2d8b76fa3428849a8d02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_class_engine_1_1_physic_1_1_solver_interface"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_class_engine_1_1_physic_1_1_solver_interface')"><img src="closed.png" alt="-"/>&#160;M茅todos p煤blicos heredados de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html">Engine::Physic::SolverInterface</a></td></tr>
+<tr class="memitem:af9fc29c56658a43eb26ef139462d4e70 inherit pub_methods_class_engine_1_1_physic_1_1_solver_interface" id="r_af9fc29c56658a43eb26ef139462d4e70"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#af9fc29c56658a43eb26ef139462d4e70">~SolverInterface</a> ()=default</td></tr>
+<tr class="separator:af9fc29c56658a43eb26ef139462d4e70 inherit pub_methods_class_engine_1_1_physic_1_1_solver_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci贸n detallada</h2>
-<div class="textblock"><p>Solver que utiliza el m閠odo de fuerza bruta para actualizar la simulaci髇 f韘ica. </p>
-<p>Hereda de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaci髇 f韘ica.">SolverInterface</a> e implementa el m閠odo solve, procesando las interacciones entre objetos de forma iterativa para actualizar sus estados. </p>
+<div class="textblock"><p>Solver que utiliza el m茅todo de fuerza bruta para actualizar la simulaci贸n f铆sica. </p>
+<p>Hereda de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaci贸n f铆sica.">SolverInterface</a> e implementa el m茅todo solve, procesando las interacciones entre objetos de forma iterativa para actualizar sus estados. </p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_brute_force_solver_8h_source.html#l00023">23</a> del archivo <a class="el" href="_brute_force_solver_8h_source.html">BruteForceSolver.h</a>.</p>
 </div><h2 class="groupheader">Documentaci贸n de funciones miembro</h2>
@@ -164,17 +167,17 @@ M茅todos p煤blicos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Resuelve la simulaci髇 f韘ica mediante fuerza bruta. </p>
-<p>Este m閠odo recorre el vector de objetos f韘icos y aplica la l骻ica necesaria para actualizar sus estados en funci髇 del intervalo de tiempo transcurrido.</p>
+<p>Resuelve la simulaci贸n f铆sica mediante fuerza bruta. </p>
+<p>Este m茅todo recorre el vector de objetos f铆sicos y aplica la l贸gica necesaria para actualizar sus estados en funci贸n del intervalo de tiempo transcurrido.</p>
 <dl class="params"><dt>Par谩metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f韘icos a resolver. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f铆sicos a resolver. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Reimplementado de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a47d5ca1ab75d4a763d67e266c02a14bb">Engine::Physic::SolverInterface</a>.</p>
+<p>Implementa <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a31fdaabca6d091537ccc95b89e3fcf16">Engine::Physic::SolverInterface</a>.</p>
 
 <p class="definition">Definici贸n en la l铆nea <a class="el" href="_brute_force_solver_8cpp_source.html#l00007">7</a> del archivo <a class="el" href="_brute_force_solver_8cpp_source.html">BruteForceSolver.cpp</a>.</p>
 <div class="dynheader">

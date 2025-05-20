@@ -9,5 +9,6 @@ var class_engine_1_1_graphic_1_1_buffer =
     [ "map", "class_engine_1_1_graphic_1_1_buffer.html#a7bc46230112b6df35c589d54c786880b", null ],
     [ "operator=", "class_engine_1_1_graphic_1_1_buffer.html#a7dad3330e7fa68541dbb3f32e2134815", null ],
     [ "operator=", "class_engine_1_1_graphic_1_1_buffer.html#a883b4f74df7b2570e69b8762ecb2ddd6", null ],
+    [ "sendToGPU", "class_engine_1_1_graphic_1_1_buffer.html#a6c7b8f717b7de24211b68cade56a4997", null ],
     [ "writeData", "class_engine_1_1_graphic_1_1_buffer.html#a40c11af96378442470d068511d31d105", null ]
 ];

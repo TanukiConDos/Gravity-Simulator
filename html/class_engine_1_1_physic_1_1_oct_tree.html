@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_oct_tree.html',''); initRe
 </div><!--header-->
 <div class="contents">
 
-<p>Clase que implementa un �rbol octal para optimizar c�lculos gravitacionales y detecci�n de colisiones.  
+<p>Clase que implementa un árbol octal para optimizar cálculos gravitacionales y detección de colisiones.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_oct_tree_8h_source.html">OctTree.h</a>&gt;</code></p>
@@ -122,28 +122,28 @@ Métodos públicos</h2></td></tr>
 <tr class="memitem:ac24c1579608774647a54f879fa474186" id="r_ac24c1579608774647a54f879fa474186"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_engine_1_1_physic_1_1_oct_tree.html">OctTree</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac24c1579608774647a54f879fa474186">operator=</a> (const <a class="el" href="class_engine_1_1_physic_1_1_oct_tree.html">OctTree</a> &amp;)=delete</td></tr>
 <tr class="separator:ac24c1579608774647a54f879fa474186"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1376f7a816bb832061bf7deee66fa663" id="r_a1376f7a816bb832061bf7deee66fa663"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1376f7a816bb832061bf7deee66fa663">OctTree</a> (std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects)</td></tr>
-<tr class="memdesc:a1376f7a816bb832061bf7deee66fa663"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor expl�cito.  <br /></td></tr>
+<tr class="memdesc:a1376f7a816bb832061bf7deee66fa663"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor explícito.  <br /></td></tr>
 <tr class="separator:a1376f7a816bb832061bf7deee66fa663"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4da27ca11a9d7c7db00787268e5087b9" id="r_a4da27ca11a9d7c7db00787268e5087b9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4da27ca11a9d7c7db00787268e5087b9">OctTree</a> ()=default</td></tr>
 <tr class="memdesc:a4da27ca11a9d7c7db00787268e5087b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor por defecto.  <br /></td></tr>
 <tr class="separator:a4da27ca11a9d7c7db00787268e5087b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5035af3a1083144f171f65e8ff56180d" id="r_a5035af3a1083144f171f65e8ff56180d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5035af3a1083144f171f65e8ff56180d">barnesHut</a> (float deltaTime)</td></tr>
-<tr class="memdesc:a5035af3a1083144f171f65e8ff56180d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Aplica el algoritmo Barnes-Hut para la simulaci�n de fuerzas.  <br /></td></tr>
-<tr class="separator:a5035af3a1083144f171f65e8ff56180d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac46b5ecbed20fa5c6a0e2b2280e85594" id="r_ac46b5ecbed20fa5c6a0e2b2280e85594"><td class="memItemLeft" align="right" valign="top">glm::vec3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac46b5ecbed20fa5c6a0e2b2280e85594">barnesHut</a> (int objectId)</td></tr>
+<tr class="memdesc:ac46b5ecbed20fa5c6a0e2b2280e85594"><td class="mdescLeft">&#160;</td><td class="mdescRight">Aplica el algoritmo Barnes-Hut para la simulación de fuerzas.  <br /></td></tr>
+<tr class="separator:ac46b5ecbed20fa5c6a0e2b2280e85594"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace5c2520934b02b5993c4b20c3c2d700" id="r_ace5c2520934b02b5993c4b20c3c2d700"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace5c2520934b02b5993c4b20c3c2d700">massCalculation</a> ()</td></tr>
-<tr class="memdesc:ace5c2520934b02b5993c4b20c3c2d700"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calcula la masa total en cada nodo del �rbol.  <br /></td></tr>
+<tr class="memdesc:ace5c2520934b02b5993c4b20c3c2d700"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calcula la masa total en cada nodo del árbol.  <br /></td></tr>
 <tr class="separator:ace5c2520934b02b5993c4b20c3c2d700"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43ab9195b3bf9b5ba8b58c970fc0a0bc" id="r_a43ab9195b3bf9b5ba8b58c970fc0a0bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a43ab9195b3bf9b5ba8b58c970fc0a0bc">checkCollisions</a> ()</td></tr>
-<tr class="memdesc:a43ab9195b3bf9b5ba8b58c970fc0a0bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifica y gestiona colisiones entre objetos.  <br /></td></tr>
-<tr class="separator:a43ab9195b3bf9b5ba8b58c970fc0a0bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accdc19544dec2cb9f43c0aede03eadf4" id="r_accdc19544dec2cb9f43c0aede03eadf4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#accdc19544dec2cb9f43c0aede03eadf4">update</a> ()</td></tr>
-<tr class="memdesc:accdc19544dec2cb9f43c0aede03eadf4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el �rbol y sus elementos.  <br /></td></tr>
-<tr class="separator:accdc19544dec2cb9f43c0aede03eadf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade63178da978c2710d55f5476031ec7c" id="r_ade63178da978c2710d55f5476031ec7c"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ade63178da978c2710d55f5476031ec7c">checkCollisions</a> (int objectId)</td></tr>
+<tr class="memdesc:ade63178da978c2710d55f5476031ec7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifica y gestiona colisiones entre objetos.  <br /></td></tr>
+<tr class="separator:ade63178da978c2710d55f5476031ec7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9af51cb9cd3bb6d80b3fca691f0d19f" id="r_ab9af51cb9cd3bb6d80b3fca691f0d19f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab9af51cb9cd3bb6d80b3fca691f0d19f">update</a> (float tickTime)</td></tr>
+<tr class="memdesc:ab9af51cb9cd3bb6d80b3fca691f0d19f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Actualiza el árbol y sus elementos.  <br /></td></tr>
+<tr class="separator:ab9af51cb9cd3bb6d80b3fca691f0d19f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Clase que implementa un �rbol octal para optimizar c�lculos gravitacionales y detecci�n de colisiones. </p>
+<div class="textblock"><p>Clase que implementa un árbol octal para optimizar cálculos gravitacionales y detección de colisiones. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8h_source.html#l00024">24</a> del archivo <a class="el" href="_oct_tree_8h_source.html">OctTree.h</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8h_source.html#l00022">22</a> del archivo <a class="el" href="_oct_tree_8h_source.html">OctTree.h</a>.</p>
 </div><h2 class="groupheader">Documentación de constructores y destructores</h2>
 <a id="adbfe76172b205519adce5c845fb2dc91" name="adbfe76172b205519adce5c845fb2dc91"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adbfe76172b205519adce5c845fb2dc91">&#9670;&#160;</a></span>OctTree() <span class="overload">[1/3]</span></h2>
@@ -203,15 +203,15 @@ Gráfico de llamadas a esta función:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Constructor expl�cito. </p>
+<p>Constructor explícito. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">objects</td><td>Puntero compartido a la colecci�n de objetos f�sicos a gestionar. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a la colección de objetos físicos a gestionar. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00009">9</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00007">7</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
 <div class="dynheader">
 Gráfico de llamadas de esta función:</div>
 <div class="dyncontent">
@@ -248,22 +248,22 @@ Gráfico de llamadas de esta función:</div>
 </div>
 </div>
 <h2 class="groupheader">Documentación de funciones miembro</h2>
-<a id="a5035af3a1083144f171f65e8ff56180d" name="a5035af3a1083144f171f65e8ff56180d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5035af3a1083144f171f65e8ff56180d">&#9670;&#160;</a></span>barnesHut()</h2>
+<a id="ac46b5ecbed20fa5c6a0e2b2280e85594" name="ac46b5ecbed20fa5c6a0e2b2280e85594"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac46b5ecbed20fa5c6a0e2b2280e85594">&#9670;&#160;</a></span>barnesHut()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Engine::Physic::OctTree::barnesHut </td>
+          <td class="memname">glm::vec3 Engine::Physic::OctTree::barnesHut </td>
           <td>(</td>
-          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>deltaTime</em></span></td><td>)</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>objectId</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Aplica el algoritmo Barnes-Hut para la simulaci�n de fuerzas. </p>
+<p>Aplica el algoritmo Barnes-Hut para la simulación de fuerzas. </p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
@@ -271,25 +271,25 @@ Gráfico de llamadas de esta función:</div>
   </dd>
 </dl>
 
-<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00018">18</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00016">16</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
 <div class="dynheader">
-Gráfico de llamadas de esta función:</div>
+Gráfico de llamadas a esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_engine_1_1_physic_1_1_oct_tree_a5035af3a1083144f171f65e8ff56180d_cgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_oct_tree_a5035af3a1083144f171f65e8ff56180d_cgraph" alt=""/></div>
+<div class="center"><img src="class_engine_1_1_physic_1_1_oct_tree_ac46b5ecbed20fa5c6a0e2b2280e85594_icgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_oct_tree_ac46b5ecbed20fa5c6a0e2b2280e85594_icgraph" alt=""/></div>
 </div>
 
 </div>
 </div>
-<a id="a43ab9195b3bf9b5ba8b58c970fc0a0bc" name="a43ab9195b3bf9b5ba8b58c970fc0a0bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a43ab9195b3bf9b5ba8b58c970fc0a0bc">&#9670;&#160;</a></span>checkCollisions()</h2>
+<a id="ade63178da978c2710d55f5476031ec7c" name="ade63178da978c2710d55f5476031ec7c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade63178da978c2710d55f5476031ec7c">&#9670;&#160;</a></span>checkCollisions()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void Engine::Physic::OctTree::checkCollisions </td>
+          <td class="memname">std::vector&lt; int &gt; Engine::Physic::OctTree::checkCollisions </td>
           <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>objectId</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -298,6 +298,11 @@ Gráfico de llamadas de esta función:</div>
 <p>Verifica y gestiona colisiones entre objetos. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00101">101</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
+<div class="dynheader">
+Gráfico de llamadas a esta función:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_engine_1_1_physic_1_1_oct_tree_ade63178da978c2710d55f5476031ec7c_icgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_oct_tree_ade63178da978c2710d55f5476031ec7c_icgraph" alt=""/></div>
+</div>
 
 </div>
 </div>
@@ -316,9 +321,9 @@ Gráfico de llamadas de esta función:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Calcula la masa total en cada nodo del �rbol. </p>
+<p>Calcula la masa total en cada nodo del árbol. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00061">61</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00059">59</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
 <div class="dynheader">
 Gráfico de llamadas a esta función:</div>
 <div class="dyncontent">
@@ -357,8 +362,8 @@ Gráfico de llamadas de esta función:</div>
 
 </div>
 </div>
-<a id="accdc19544dec2cb9f43c0aede03eadf4" name="accdc19544dec2cb9f43c0aede03eadf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#accdc19544dec2cb9f43c0aede03eadf4">&#9670;&#160;</a></span>update()</h2>
+<a id="ab9af51cb9cd3bb6d80b3fca691f0d19f" name="ab9af51cb9cd3bb6d80b3fca691f0d19f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9af51cb9cd3bb6d80b3fca691f0d19f">&#9670;&#160;</a></span>update()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -366,19 +371,19 @@ Gráfico de llamadas de esta función:</div>
         <tr>
           <td class="memname">void Engine::Physic::OctTree::update </td>
           <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>tickTime</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Actualiza el �rbol y sus elementos. </p>
+<p>Actualiza el árbol y sus elementos. </p>
 
-<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00140">140</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="_oct_tree_8cpp_source.html#l00137">137</a> del archivo <a class="el" href="_oct_tree_8cpp_source.html">OctTree.cpp</a>.</p>
 <div class="dynheader">
 Gráfico de llamadas de esta función:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_engine_1_1_physic_1_1_oct_tree_accdc19544dec2cb9f43c0aede03eadf4_cgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_oct_tree_accdc19544dec2cb9f43c0aede03eadf4_cgraph" alt=""/></div>
+<div class="center"><img src="class_engine_1_1_physic_1_1_oct_tree_ab9af51cb9cd3bb6d80b3fca691f0d19f_cgraph.png" border="0" usemap="#aclass_engine_1_1_physic_1_1_oct_tree_ab9af51cb9cd3bb6d80b3fca691f0d19f_cgraph" alt=""/></div>
 </div>
 
 </div>

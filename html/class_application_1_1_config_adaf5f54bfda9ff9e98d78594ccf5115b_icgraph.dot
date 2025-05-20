@@ -5,7 +5,7 @@ digraph "Application::Config::changeState"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="RL";
-  Node1 [id="Node000001",label="Application::Config\l::changeState",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Realiza la transici髇 de estado basada en la acci髇 en configuraci髇."];
+  Node1 [id="Node000001",label="Application::Config\l::changeState",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Realiza la transici贸n de estado basada en la acci贸n en configuraci贸n."];
   Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Application::Config\l::frame",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_config.html#a291cc3a874949e121dcf83a3f90681bc",tooltip="Ejecuta la l骻ica del frame para la configuraci髇."];
+  Node2 [id="Node000002",label="Application::Config\l::frame",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_application_1_1_config.html#a291cc3a874949e121dcf83a3f90681bc",tooltip="Ejecuta la l贸gica del frame para la configuraci贸n."];
 }

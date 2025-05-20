@@ -3,7 +3,7 @@
 
 namespace Application
 {
-    void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         if (action == GLFW_RELEASE) return;
         Window* app = static_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -63,7 +63,7 @@ namespace Application
 
         glfwSetWindowUserPointer(_window, this);
         glfwSetFramebufferSizeCallback(_window, framebufferResizeCallback);
-        glfwSetKeyCallback(_window, key_callback);
+        glfwSetKeyCallback(_window, keyCallback);
     }
 
     void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)

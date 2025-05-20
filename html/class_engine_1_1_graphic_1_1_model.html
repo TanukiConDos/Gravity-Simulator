@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_graphic_1_1_model.html',''); initResi
 </div><!--header-->
 <div class="contents">
 
-<p>Representa un modelo 3D generado a partir de par·metros geomÈtricos.  
+<p>Representa un modelo 3D generado a partir de par√°metros geom√©tricos.  
  <a href="#details">M√°s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_model_8h_source.html">Model.h</a>&gt;</code></p>
@@ -122,20 +122,20 @@ M√©todos p√∫blicos</h2></td></tr>
 <tr class="memitem:a67df73124a0818454a0e2c6d6d4c3b3b" id="r_a67df73124a0818454a0e2c6d6d4c3b3b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_engine_1_1_graphic_1_1_model.html">Model</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a67df73124a0818454a0e2c6d6d4c3b3b">operator=</a> (const <a class="el" href="class_engine_1_1_graphic_1_1_model.html">Model</a> &amp;)=delete</td></tr>
 <tr class="separator:a67df73124a0818454a0e2c6d6d4c3b3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6cef11da77f48358b4f6af43764b819f" id="r_a6cef11da77f48358b4f6af43764b819f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6cef11da77f48358b4f6af43764b819f">Model</a> (int sectorCount, int stackCount, <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html">GPU</a> &amp;gpu, <a class="el" href="class_engine_1_1_graphic_1_1_command_pool.html">CommandPool</a> &amp;commandPool)</td></tr>
-<tr class="memdesc:a6cef11da77f48358b4f6af43764b819f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor de <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par·metros geomÈtricos.">Model</a>.  <br /></td></tr>
+<tr class="memdesc:a6cef11da77f48358b4f6af43764b819f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor de <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par√°metros geom√©tricos.">Model</a>.  <br /></td></tr>
 <tr class="separator:a6cef11da77f48358b4f6af43764b819f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8aa9805abdc78142d7db16d214d1677" id="r_af8aa9805abdc78142d7db16d214d1677"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af8aa9805abdc78142d7db16d214d1677">bind</a> (VkCommandBuffer commandBuffer) const</td></tr>
 <tr class="memdesc:af8aa9805abdc78142d7db16d214d1677"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlaza el buffer del modelo al buffer de comando para el renderizado.  <br /></td></tr>
 <tr class="separator:af8aa9805abdc78142d7db16d214d1677"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2e203c5f3077bebc4e692298f029eef" id="r_ae2e203c5f3077bebc4e692298f029eef"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2e203c5f3077bebc4e692298f029eef">getIndexSize</a> ()</td></tr>
-<tr class="memdesc:ae2e203c5f3077bebc4e692298f029eef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el n˙mero total de Ìndices del modelo.  <br /></td></tr>
-<tr class="separator:ae2e203c5f3077bebc4e692298f029eef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f53a6162864d8bc44812978c1ffe11c" id="r_a9f53a6162864d8bc44812978c1ffe11c"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9f53a6162864d8bc44812978c1ffe11c">getIndexSize</a> () const</td></tr>
+<tr class="memdesc:a9f53a6162864d8bc44812978c1ffe11c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtiene el n√∫mero total de √≠ndices del modelo.  <br /></td></tr>
+<tr class="separator:a9f53a6162864d8bc44812978c1ffe11c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci√≥n detallada</h2>
-<div class="textblock"><p>Representa un modelo 3D generado a partir de par·metros geomÈtricos. </p>
-<p>La clase <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par·metros geomÈtricos.">Model</a> se utiliza para generar la malla del modelo, almacenar los vÈrtices e Ìndices, y crear el buffer correspondiente en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacciÛn con Vulkan.">GPU</a> para su renderizaciÛn. </p>
+<div class="textblock"><p>Representa un modelo 3D generado a partir de par√°metros geom√©tricos. </p>
+<p>La clase <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par√°metros geom√©tricos.">Model</a> se utiliza para generar la malla del modelo, almacenar los v√©rtices e √≠ndices, y crear el buffer correspondiente en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci√≥n con Vulkan.">GPU</a> para su renderizaci√≥n. </p>
 
-<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_model_8h_source.html#l00027">27</a> del archivo <a class="el" href="_model_8h_source.html">Model.h</a>.</p>
+<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_model_8h_source.html#l00025">25</a> del archivo <a class="el" href="_model_8h_source.html">Model.h</a>.</p>
 </div><h2 class="groupheader">Documentaci√≥n de constructores y destructores</h2>
 <a id="a0e26042620f5a7b2c3e34e197114f781" name="a0e26042620f5a7b2c3e34e197114f781"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0e26042620f5a7b2c3e34e197114f781">&#9670;&#160;</a></span>Model() <span class="overload">[1/2]</span></h2>
@@ -201,14 +201,14 @@ Gr√°fico de llamadas a esta funci√≥n:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Constructor de <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par·metros geomÈtricos.">Model</a>. </p>
-<p>Genera la malla del modelo utilizando el n˙mero de sectores y pilas indicados, e inicializa los recursos necesarios en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacciÛn con Vulkan.">GPU</a> mediante la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacciÛn con Vulkan.">GPU</a> y el <a class="el" href="class_engine_1_1_graphic_1_1_command_pool.html" title="Encapsula un pool de comandos de Vulkan y gestiona m˙ltiples buffers de comando.">CommandPool</a> proporcionados.</p>
+<p>Constructor de <a class="el" href="class_engine_1_1_graphic_1_1_model.html" title="Representa un modelo 3D generado a partir de par√°metros geom√©tricos.">Model</a>. </p>
+<p>Genera la malla del modelo utilizando el n√∫mero de sectores y pilas indicados, e inicializa los recursos necesarios en la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci√≥n con Vulkan.">GPU</a> mediante la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci√≥n con Vulkan.">GPU</a> y el <a class="el" href="class_engine_1_1_graphic_1_1_command_pool.html" title="Encapsula un pool de comandos de Vulkan y gestiona m√∫ltiples buffers de comando.">CommandPool</a> proporcionados.</p>
 <dl class="params"><dt>Par√°metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">sectorCount</td><td>N˙mero de divisiones alrededor del eje (sectores). </td></tr>
-    <tr><td class="paramname">stackCount</td><td>N˙mero de divisiones en la direcciÛn vertical (pilas). </td></tr>
-    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacciÛn con Vulkan.">GPU</a> para crear los buffers. </td></tr>
-    <tr><td class="paramname">commandPool</td><td>Pool de comandos utilizado para la creaciÛn de comandos de copia. </td></tr>
+    <tr><td class="paramname">sectorCount</td><td>N√∫mero de divisiones alrededor del eje (sectores). </td></tr>
+    <tr><td class="paramname">stackCount</td><td>N√∫mero de divisiones en la direcci√≥n vertical (pilas). </td></tr>
+    <tr><td class="paramname">gpu</td><td>Referencia a la <a class="el" href="class_engine_1_1_graphic_1_1_g_p_u.html" title="Clase que administra recursos de la GPU y la interacci√≥n con Vulkan.">GPU</a> para crear los buffers. </td></tr>
+    <tr><td class="paramname">commandPool</td><td>Pool de comandos utilizado para la creaci√≥n de comandos de copia. </td></tr>
   </table>
   </dd>
 </dl>
@@ -239,10 +239,10 @@ Gr√°fico de llamadas de esta funci√≥n:</div>
 </div><div class="memdoc">
 
 <p>Enlaza el buffer del modelo al buffer de comando para el renderizado. </p>
-<p>Este mÈtodo vincula el buffer que contiene la malla del modelo al comando de renderizaciÛn.</p>
+<p>Este m√©todo vincula el buffer que contiene la malla del modelo al comando de renderizaci√≥n.</p>
 <dl class="params"><dt>Par√°metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gestiÛn de buffers de Vulkan.">Buffer</a> de comando donde se enlaza el buffer. </td></tr>
+    <tr><td class="paramname">commandBuffer</td><td><a class="el" href="class_engine_1_1_graphic_1_1_buffer.html" title="Clase para la gesti√≥n de buffers de Vulkan.">Buffer</a> de comando donde se enlaza el buffer. </td></tr>
   </table>
   </dd>
 </dl>
@@ -251,8 +251,8 @@ Gr√°fico de llamadas de esta funci√≥n:</div>
 
 </div>
 </div>
-<a id="ae2e203c5f3077bebc4e692298f029eef" name="ae2e203c5f3077bebc4e692298f029eef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae2e203c5f3077bebc4e692298f029eef">&#9670;&#160;</a></span>getIndexSize()</h2>
+<a id="a9f53a6162864d8bc44812978c1ffe11c" name="a9f53a6162864d8bc44812978c1ffe11c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f53a6162864d8bc44812978c1ffe11c">&#9670;&#160;</a></span>getIndexSize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,14 +261,14 @@ Gr√°fico de llamadas de esta funci√≥n:</div>
           <td class="memname">size_t Engine::Graphic::Model::getIndexSize </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Obtiene el n˙mero total de Ìndices del modelo. </p>
+<p>Obtiene el n√∫mero total de √≠ndices del modelo. </p>
 <p>Este valor se utiliza para determinar la cantidad de elementos a renderizar.</p>
-<dl class="section return"><dt>Devuelve</dt><dd>size_t N˙mero de Ìndices almacenados. </dd></dl>
+<dl class="section return"><dt>Devuelve</dt><dd>size_t N√∫mero de √≠ndices almacenados. </dd></dl>
 
 <p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_model_8cpp_source.html#l00099">99</a> del archivo <a class="el" href="_model_8cpp_source.html">Model.cpp</a>.</p>
 

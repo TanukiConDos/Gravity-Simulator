@@ -1,0 +1,22 @@
+digraph "testing::internal::RE::pattern"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="testing::internal::\lRE::pattern",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="testing::internal::\lRE::RE",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classtesting_1_1internal_1_1_r_e.html#ab215dbc2565fce641e1746ca43e9d68a",tooltip=" "];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="testing::internal::\lRE::FullMatch",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classtesting_1_1internal_1_1_r_e.html#aa79a950758d0f1d62f7762d1e9cefe86",tooltip=" "];
+  Node3 -> Node3 [id="edge3_Node000003_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node4 [id="edge4_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="testing::internal::\lRE::FullMatch",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classtesting_1_1internal_1_1_r_e.html#a2b13ec1f6ccd6c32f7efa01e21588f0b",tooltip=" "];
+  Node2 -> Node5 [id="edge5_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="testing::internal::\lRE::PartialMatch",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classtesting_1_1internal_1_1_r_e.html#a1e81f9a87211bdca645e025f8f0236c8",tooltip=" "];
+  Node5 -> Node5 [id="edge6_Node000005_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node6 [id="edge7_Node000002_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="testing::internal::\lRE::PartialMatch",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classtesting_1_1internal_1_1_r_e.html#a97495dd4c2bb9589522823f060c8e8ba",tooltip=" "];
+  Node2 -> Node2 [id="edge8_Node000002_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

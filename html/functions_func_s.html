@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -106,62 +106,30 @@ $(function(){initNavTree('functions_func_s.html',''); initResizable(true); });
 <div class="textblock">Lista de todas las funciones con enlaces a las clases a las que pertenecen:</div>
 
 <h3><a id="index_s" name="index_s"></a>- s -</h3><ul>
-<li>sax_parse()&#160;:&#160;<a class="el" href="classbasic__json.html#addedd5e53fa6eff6cd621f1615741c3d">basic_json&lt; ObjectType, ArrayType, StringType, BooleanType, NumberIntegerType, NumberUnsignedType, NumberFloatType, AllocatorType, JSONSerializer, BinaryType, CustomBaseClass &gt;</a>, <a class="el" href="classdetail_1_1binary__reader.html#a8e1b5452ae426e1d7b48761859e7f52d">detail::binary_reader&lt; BasicJsonType, InputAdapterType, SAX &gt;</a>, <a class="el" href="classdetail_1_1parser.html#ae9084759356689163fee9ae37e69b050">detail::parser&lt; BasicJsonType, InputAdapterType &gt;</a></li>
-<li>ScaleAllSizes()&#160;:&#160;<a class="el" href="struct_im_gui_style.html#a7c9d3e0974a239f65e433cc952be0627">ImGuiStyle</a></li>
-<li>ScaleClipRects()&#160;:&#160;<a class="el" href="struct_im_draw_data.html#a951fbe824674c7a5c2f6a478f3654ca8">ImDrawData</a></li>
-<li>scan()&#160;:&#160;<a class="el" href="classdetail_1_1lexer.html#a6497d12a0c35b355b3e22da69d6819f9">detail::lexer&lt; BasicJsonType, InputAdapterType &gt;</a></li>
-<li>SelectAll()&#160;:&#160;<a class="el" href="struct_im_gui_input_text_callback_data.html#aabbc96c73ebcec89f06811dba531bc56">ImGuiInputTextCallbackData</a>, <a class="el" href="struct_im_gui_input_text_state.html#ac9ceb16a3551dc82a1e8be716236b811">ImGuiInputTextState</a></li>
-<li>serializer()&#160;:&#160;<a class="el" href="classdetail_1_1serializer.html#a3d025f3aa1e8661554858b8aaab08c3b">detail::serializer&lt; BasicJsonType &gt;</a></li>
-<li>set()&#160;:&#160;<a class="el" href="struct_im_span.html#a0c07dbc18bebd7d02ca1fb866861506a">ImSpan&lt; T &gt;</a></li>
-<li>set_begin()&#160;:&#160;<a class="el" href="classdetail_1_1primitive__iterator__t.html#ae05402e355829cd46a9b31365a7b1a49">detail::primitive_iterator_t</a></li>
-<li>set_end()&#160;:&#160;<a class="el" href="classdetail_1_1iter__impl.html#afc94db3b8f35616347c25fae68e09509">detail::iter_impl&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1primitive__iterator__t.html#a761383c368d1c32f11bbeb31a04e6488">detail::primitive_iterator_t</a></li>
-<li>set_subtype()&#160;:&#160;<a class="el" href="classbyte__container__with__subtype.html#aa211ecfe3f0a626e96c54ea7e160491b">byte_container_with_subtype&lt; BinaryType &gt;</a></li>
-<li>SetAllBits()&#160;:&#160;<a class="el" href="struct_im_bit_array.html#a52c1f3ec6a89c91e2090bf75e00152ac">ImBitArray&lt; BITCOUNT, OFFSET &gt;</a></li>
-<li>SetAllInt()&#160;:&#160;<a class="el" href="struct_im_gui_storage.html#ae5ee60618c4ce8e2b4ce0e5543d52992">ImGuiStorage</a></li>
-<li>SetAppAcceptingEvents()&#160;:&#160;<a class="el" href="struct_im_gui_i_o.html#a8ec563cbffee4818a89840654b8c4404">ImGuiIO</a></li>
-<li>SetArenaBasePtr()&#160;:&#160;<a class="el" href="struct_im_span_allocator.html#af379bb313a9dae91ee56093aa81d83f3">ImSpanAllocator&lt; CHUNKS &gt;</a></li>
-<li>SetBit()&#160;:&#160;<a class="el" href="struct_im_bit_array.html#a8c4d1a352cbd565200c8fe983c879022">ImBitArray&lt; BITCOUNT, OFFSET &gt;</a>, <a class="el" href="struct_im_bit_vector.html#afab0abbd320b1f33d1988760be7cd39b">ImBitVector</a>, <a class="el" href="struct_im_font_glyph_ranges_builder.html#a12474f5e042b7097a515db0abb71e3e6">ImFontGlyphRangesBuilder</a></li>
-<li>SetBitRange()&#160;:&#160;<a class="el" href="struct_im_bit_array.html#a7a3a4472aaf1eb8a6fe5f7aeed155b54">ImBitArray&lt; BITCOUNT, OFFSET &gt;</a></li>
-<li>SetBool()&#160;:&#160;<a class="el" href="struct_im_gui_storage.html#ac5beee31a59b3f5294b41992717be7bf">ImGuiStorage</a></li>
-<li>SetCircleTessellationMaxError()&#160;:&#160;<a class="el" href="struct_im_draw_list_shared_data.html#adc947304370a6d5ee55a44190e923c8d">ImDrawListSharedData</a></li>
-<li>SetCurrentChannel()&#160;:&#160;<a class="el" href="struct_im_draw_list_splitter.html#ad3797b0755caa07f3d69a9e3566eb0e5">ImDrawListSplitter</a></li>
-<li>SetFloat()&#160;:&#160;<a class="el" href="struct_im_gui_storage.html#ab531d90a0e5a1a2453e351c499149756">ImGuiStorage</a></li>
+<li>scoped_ptr()&#160;:&#160;<a class="el" href="classtesting_1_1internal_1_1scoped__ptr.html#adb972432999a0c63720df148964ac2a5">testing::internal::scoped_ptr&lt; T &gt;</a></li>
+<li>ScopedTrace()&#160;:&#160;<a class="el" href="classtesting_1_1_scoped_trace.html#a2da90b95d682d518cca472934d53c59c">testing::ScopedTrace</a></li>
+<li>sendToGPU()&#160;:&#160;<a class="el" href="class_engine_1_1_graphic_1_1_buffer.html#a6c7b8f717b7de24211b68cade56a4997">Engine::Graphic::Buffer</a></li>
+<li>sendUniformBufferToGPU()&#160;:&#160;<a class="el" href="class_engine_1_1_graphic_1_1_descriptor_pool.html#a36f81bdfa4dc27ceb22d3ccdfa13865a">Engine::Graphic::DescriptorPool</a></li>
+<li>set()&#160;:&#160;<a class="el" href="classtesting_1_1internal_1_1_thread_local.html#ab5ebc7ba07426cef7167afa2a7707eb4">testing::internal::ThreadLocal&lt; T &gt;</a></li>
 <li>setFramebufferResized()&#160;:&#160;<a class="el" href="class_application_1_1_window.html#ae523f7e4277116da0e21dd3715740011">Application::Window</a></li>
-<li>SetGlyphVisible()&#160;:&#160;<a class="el" href="struct_im_font.html#a52fbd5caef22c68bb8e0e251c6bfcc53">ImFont</a></li>
-<li>SetHSV()&#160;:&#160;<a class="el" href="struct_im_color.html#afcff20160db703b956d56e5a9fa88e24">ImColor</a></li>
-<li>SetInt()&#160;:&#160;<a class="el" href="struct_im_gui_storage.html#af83975ca841a9bd0e06a6ea0a41bf159">ImGuiStorage</a></li>
-<li>SetKeyEventNativeData()&#160;:&#160;<a class="el" href="struct_im_gui_i_o.html#a6b2fa57fb6af5aa1c99f58115542e1dc">ImGuiIO</a></li>
-<li>SetTexID()&#160;:&#160;<a class="el" href="struct_im_font_atlas.html#a96ffd1956c11dac4f79b43c095828445">ImFontAtlas</a></li>
 <li>setTimer()&#160;:&#160;<a class="el" href="class_foundation_1_1_timers.html#ae2eb7b23762783829a97b6f5fbfa96d7">Foundation::Timers</a></li>
-<li>SetToContextState()&#160;:&#160;<a class="el" href="struct_im_gui_stack_sizes.html#a7dd94b563bf4547685bc93fc00f58543">ImGuiStackSizes</a></li>
-<li>SetVoidPtr()&#160;:&#160;<a class="el" href="struct_im_gui_storage.html#a55f840086b3ec9cf63c67f02d159204a">ImGuiStorage</a></li>
-<li>shrink()&#160;:&#160;<a class="el" href="struct_im_vector.html#a8dafcce1e393244890f52ef1aa490876">ImVector&lt; T &gt;</a></li>
-<li>size()&#160;:&#160;<a class="el" href="classbasic__json.html#a086cbfd1ad4ba83a8127c87467a92f47">basic_json&lt; ObjectType, ArrayType, StringType, BooleanType, NumberIntegerType, NumberUnsignedType, NumberFloatType, AllocatorType, JSONSerializer, BinaryType, CustomBaseClass &gt;</a>, <a class="el" href="structdetail_1_1integer__sequence.html#ae4d9136f834057a4b68a115554eb9817">detail::integer_sequence&lt; T, Ints &gt;</a>, <a class="el" href="struct_im_chunk_stream.html#a0454c7345104dad27a52828584765edb">ImChunkStream&lt; T &gt;</a>, <a class="el" href="struct_im_gui_text_buffer.html#a2811fcd43e0224eb3bd0f3464b634289">ImGuiTextBuffer</a>, <a class="el" href="struct_im_gui_text_index.html#a016978541a00f3901b19327296fd4934">ImGuiTextIndex</a>, <a class="el" href="struct_im_span.html#a88270b885861b27640003f6a8a3effa0">ImSpan&lt; T &gt;</a>, <a class="el" href="struct_im_vector.html#a8c903ecb1aaee0601b6a8ad835a4a435">ImVector&lt; T &gt;</a></li>
-<li>size_in_bytes()&#160;:&#160;<a class="el" href="struct_im_span.html#a23a632e44927fde363df6191531591f2">ImSpan&lt; T &gt;</a>, <a class="el" href="struct_im_vector.html#ade9f2e937e47b0e0f9970dcfba038204">ImVector&lt; T &gt;</a></li>
-<li>skip_bom()&#160;:&#160;<a class="el" href="classdetail_1_1lexer.html#a04ae0c7807a761f4162ff42290be5490">detail::lexer&lt; BasicJsonType, InputAdapterType &gt;</a></li>
-<li>skip_whitespace()&#160;:&#160;<a class="el" href="classdetail_1_1lexer.html#a230468eb9130a7173e0636fc1fc5606b">detail::lexer&lt; BasicJsonType, InputAdapterType &gt;</a></li>
-<li>solve()&#160;:&#160;<a class="el" href="class_engine_1_1_physic_1_1_brute_force_solver.html#af9fd2a6a140a2d8b76fa3428849a8d02">Engine::Physic::BruteForceSolver</a>, <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver</a>, <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a47d5ca1ab75d4a763d67e266c02a14bb">Engine::Physic::SolverInterface</a></li>
-<li>span_input_adapter()&#160;:&#160;<a class="el" href="classdetail_1_1span__input__adapter.html#a100cb2415f6ad4fb60e3848569ed20dc">detail::span_input_adapter</a></li>
-<li>Split()&#160;:&#160;<a class="el" href="struct_im_draw_list_splitter.html#aa491c5b1e10b2f5340e7db4949d31255">ImDrawListSplitter</a></li>
-<li>split()&#160;:&#160;<a class="el" href="struct_im_gui_text_filter_1_1_im_gui_text_range.html#ace58f9b4795033f695344a0e660ee2af">ImGuiTextFilter::ImGuiTextRange</a></li>
-<li>start_array()&#160;:&#160;<a class="el" href="classdetail_1_1json__sax__acceptor.html#a23fbef6b0be5b4d8e38b207909a5ad7e">detail::json_sax_acceptor&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__callback__parser.html#a6e6c97a9d73f4e98ed881b3833b570a9">detail::json_sax_dom_callback_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__parser.html#af6e857ad7aaf6eba2440c67d4b5f360e">detail::json_sax_dom_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="structjson__sax.html#afc4d5c0d123f2e3c939060a778c4f22c">json_sax&lt; BasicJsonType &gt;</a></li>
-<li>start_object()&#160;:&#160;<a class="el" href="classdetail_1_1json__sax__acceptor.html#a13a84661a9c697058a50741567751336">detail::json_sax_acceptor&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__callback__parser.html#a5e78ec63eed401c3c56689d32472376a">detail::json_sax_dom_callback_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__parser.html#a7a3559ee198992550caad696a9c002ff">detail::json_sax_dom_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="structjson__sax.html#a54a0883df64f40664395e3dad674aaa5">json_sax&lt; BasicJsonType &gt;</a></li>
+<li>SetUp()&#160;:&#160;<a class="el" href="classtesting_1_1_environment.html#a1bf8cafaa9d4eba9feb98655ee434eb3">testing::Environment</a>, <a class="el" href="classtesting_1_1_test.html#a8b38992669fb844864807cf32e416853">testing::Test</a></li>
+<li>SetUpTestCase()&#160;:&#160;<a class="el" href="classtesting_1_1_test.html#a5ccbac42fee8c5b00b0bfe89b6c49d79">testing::Test</a></li>
+<li>SetValue()&#160;:&#160;<a class="el" href="classtesting_1_1_test_property.html#a377245335d9f614cd06d1650e3358e1d">testing::TestProperty</a></li>
+<li>should_run()&#160;:&#160;<a class="el" href="classtesting_1_1_test_case.html#a843d6cd43f3e587bfa8681990b9d59df">testing::TestCase</a>, <a class="el" href="classtesting_1_1_test_info.html#a866e33b5bc5ab2a6e5375fc7d3af0f96">testing::TestInfo</a></li>
+<li>ShowWideCString()&#160;:&#160;<a class="el" href="classtesting_1_1internal_1_1_string.html#acbf0511e9ae5009f42de77e565f6ba61">testing::internal::String</a></li>
+<li>sign_bit()&#160;:&#160;<a class="el" href="classtesting_1_1internal_1_1_floating_point.html#afb8a816bb598225d775caaf43a893ef0">testing::internal::FloatingPoint&lt; RawType &gt;</a></li>
+<li>size()&#160;:&#160;<a class="el" href="classtesting_1_1internal_1_1_native_array.html#af96a4a5ca0cdd5d163c47a081f08bd89">testing::internal::NativeArray&lt; Element &gt;</a></li>
+<li>solve()&#160;:&#160;<a class="el" href="class_engine_1_1_physic_1_1_brute_force_solver.html#af9fd2a6a140a2d8b76fa3428849a8d02">Engine::Physic::BruteForceSolver</a>, <a class="el" href="class_engine_1_1_physic_1_1_oct_tree_solver.html#ada7b732a8b8598c2f21f93071b6b1626">Engine::Physic::OctTreeSolver</a>, <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a31fdaabca6d091537ccc95b89e3fcf16">Engine::Physic::SolverInterface</a></li>
+<li>start_timestamp()&#160;:&#160;<a class="el" href="classtesting_1_1_unit_test.html#ab6dc32e9f385f164df02899b2b440f04">testing::UnitTest</a></li>
 <li>startFrame()&#160;:&#160;<a class="el" href="class_engine_1_1_graphic_1_1_im_g_u_i_window.html#a9ca05f8fa30f8ee342d254eb0d34948a">Engine::Graphic::ImGUIWindow</a></li>
 <li>State()&#160;:&#160;<a class="el" href="class_application_1_1_state.html#a374a363a3447f88efa91946a66616f2e">Application::State</a></li>
 <li>StateMachine()&#160;:&#160;<a class="el" href="class_application_1_1_state_machine.html#a56072f0841515fb119de17cf4a5b84dd">Application::StateMachine</a></li>
-<li>Step()&#160;:&#160;<a class="el" href="struct_im_gui_list_clipper.html#ac3e115812c3c4e5a39578a7aa955379a">ImGuiListClipper</a></li>
-<li>Strdup()&#160;:&#160;<a class="el" href="struct_example_app_console.html#ab81253ac3575f7fcd63a61c7f5820913">ExampleAppConsole</a></li>
-<li>Stricmp()&#160;:&#160;<a class="el" href="struct_example_app_console.html#a3ac60d63c0eed2d3ad282fbbc1ae068a">ExampleAppConsole</a></li>
-<li>string()&#160;:&#160;<a class="el" href="classdetail_1_1json__sax__acceptor.html#aa8ecef0d8f7096cd72acc95d0c349013">detail::json_sax_acceptor&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__callback__parser.html#a39d9c56b0e55e805fb5c3e881680f376">detail::json_sax_dom_callback_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="classdetail_1_1json__sax__dom__parser.html#a3c989c4cbb0acd034f5cc31018830885">detail::json_sax_dom_parser&lt; BasicJsonType &gt;</a>, <a class="el" href="structjson__sax.html#a3da9ee0c61f1a37e6c6a3d2dccb16765">json_sax&lt; BasicJsonType &gt;</a></li>
-<li>Strnicmp()&#160;:&#160;<a class="el" href="struct_example_app_console.html#a8dfb0fe296b0bad9e991861ff46ec12f">ExampleAppConsole</a></li>
-<li>Strtrim()&#160;:&#160;<a class="el" href="struct_example_app_console.html#a3a5622b2d8c52a3083df6ed9f90e7210">ExampleAppConsole</a></li>
-<li>sub()&#160;:&#160;<a class="el" href="structdetail_1_1dtoa__impl_1_1diyfp.html#a75142bace0b78b1e1433b1d35a7ff252">detail::dtoa_impl::diyfp</a></li>
 <li>submit()&#160;:&#160;<a class="el" href="class_application_1_1_input_event.html#a6075c40d5eee91a9ca8723c34e38a73a">Application::InputEvent</a></li>
 <li>subscribe()&#160;:&#160;<a class="el" href="class_application_1_1_input_event.html#a2c7e822ef54e4958ebb7ace927812d03">Application::InputEvent</a></li>
-<li>subtype()&#160;:&#160;<a class="el" href="classbyte__container__with__subtype.html#a678460360dd494c33fbfde782e7c8201">byte_container_with_subtype&lt; BinaryType &gt;</a></li>
-<li>swap()&#160;:&#160;<a class="el" href="classbasic__json.html#a1a94e5348ebb34852092d51a44e21d24">basic_json&lt; ObjectType, ArrayType, StringType, BooleanType, NumberIntegerType, NumberUnsignedType, NumberFloatType, AllocatorType, JSONSerializer, BinaryType, CustomBaseClass &gt;</a>, <a class="el" href="struct_im_chunk_stream.html#adbd734ea08939c0bce519e90b26c9d28">ImChunkStream&lt; T &gt;</a>, <a class="el" href="struct_im_vector.html#afcec0d2a1e28aebe412b6efd06f0a77a">ImVector&lt; T &gt;</a></li>
+<li>successful_test_case_count()&#160;:&#160;<a class="el" href="classtesting_1_1_unit_test.html#acaa2ab71f53c25ffe0242a91c14e173f">testing::UnitTest</a></li>
+<li>successful_test_count()&#160;:&#160;<a class="el" href="classtesting_1_1_test_case.html#ab61929942a202f03903182866bd0e086">testing::TestCase</a>, <a class="el" href="classtesting_1_1_unit_test.html#a49ee8056e357ad497e67399447dd5a40">testing::UnitTest</a></li>
 <li>SwapChain()&#160;:&#160;<a class="el" href="class_engine_1_1_graphic_1_1_swap_chain.html#a208b59075013656b07465a27246085c4">Engine::Graphic::SwapChain</a></li>
-<li>switch()&#160;:&#160;<a class="el" href="classdetail_1_1iter__impl.html#ab3a9cbf054745890847c27896f636ecc">detail::iter_impl&lt; BasicJsonType &gt;</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -56,7 +56,7 @@ namespace Application
          * @param action Acción del evento.
          * @param mods Modificadores.
          */
-        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
         /**
          * @brief Obtiene la superficie Vulkan asociada a la ventana.

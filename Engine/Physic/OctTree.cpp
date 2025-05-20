@@ -10,7 +10,7 @@ namespace Engine::Physic
 		_root = _arenaNode.alloc(1);
 		*_root = Node(glm::vec3{ -1.1e11 , -1.1e11 , -1.1e11 }, glm::vec3{ 1.1e11, 1.1e11, 1.1e11 });
 		insert();
-		if(Foundation::Config::getConfig()->SolverAlgorithm == Foundation::Algorithm::OCTREE) massCalculation();
+		if(Foundation::Config::getConfig()->_SolverAlgorithm == Foundation::Algorithm::OCTREE) massCalculation();
 	}
 
 	glm::vec3 OctTree::barnesHut(int objectId)
@@ -146,7 +146,7 @@ namespace Engine::Physic
 			*_root = Node(glm::vec3{ -1.1e11 , -1.1e11 , -1.1e11 },
 				glm::vec3{ 1.1e11, 1.1e11, 1.1e11 });
 			insert();
-			if (Foundation::Config::getConfig()->SolverAlgorithm == Foundation::Algorithm::OCTREE) massCalculation();
+			if (Foundation::Config::getConfig()->_SolverAlgorithm == Foundation::Algorithm::OCTREE) massCalculation();
 		}
 		
 	}

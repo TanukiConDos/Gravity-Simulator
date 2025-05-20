@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,9 +111,9 @@ $(function(){initNavTree('_physic_object_8h.html',''); initResizable(true); });
 </div><!--header-->
 <div class="contents">
 
-<p>Define la clase PhysicObject para representar un objeto f�sico en la simulaci�n, proporcionando m�todos para actualizar su estado, gestionar colisiones y serializar a JSON.  
+<p>Define la clase PhysicObject para representar un objeto físico en la simulación, proporcionando métodos para actualizar su estado, gestionar colisiones y serializar a JSON.  
 <a href="#details">Más...</a></p>
-<div class="textblock"><code>#include &lt;glm/glm.hpp&gt;</code><br />
+<div class="textblock"><code>#include &quot;../../External/glm/glm.hpp&quot;</code><br />
 <code>#include &quot;../../External/json/json.hpp&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Gráfico de dependencias incluidas en PhysicObject.h:</div>
@@ -131,7 +131,7 @@ Gráfico de los archivos que directa o indirectamente incluyen a este archivo:</
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Clases</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">Engine::Physic::PhysicObject</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa un objeto f�sico en la simulaci�n.  <a href="class_engine_1_1_physic_1_1_physic_object.html#details">Más...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa un objeto físico en la simulación.  <a href="class_engine_1_1_physic_1_1_physic_object.html#details">Más...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
@@ -139,19 +139,20 @@ Espacios de nombres</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine.html">Engine</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_physic.html">Engine::Physic</a></td></tr>
+<tr class="memdesc:namespace_engine_1_1_physic"><td class="mdescLeft">&#160;</td><td class="mdescRight">Espacio de nombres que contiene las clases del motor de físicas. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Funciones</h2></td></tr>
 <tr class="memitem:a19c4ab58d4dc8f9b212feaa6d3732eca" id="r_a19c4ab58d4dc8f9b212feaa6d3732eca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_physic.html#a19c4ab58d4dc8f9b212feaa6d3732eca">Engine::Physic::to_json</a> (nlohmann::json &amp;j, const <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &amp;o)</td></tr>
-<tr class="memdesc:a19c4ab58d4dc8f9b212feaa6d3732eca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serializa un objeto <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html" title="Representa un objeto f�sico en la simulaci�n.">PhysicObject</a> a formato JSON.  <br /></td></tr>
+<tr class="memdesc:a19c4ab58d4dc8f9b212feaa6d3732eca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serializa un objeto <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html" title="Representa un objeto físico en la simulación.">PhysicObject</a> a formato JSON.  <br /></td></tr>
 <tr class="separator:a19c4ab58d4dc8f9b212feaa6d3732eca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac69b2a15f80a2c1d50fd735c508a100d" id="r_ac69b2a15f80a2c1d50fd735c508a100d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_physic.html#ac69b2a15f80a2c1d50fd735c508a100d">Engine::Physic::from_json</a> (const nlohmann::json &amp;j, <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &amp;o)</td></tr>
-<tr class="memdesc:ac69b2a15f80a2c1d50fd735c508a100d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deserializa un objeto <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html" title="Representa un objeto f�sico en la simulaci�n.">PhysicObject</a> desde formato JSON.  <br /></td></tr>
+<tr class="memdesc:ac69b2a15f80a2c1d50fd735c508a100d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deserializa un objeto <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html" title="Representa un objeto físico en la simulación.">PhysicObject</a> desde formato JSON.  <br /></td></tr>
 <tr class="separator:ac69b2a15f80a2c1d50fd735c508a100d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Define la clase PhysicObject para representar un objeto f�sico en la simulaci�n, proporcionando m�todos para actualizar su estado, gestionar colisiones y serializar a JSON. </p>
+<div class="textblock"><p>Define la clase PhysicObject para representar un objeto físico en la simulación, proporcionando métodos para actualizar su estado, gestionar colisiones y serializar a JSON. </p>
 
 <p class="definition">Definición en el archivo <a class="el" href="_physic_object_8h_source.html">PhysicObject.h</a>.</p>
 </div></div><!-- contents -->

@@ -17,7 +17,7 @@
 
 /**
  * @namespace Application
- * @brief Espacio de nombres que contiene la aplicación y sus componentes.
+ * @brief Espacio de nombres que contiene las clases de la capa Application.
  */
 namespace Application
 {

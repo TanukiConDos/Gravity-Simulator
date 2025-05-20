@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1_oct_tree_solver.html','');
 </div><!--header-->
 <div class="contents">
 
-<p>Solver que utiliza un ·rbol octal para actualizar la simulaciÛn fÌsica.  
+<p>Solver que utiliza un √°rbol octal para actualizar la simulaci√≥n f√≠sica.  
  <a href="#details">M√°s...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_oct_tree_solver_8h_source.html">OctTreeSolver.h</a>&gt;</code></p>
@@ -128,17 +128,20 @@ Diagrama de colaboraci√≥n de Engine::Physic::OctTreeSolver:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 M√©todos p√∫blicos</h2></td></tr>
 <tr class="memitem:a79deb25f21ddb21030f81288a65d7ac3" id="r_a79deb25f21ddb21030f81288a65d7ac3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79deb25f21ddb21030f81288a65d7ac3">OctTreeSolver</a> (std::shared_ptr&lt; <a class="el" href="class_engine_1_1_physic_1_1_oct_tree.html">OctTree</a> &gt; tree)</td></tr>
-<tr class="memdesc:a79deb25f21ddb21030f81288a65d7ac3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el solver con un ·rbol octal.  <br /></td></tr>
+<tr class="memdesc:a79deb25f21ddb21030f81288a65d7ac3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor que inicializa el solver con un √°rbol octal.  <br /></td></tr>
 <tr class="separator:a79deb25f21ddb21030f81288a65d7ac3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada7b732a8b8598c2f21f93071b6b1626" id="r_ada7b732a8b8598c2f21f93071b6b1626"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada7b732a8b8598c2f21f93071b6b1626">solve</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects) final</td></tr>
-<tr class="memdesc:ada7b732a8b8598c2f21f93071b6b1626"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulaciÛn fÌsica utilizando el ·rbol octal.  <br /></td></tr>
+<tr class="memdesc:ada7b732a8b8598c2f21f93071b6b1626"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resuelve la simulaci√≥n f√≠sica utilizando el √°rbol octal.  <br /></td></tr>
 <tr class="separator:ada7b732a8b8598c2f21f93071b6b1626"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_class_engine_1_1_physic_1_1_solver_interface"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_class_engine_1_1_physic_1_1_solver_interface')"><img src="closed.png" alt="-"/>&#160;M√©todos p√∫blicos heredados de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html">Engine::Physic::SolverInterface</a></td></tr>
+<tr class="memitem:af9fc29c56658a43eb26ef139462d4e70 inherit pub_methods_class_engine_1_1_physic_1_1_solver_interface" id="r_af9fc29c56658a43eb26ef139462d4e70"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#af9fc29c56658a43eb26ef139462d4e70">~SolverInterface</a> ()=default</td></tr>
+<tr class="separator:af9fc29c56658a43eb26ef139462d4e70 inherit pub_methods_class_engine_1_1_physic_1_1_solver_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci√≥n detallada</h2>
-<div class="textblock"><p>Solver que utiliza un ·rbol octal para actualizar la simulaciÛn fÌsica. </p>
-<p>Esta clase hereda de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaciÛn fÌsica.">SolverInterface</a> e implementa el mÈtodo solve, utilizando el ·rbol octal (_tree) para procesar y actualizar el estado de los objetos fÌsicos en cada iteraciÛn. </p>
+<div class="textblock"><p>Solver que utiliza un √°rbol octal para actualizar la simulaci√≥n f√≠sica. </p>
+<p>Esta clase hereda de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html" title="Interfaz para resolver la simulaci√≥n f√≠sica.">SolverInterface</a> e implementa el m√©todo solve, utilizando el √°rbol octal (_tree) para procesar y actualizar el estado de los objetos f√≠sicos en cada iteraci√≥n. </p>
 
-<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_oct_tree_solver_8h_source.html#l00022">22</a> del archivo <a class="el" href="_oct_tree_solver_8h_source.html">OctTreeSolver.h</a>.</p>
+<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_oct_tree_solver_8h_source.html#l00020">20</a> del archivo <a class="el" href="_oct_tree_solver_8h_source.html">OctTreeSolver.h</a>.</p>
 </div><h2 class="groupheader">Documentaci√≥n de constructores y destructores</h2>
 <a id="a79deb25f21ddb21030f81288a65d7ac3" name="a79deb25f21ddb21030f81288a65d7ac3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a79deb25f21ddb21030f81288a65d7ac3">&#9670;&#160;</a></span>OctTreeSolver()</h2>
@@ -163,15 +166,15 @@ M√©todos p√∫blicos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Constructor que inicializa el solver con un ·rbol octal. </p>
+<p>Constructor que inicializa el solver con un √°rbol octal. </p>
 <dl class="params"><dt>Par√°metros</dt><dd>
   <table class="params">
-    <tr><td class="paramname">tree</td><td>Puntero compartido al <a class="el" href="class_engine_1_1_physic_1_1_oct_tree.html" title="Clase que implementa un ·rbol octal para optimizar c·lculos gravitacionales y detecciÛn de colisiones.">OctTree</a> que se utilizar· para resolver la simulaciÛn. </td></tr>
+    <tr><td class="paramname">tree</td><td>Puntero compartido al <a class="el" href="class_engine_1_1_physic_1_1_oct_tree.html" title="Clase que implementa un √°rbol octal para optimizar c√°lculos gravitacionales y detecci√≥n de colisiones...">OctTree</a> que se utilizar√° para resolver la simulaci√≥n. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_oct_tree_solver_8h_source.html#l00030">30</a> del archivo <a class="el" href="_oct_tree_solver_8h_source.html">OctTreeSolver.h</a>.</p>
+<p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_oct_tree_solver_8h_source.html#l00028">28</a> del archivo <a class="el" href="_oct_tree_solver_8h_source.html">OctTreeSolver.h</a>.</p>
 
 </div>
 </div>
@@ -203,17 +206,17 @@ M√©todos p√∫blicos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Resuelve la simulaciÛn fÌsica utilizando el ·rbol octal. </p>
-<p>Este mÈtodo actualiza el estado de los objetos fÌsicos en funciÛn del intervalo de tiempo transcurrido, delegando en el ·rbol octal para optimizar la resoluciÛn de interacciones.</p>
+<p>Resuelve la simulaci√≥n f√≠sica utilizando el √°rbol octal. </p>
+<p>Este m√©todo actualiza el estado de los objetos f√≠sicos en funci√≥n del intervalo de tiempo transcurrido, delegando en el √°rbol octal para optimizar la resoluci√≥n de interacciones.</p>
 <dl class="params"><dt>Par√°metros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos fÌsicos a actualizar. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f√≠sicos a actualizar. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Reimplementado de <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a47d5ca1ab75d4a763d67e266c02a14bb">Engine::Physic::SolverInterface</a>.</p>
+<p>Implementa <a class="el" href="class_engine_1_1_physic_1_1_solver_interface.html#a31fdaabca6d091537ccc95b89e3fcf16">Engine::Physic::SolverInterface</a>.</p>
 
 <p class="definition">Definici√≥n en la l√≠nea <a class="el" href="_oct_tree_solver_8cpp_source.html#l00003">3</a> del archivo <a class="el" href="_oct_tree_solver_8cpp_source.html">OctTreeSolver.cpp</a>.</p>
 

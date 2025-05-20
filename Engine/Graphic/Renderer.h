@@ -1,3 +1,7 @@
+/**
+ * @file Renderer.h
+ * @brief Define la clase Renderer, encargada de gestionar la renderización utilizando Vulkan.
+ */
 #pragma once
 #include <vulkan/vulkan.hpp>
 
@@ -14,11 +18,10 @@
 #include "Camera.h"
 #include "imGUIWindow.h"
 
-/**
- * @file Renderer.h
- * @brief Define la clase Renderer, encargada de gestionar la renderización utilizando Vulkan.
- */
-
+ /**
+  * @namespace Engine::Graphic
+  * @brief Espacio de nombres que contiene las clases del motor gráfico.
+  */
 namespace Engine::Graphic
 {
 	/**

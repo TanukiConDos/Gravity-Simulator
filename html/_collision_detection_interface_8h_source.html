@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -118,14 +118,18 @@ $(function(){initNavTree('_collision_detection_interface_8h_source.html',''); in
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">   23</a></span>    <span class="keyword">class </span><a class="code hl_class" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">CollisionDetectionInterface</a></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    {</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#addf38ca222d9edc009353a2f91940ad6">detection</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    };</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a1ee21c62e7c89d91c1043cfcc4b5148d">   27</a></span>        <span class="keyword">virtual</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a1ee21c62e7c89d91c1043cfcc4b5148d">~CollisionDetectionInterface</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>        <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a8b805aec3304874c9f470e849de0b416">detection</a>(<span class="keywordtype">float</span> deltaTime, std::shared_ptr&lt;std::vector&lt;PhysicObject&gt;&gt; objects) = 0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    };</div>
 </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
-<div class="ttc" id="a_physic_object_8h_html"><div class="ttname"><a href="_physic_object_8h.html">PhysicObject.h</a></div><div class="ttdoc">Define la clase PhysicObject para representar un objeto fÌsico en la simulaciÛn, proporcionando mÈtodos para...</div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html">Engine::Physic::CollisionDetectionInterface</a></div><div class="ttdoc">Interfaz para implementar algoritmos de detecciÛn de colisiones.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">CollisionDetectionInterface.h:24</a></div></div>
-<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html_addf38ca222d9edc009353a2f91940ad6"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html#addf38ca222d9edc009353a2f91940ad6">Engine::Physic::CollisionDetectionInterface::detection</a></div><div class="ttdeci">virtual void detection(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects)</div><div class="ttdoc">Detecta colisiones entre objetos fÌsicos.</div><div class="ttdef"><b>Definition</b> <a href="_collision_detection_interface_8cpp_source.html#l00003">CollisionDetectionInterface.cpp:3</a></div></div>
-<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>}</div>
+<div class="ttc" id="a_physic_object_8h_html"><div class="ttname"><a href="_physic_object_8h.html">PhysicObject.h</a></div><div class="ttdoc">Define la clase PhysicObject para representar un objeto f√≠sico en la simulaci√≥n, proporcionando m√©tod...</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html">Engine::Physic::CollisionDetectionInterface</a></div><div class="ttdoc">Interfaz para implementar algoritmos de detecci√≥n de colisiones.</div><div class="ttdef"><b>Definition</b> <a href="#l00023">CollisionDetectionInterface.h:24</a></div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html_a1ee21c62e7c89d91c1043cfcc4b5148d"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a1ee21c62e7c89d91c1043cfcc4b5148d">Engine::Physic::CollisionDetectionInterface::~CollisionDetectionInterface</a></div><div class="ttdeci">virtual ~CollisionDetectionInterface()=default</div></div>
+<div class="ttc" id="aclass_engine_1_1_physic_1_1_collision_detection_interface_html_a8b805aec3304874c9f470e849de0b416"><div class="ttname"><a href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a8b805aec3304874c9f470e849de0b416">Engine::Physic::CollisionDetectionInterface::detection</a></div><div class="ttdeci">virtual void detection(float deltaTime, std::shared_ptr&lt; std::vector&lt; PhysicObject &gt; &gt; objects)=0</div><div class="ttdoc">Detecta colisiones entre objetos f√≠sicos.</div><div class="ttdef"><b>Definition</b> <a href="_collision_detection_interface_8cpp_source.html#l00003">CollisionDetectionInterface.cpp:3</a></div></div>
+<div class="ttc" id="anamespace_engine_1_1_physic_html"><div class="ttname"><a href="namespace_engine_1_1_physic.html">Engine::Physic</a></div><div class="ttdoc">Espacio de nombres que contiene las clases del motor de f√≠sicas.</div><div class="ttdef"><b>Definition</b> <a href="brute_force_detection_8cpp_source.html#l00004">bruteForceDetection.cpp:5</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

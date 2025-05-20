@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -108,7 +108,11 @@ $(function(){initNavTree('main_8cpp.html',''); initResizable(true); });
   <div class="headertitle"><div class="title">Referencia del archivo main.cpp</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Punto de entrada de la aplicación.  
+<a href="#details">Más...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="_gravity_simulator_8h_source.html">Application/GravitySimulator.h</a>&quot;</code><br />
+<code>#include &lt;iostream&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Gráfico de dependencias incluidas en main.cpp:</div>
 <div class="dyncontent">
@@ -122,7 +126,12 @@ Funciones</h2></td></tr>
 <tr class="memitem:ae66f6b31b5ad750f1fe042a706a4e3d4" id="r_ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a> ()</td></tr>
 <tr class="separator:ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Documentación de funciones</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
+<div class="textblock"><p>Punto de entrada de la aplicación. </p>
+<p>Se crea una instancia de GravitySimulator y se ejecuta utilizando app.run(). Se utiliza un bloque try/catch para capturar excepciones derivadas de std::exception y reportar errores. </p>
+
+<p class="definition">Definición en el archivo <a class="el" href="main_8cpp_source.html">main.cpp</a>.</p>
+</div><h2 class="groupheader">Documentación de funciones</h2>
 <a id="ae66f6b31b5ad750f1fe042a706a4e3d4" name="ae66f6b31b5ad750f1fe042a706a4e3d4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae66f6b31b5ad750f1fe042a706a4e3d4">&#9670;&#160;</a></span>main()</h2>
 
@@ -138,7 +147,7 @@ Funciones</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definición en la línea <a class="el" href="main_8cpp_source.html#l00003">3</a> del archivo <a class="el" href="main_8cpp_source.html">main.cpp</a>.</p>
+<p class="definition">Definición en la línea <a class="el" href="main_8cpp_source.html#l00011">11</a> del archivo <a class="el" href="main_8cpp_source.html">main.cpp</a>.</p>
 
 </div>
 </div>

@@ -12,5 +12,5 @@ digraph "Application/Window.cpp"
   Node2 -> Node4 [id="edge3_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
   Node4 [id="Node000004",label="stdexcept",height=0.2,width=0.4,color="grey60", fillcolor="#E0E0E0", style="filled",tooltip=" "];
   Node2 -> Node5 [id="edge4_Node000002_Node000005",color="steelblue1",style="solid",tooltip=" "];
-  Node5 [id="Node000005",label="input.h",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$input_8h.html",tooltip="Define acciones de entrada y eventos para la aplicación."];
+  Node5 [id="Node000005",label="input.h",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$input_8h.html",tooltip="Define acciones de entrada y eventos para la aplicaciÃ³n."];
 }

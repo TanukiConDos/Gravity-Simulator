@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,11 +111,11 @@ $(function(){initNavTree('_graphic_8h.html',''); initResizable(true); });
 </div><!--header-->
 <div class="contents">
 
-<p>Define las estructuras y constantes utilizadas en la gestiÛn de recursos gr·ficos con Vulkan.  
+<p>Define las estructuras y constantes utilizadas en la gesti√≥n de recursos gr√°ficos con Vulkan.  
 <a href="#details">M√°s...</a></p>
 <div class="textblock"><code>#include &lt;vulkan/vulkan.hpp&gt;</code><br />
-<code>#include &lt;glm/glm.hpp&gt;</code><br />
-<code>#include &lt;glm/gtc/matrix_transform.hpp&gt;</code><br />
+<code>#include &quot;../../External/glm/glm.hpp&quot;</code><br />
+<code>#include &lt;../../External/glm/gtc/matrix_transform.hpp&gt;</code><br />
 <code>#include &lt;optional&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &quot;<a class="el" href="_physic_object_8h_source.html">../Physic/PhysicObject.h</a>&quot;</code><br />
@@ -135,16 +135,16 @@ Gr√°fico de los archivos que directa o indirectamente incluyen a este archivo:</
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Clases</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_engine_1_1_graphic_1_1_queue_family_indices.html">Engine::Graphic::QueueFamilyIndices</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Almacena los Ìndices de las familias de colas para gr·ficos y presentaciÛn.  <a href="struct_engine_1_1_graphic_1_1_queue_family_indices.html#details">M√°s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Almacena los √≠ndices de las familias de colas para gr√°ficos y presentaci√≥n.  <a href="struct_engine_1_1_graphic_1_1_queue_family_indices.html#details">M√°s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_engine_1_1_graphic_1_1_swap_chain_support_details.html">Engine::Graphic::SwapChainSupportDetails</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Almacena informaciÛn sobre el soporte del swap chain.  <a href="struct_engine_1_1_graphic_1_1_swap_chain_support_details.html#details">M√°s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Almacena informaci√≥n sobre el soporte del swap chain.  <a href="struct_engine_1_1_graphic_1_1_swap_chain_support_details.html#details">M√°s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html">Engine::Graphic::UniformBufferObject</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estructura utilizada para almacenar las matrices de transformaciÛn y estado de selecciÛn.  <a href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html#details">M√°s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estructura utilizada para almacenar las matrices de transformaci√≥n y estado de selecci√≥n.  <a href="struct_engine_1_1_graphic_1_1_uniform_buffer_object.html#details">M√°s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_engine_1_1_graphic_1_1_vertex.html">Engine::Graphic::Vertex</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa la informaciÛn de un vÈrtice, incluyendo posiciÛn y color.  <a href="struct_engine_1_1_graphic_1_1_vertex.html#details">M√°s...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa la informaci√≥n de un v√©rtice, incluyendo posici√≥n y color.  <a href="struct_engine_1_1_graphic_1_1_vertex.html#details">M√°s...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
@@ -152,16 +152,17 @@ Espacios de nombres</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine.html">Engine</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></td></tr>
+<tr class="memdesc:namespace_engine_1_1_graphic"><td class="mdescLeft">&#160;</td><td class="mdescRight">Espacio de nombres que contiene las clases del motor gr√°fico. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ad97bdb4306c36cdaf0c646fe6b3e6cda" id="r_ad97bdb4306c36cdaf0c646fe6b3e6cda"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html#ad97bdb4306c36cdaf0c646fe6b3e6cda">Engine::Graphic::MAX_FRAMES_IN_FLIGHT</a> = 2</td></tr>
-<tr class="memdesc:ad97bdb4306c36cdaf0c646fe6b3e6cda"><td class="mdescLeft">&#160;</td><td class="mdescRight">N˙mero m·ximo de frames en vuelo.  <br /></td></tr>
+<tr class="memitem:ad97bdb4306c36cdaf0c646fe6b3e6cda" id="r_ad97bdb4306c36cdaf0c646fe6b3e6cda"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html#ad97bdb4306c36cdaf0c646fe6b3e6cda">Engine::Graphic::MAX_FRAMES_IN_FLIGHT</a> = 1</td></tr>
+<tr class="memdesc:ad97bdb4306c36cdaf0c646fe6b3e6cda"><td class="mdescLeft">&#160;</td><td class="mdescRight">N√∫mero m√°ximo de frames en vuelo.  <br /></td></tr>
 <tr class="separator:ad97bdb4306c36cdaf0c646fe6b3e6cda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripci√≥n detallada</h2>
-<div class="textblock"><p>Define las estructuras y constantes utilizadas en la gestiÛn de recursos gr·ficos con Vulkan. </p>
+<div class="textblock"><p>Define las estructuras y constantes utilizadas en la gesti√≥n de recursos gr√°ficos con Vulkan. </p>
 
 <p class="definition">Definici√≥n en el archivo <a class="el" href="_graphic_8h_source.html">Graphic.h</a>.</p>
 </div></div><!-- contents -->

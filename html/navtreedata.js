@@ -25,8 +25,14 @@
 var NAVTREE =
 [
   [ "Simulador de Campos Gravitatorios", "index.html", [
-    [ "README", "md__r_e_a_d_m_e.html", [
-      [ "TFG", "md__r_e_a_d_m_e.html#autotoc_md0", null ]
+    [ "LICENSE", "license.html", null ],
+    [ "README", "readme.html", [
+      [ "Simulador de Campos Gravitatorios", "readme.html#simulador-de-campos-gravitatorios", [
+        [ "DescripciÃ³n", "readme.html#descripciã³n", null ],
+        [ "InstalaciÃ³n", "readme.html#instalaciã³n", null ],
+        [ "Uso de la aplicaciÃ³n", "readme.html#uso-de-la-aplicaciã³n", null ],
+        [ "CompilaciÃ³n desde cÃ³digo fuente", "readme.html#compilaciã³n-desde-cã³digo-fuente", null ]
+      ] ]
     ] ],
     [ "Espacios de nombres", "namespaces.html", [
       [ "Lista de espacios de nombres", "namespaces.html", "namespaces_dup" ],
@@ -62,8 +68,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "_arena_8h.html",
-"class_engine_1_1_graphic_1_1_camera.html",
-"class_foundation_1_1_arena.html#a6df218018e1dee004c050815451695b8"
+"class_engine_1_1_graphic_1_1_buffer.html#a6c7b8f717b7de24211b68cade56a4997",
+"class_engine_1_1_physic_1_1_physic_system.html"
 ];
 
 var SYNCONMSG = 'pulsar para deshabilitar sincronización';

@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('class_engine_1_1_physic_1_1brute_force_detection.html'
 </div><!--header-->
 <div class="contents">
 
-<p>Detecci�n de colisiones mediante fuerza bruta.  
+<p>Detección de colisiones mediante fuerza bruta.  
  <a href="#details">Más...</a></p>
 
 <p><code>#include &lt;<a class="el" href="brute_force_detection_8h_source.html">bruteForceDetection.h</a>&gt;</code></p>
@@ -128,12 +128,15 @@ Diagrama de colaboración de Engine::Physic::bruteForceDetection:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Métodos públicos</h2></td></tr>
 <tr class="memitem:aa3e17cd0701ff552e8646b2b5f65b170" id="r_aa3e17cd0701ff552e8646b2b5f65b170"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa3e17cd0701ff552e8646b2b5f65b170">detection</a> (float deltaTime, std::shared_ptr&lt; std::vector&lt; <a class="el" href="class_engine_1_1_physic_1_1_physic_object.html">PhysicObject</a> &gt; &gt; objects) final</td></tr>
-<tr class="memdesc:aa3e17cd0701ff552e8646b2b5f65b170"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detecta colisiones entre objetos f�sicos.  <br /></td></tr>
+<tr class="memdesc:aa3e17cd0701ff552e8646b2b5f65b170"><td class="mdescLeft">&#160;</td><td class="mdescRight">Detecta colisiones entre objetos físicos.  <br /></td></tr>
 <tr class="separator:aa3e17cd0701ff552e8646b2b5f65b170"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_class_engine_1_1_physic_1_1_collision_detection_interface"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_class_engine_1_1_physic_1_1_collision_detection_interface')"><img src="closed.png" alt="-"/>&#160;Métodos públicos heredados de <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html">Engine::Physic::CollisionDetectionInterface</a></td></tr>
+<tr class="memitem:a1ee21c62e7c89d91c1043cfcc4b5148d inherit pub_methods_class_engine_1_1_physic_1_1_collision_detection_interface" id="r_a1ee21c62e7c89d91c1043cfcc4b5148d"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a1ee21c62e7c89d91c1043cfcc4b5148d">~CollisionDetectionInterface</a> ()=default</td></tr>
+<tr class="separator:a1ee21c62e7c89d91c1043cfcc4b5148d inherit pub_methods_class_engine_1_1_physic_1_1_collision_detection_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Detecci�n de colisiones mediante fuerza bruta. </p>
-<p>Esta clase implementa el m�todo detection utilizando un enfoque de fuerza bruta, recorriendo iterativamente el vector de objetos f�sicos para identificar colisiones en funci�n del intervalo de tiempo transcurrido. </p>
+<div class="textblock"><p>Detección de colisiones mediante fuerza bruta. </p>
+<p>Esta clase implementa el método detection utilizando un enfoque de fuerza bruta, recorriendo iterativamente el vector de objetos físicos para identificar colisiones en función del intervalo de tiempo transcurrido. </p>
 
 <p class="definition">Definición en la línea <a class="el" href="brute_force_detection_8h_source.html#l00024">24</a> del archivo <a class="el" href="brute_force_detection_8h_source.html">bruteForceDetection.h</a>.</p>
 </div><h2 class="groupheader">Documentación de funciones miembro</h2>
@@ -164,17 +167,17 @@ Métodos públicos</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Detecta colisiones entre objetos f�sicos. </p>
-<p>Este m�todo eval�a todas las posibles interacciones entre los objetos utilizando un enfoque de fuerza bruta, considerando el intervalo de tiempo transcurrido.</p>
+<p>Detecta colisiones entre objetos físicos. </p>
+<p>Este método evalúa todas las posibles interacciones entre los objetos utilizando un enfoque de fuerza bruta, considerando el intervalo de tiempo transcurrido.</p>
 <dl class="params"><dt>Parámetros</dt><dd>
   <table class="params">
     <tr><td class="paramname">deltaTime</td><td>Intervalo de tiempo transcurrido. </td></tr>
-    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos f�sicos a evaluar. </td></tr>
+    <tr><td class="paramname">objects</td><td>Puntero compartido a un vector de objetos físicos a evaluar. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Reimplementado de <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#addf38ca222d9edc009353a2f91940ad6">Engine::Physic::CollisionDetectionInterface</a>.</p>
+<p>Implementa <a class="el" href="class_engine_1_1_physic_1_1_collision_detection_interface.html#a8b805aec3304874c9f470e849de0b416">Engine::Physic::CollisionDetectionInterface</a>.</p>
 
 <p class="definition">Definición en la línea <a class="el" href="brute_force_detection_8cpp_source.html#l00006">6</a> del archivo <a class="el" href="brute_force_detection_8cpp_source.html">bruteForceDetection.cpp</a>.</p>
 <div class="dynheader">

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['parse_5fevent_5ft_0',['parse_event_t',['../namespacedetail.html#a47b1bb0bbd3596589ed9187059c312ef',1,'detail']]]
+  ['timer_0',['Timer',['../namespace_foundation.html#ad5a5b0f6c15c779a548886884e6ab5a7',1,'Foundation']]],
+  ['typekind_1',['TypeKind',['../namespacetesting_1_1internal2.html#aeb8161b0b3ee503347b0662d7028fd57',1,'testing::internal2']]]
 ];

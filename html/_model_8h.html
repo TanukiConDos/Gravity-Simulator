@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -111,7 +111,7 @@ $(function(){initNavTree('_model_8h.html',''); initResizable(true); });
 </div><!--header-->
 <div class="contents">
 
-<p>Define la clase Model para representar modelos 3D generados a partir de par�metros geom�tricos.  
+<p>Define la clase Model para representar modelos 3D generados a partir de parámetros geométricos.  
 <a href="#details">Más...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="_g_p_u_8h_source.html">GPU.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="_physic_object_8h_source.html">../Physic/PhysicObject.h</a>&quot;</code><br />
@@ -133,7 +133,7 @@ Gráfico de los archivos que directa o indirectamente incluyen a este archivo:</
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Clases</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_engine_1_1_graphic_1_1_model.html">Engine::Graphic::Model</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa un modelo 3D generado a partir de par�metros geom�tricos.  <a href="class_engine_1_1_graphic_1_1_model.html#details">Más...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Representa un modelo 3D generado a partir de parámetros geométricos.  <a href="class_engine_1_1_graphic_1_1_model.html#details">Más...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="namespaces" name="namespaces"></a>
@@ -141,27 +141,28 @@ Espacios de nombres</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine.html">Engine</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_engine_1_1_graphic.html">Engine::Graphic</a></td></tr>
+<tr class="memdesc:namespace_engine_1_1_graphic"><td class="mdescLeft">&#160;</td><td class="mdescRight">Espacio de nombres que contiene las clases del motor gráfico. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a952eac791b596a61bba0a133a3bb439f" id="r_a952eac791b596a61bba0a133a3bb439f"><td class="memItemLeft" align="right" valign="top">const double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a952eac791b596a61bba0a133a3bb439f">PI</a> = 3.141592653589793238462643383279502884f</td></tr>
-<tr class="separator:a952eac791b596a61bba0a133a3bb439f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa08a577393243b86dfd2a97e61443673" id="r_aa08a577393243b86dfd2a97e61443673"><td class="memItemLeft" align="right" valign="top">const float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa08a577393243b86dfd2a97e61443673">PI</a> = 3.141592653589793238462643383279502884f</td></tr>
+<tr class="separator:aa08a577393243b86dfd2a97e61443673"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Descripción detallada</h2>
-<div class="textblock"><p>Define la clase Model para representar modelos 3D generados a partir de par�metros geom�tricos. </p>
-<p>Esta clase se encarga de generar v�rtices e �ndices utilizando valores como sectorCount y stackCount, y de gestionar el buffer en la GPU para renderizar el modelo. </p>
+<div class="textblock"><p>Define la clase Model para representar modelos 3D generados a partir de parámetros geométricos. </p>
+<p>Esta clase se encarga de generar vértices e índices utilizando valores como sectorCount y stackCount, y de gestionar el buffer en la GPU para renderizar el modelo. </p>
 
 <p class="definition">Definición en el archivo <a class="el" href="_model_8h_source.html">Model.h</a>.</p>
 </div><h2 class="groupheader">Documentación de variables</h2>
-<a id="a952eac791b596a61bba0a133a3bb439f" name="a952eac791b596a61bba0a133a3bb439f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a952eac791b596a61bba0a133a3bb439f">&#9670;&#160;</a></span>PI</h2>
+<a id="aa08a577393243b86dfd2a97e61443673" name="aa08a577393243b86dfd2a97e61443673"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa08a577393243b86dfd2a97e61443673">&#9670;&#160;</a></span>PI</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const double PI = 3.141592653589793238462643383279502884f</td>
+          <td class="memname">const float PI = 3.141592653589793238462643383279502884f</td>
         </tr>
       </table>
 </div><div class="memdoc">

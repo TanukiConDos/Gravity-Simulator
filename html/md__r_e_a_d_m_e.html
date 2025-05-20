@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Simulador de Campos Gravitatorios
+   <div id="projectname">Simulador de Campos Gravitatorios<span id="projectnumber">&#160;1.0.0</span>
    </div>
    <div id="projectbrief">Simula los campos gravitatorios para mostrar orbitas de planetas</div>
   </td>
@@ -108,7 +108,53 @@ $(function(){initNavTree('md__r_e_a_d_m_e.html',''); initResizable(true); });
 <div class="contents">
 <div class="textblock"><p><a href="https://sonarcloud.io/summary/new_code?id=TanukiConDos_TFG"><img src="https://sonarcloud.io/api/project_badges/measure?project=TanukiConDos_TFG&amp;metric=alert_status" alt="Quality Gate Status" class="inline"/></a> </p>
 <h1><a class="anchor" id="autotoc_md0"></a>
-TFG</h1>
+Simulador de Campos Gravitatorios</h1>
+<h2><a class="anchor" id="autotoc_md1"></a>
+Descripción</h2>
+<p>Este proyecto es una aplicación desarrollada en C++20 que se enfoca en aprender las bases de la computación gráfica y la simulaciones de fenomenos físicos. Especiíficamente, se trata de un simulador de campos gravitatorios que permite al usuario definir las condiciones iniciales de los cuerpos celestes y observar su interacción gravitatoria. Las herramientas utilizadas para el desarrollo de este proyecto son las siguientes:</p><ul>
+<li><a href="https://www.vulkan.org/">Vulkan</a>: API de gráficos de bajo nivel.</li>
+<li><a href="https://www.glfw.org/">GLFW</a>: Biblioteca para la creación de ventanas y la gestión de eventos.</li>
+<li><a href="https://glm.g-truc.net">GLM</a>: Biblioteca de matemáticas para gráficos en 3D.</li>
+<li><a href="https://github.com/ocornut/imgui">ImGui</a>: Biblioteca para la creación de interfaces de usuario.</li>
+<li><a href="https://json.nlohmann.me/">json</a>: Biblioteca para el manejo de archivos JSON.</li>
+<li><a href="https://github.com/dougbinks/enkiTS">EnkiTS</a>: Biblioteca para la gestión de tareas y hilos.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md2"></a>
+Instalación</h2>
+<p>Descarga el zip de la última versión del proyecto desde la página de [releases]() y descomprímelo en la carpeta que prefieras.</p>
+<p>Ejecuta el archivo <code>SimuladorCamposGravitatorios.exe</code> para iniciar la aplicación.</p>
+<h2><a class="anchor" id="autotoc_md3"></a>
+Uso de la aplicación</h2>
+<p>La aplicación cuenta con una interfaz gráfica que permite al usuario definir una serie de parámetros utilizados en la aplicación. Estos parámetros se cambian en la ventana de cónfiguración de la aplicación. Los párametros son los siguientes:</p>
+<ul>
+<li><b>Multiplicador de tiempo</b>: Se encarga de establecer la relación entre el tiempo en la simulación y la vida real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.</li>
+<li><b>Modo de creación de la escenca</b>: Permite seleccionar de donde saca los valores iniciales de la simulación. Puede ser JSON o aleatorio. Los JSON tienen que estar en la carpeta scenes.ç</li>
+<li><b>Fichero JSON/número de objetos</b>: Esta opción cambia dependiendo del valor en el parámetro anterior. En el fichero JSON se establerce el nombre del fichero del que se leen los datos. El número de objetos cambia el numero de cuerpos a generar de manera aleatoria.</li>
+<li><b>Algoritmo de colisión</b>: Permite elegir el algoritmo que resuelve la colisión entre 2 cuerpos.</li>
+<li><b>Algoritmo de Resolución</b>: Permite elegir el algoritmo que calcula la fuerza gravitatoria entre los cuerpos.</li>
+</ul>
+<p><img src="https://github.com/user-attachments/assets/002a02bb-ecdf-4777-b890-5ca9421e6a36" alt="image" class="inline"/></p>
+<p>Una vez configurada la simulación podemos pulsar en iniciar simulación. Esto nos lleva a una pantalla en la que se ve la simulación en tiempo real y 2 ventanas.</p><ul>
+<li><b>La ventana de debug</b>: Muestra estadisticas de cuanto tarda en realizar la renderización y los calculos del motor de físicas.</li>
+<li><b>Datos del cuerpo</b>: Muestra los datos del cuerpo selecionado.</li>
+</ul>
+<p><img src="https://github.com/user-attachments/assets/bac0c520-61ef-4081-a132-24fd5c3f4ae9" alt="image" class="inline"/></p>
+<h2><a class="anchor" id="autotoc_md4"></a>
+Compilación desde código fuente</h2>
+<ol type="1">
+<li><b>Requisitos previos:</b><ul>
+<li>Sistema operativo Windows.</li>
+<li><a href="https://visualstudio.microsoft.com/vs/">Visual Studio 2022</a> con soporte para C++ y C++20.</li>
+<li>Descargar e instalar <a href="https://vulkan.lunarg.com/sdk/home#windows">Vulkan SDK</a>.</li>
+<li>Descargar e instalar <a href="https://www.glfw.org/download.html">GLFW</a>.</li>
+</ul>
+</li>
+<li><p class="startli"><b>Preparación del entorno:</b></p>
+<p class="startli">Abre el archivo <code>SimuladorCamposGravitatorios.sln</code> con Visual Studio 2022. En la configuración de la solución, asegúrate de que las rutas de las librerías de Vulkan, GLFW y GLM sean las rutas en las que te has descargado las librerias. Para ello, ve a <code>Propiedades de la solución -&gt; Configuración de propiedades -&gt; C/C++ -&gt; Directorios de inclusión adicionales</code> y añade las rutas a la carpeta include de las librerías.</p>
+<p class="startli">A continuación, ve a <code>Propiedades de la solución -&gt; Configuración de propiedades -&gt; Vinculador -&gt; Directorios de bibliotecas adicionales</code> y añade las rutas a las carpetas lib de las librerías. Después, ve a <code>Propiedades de la solución -&gt; Configuración de propiedades -&gt; Vinculador -&gt; Entrada -&gt; Dependencias adicionales</code> y añade las librerías vulkan-1.lib y glfw3.lib. Por ultimo, edita el script compilar.bat en la carpeta <code>Engine/Graphic/shader</code> cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK. Ya puedes compilar el proyecto y ejecutarlo.</p>
+<p class="startli">Para la ejecución de los test se debe añadir la ruta de la librería GLM a los directorios de inclusión adicionales siguiendo el mismo procedimiento que antes en el projecto de test. </p>
+</li>
+</ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

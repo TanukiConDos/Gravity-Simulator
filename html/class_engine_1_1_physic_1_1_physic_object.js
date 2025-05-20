@@ -2,8 +2,8 @@ var class_engine_1_1_physic_1_1_physic_object =
 [
     [ "PhysicObject", "class_engine_1_1_physic_1_1_physic_object.html#a7b0a123e1a63404f79aab429822ea366", null ],
     [ "collision", "class_engine_1_1_physic_1_1_physic_object.html#ae3d5423aa21b8f09987238bb87bbbeec", null ],
-    [ "getVelocity", "class_engine_1_1_physic_1_1_physic_object.html#af204645417e82e51857c2842686441ad", null ],
-    [ "update", "class_engine_1_1_physic_1_1_physic_object.html#ae6bdc2995f34d85bfc3ecc4cd7d3995f", null ],
+    [ "getVelocity", "class_engine_1_1_physic_1_1_physic_object.html#a87f6cf764d3cd7235d9537a5f73b597f", null ],
+    [ "update", "class_engine_1_1_physic_1_1_physic_object.html#a72e025ca1fc7a118b49a520394c97c72", null ],
     [ "_acceleration", "class_engine_1_1_physic_1_1_physic_object.html#af49fcb14ff6a3aa2cc269eda6fd75bb4", null ],
     [ "_mass", "class_engine_1_1_physic_1_1_physic_object.html#a4e4ead0b550188e97daba80017ae80ab", null ],
     [ "_position", "class_engine_1_1_physic_1_1_physic_object.html#a6e42b9fa3a028da1423f56a7e048d69e", null ],

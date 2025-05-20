@@ -4,7 +4,7 @@ digraph "Application::StateMachine"
   bgcolor="transparent";
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
-  Node1 [id="Node000001",label="Application::StateMachine",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Gestiona la transici髇 y ejecuci髇 de estados en la aplicaci髇."];
+  Node1 [id="Node000001",label="Application::StateMachine",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Gestiona la transici贸n y ejecuci贸n de estados en la aplicaci贸n."];
   Node2 -> Node1 [id="edge1_Node000001_Node000002",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" _sub",fontcolor="grey" ];
-  Node2 [id="Node000002",label="Application::GravitySimulator",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$class_application_1_1_gravity_simulator.html",tooltip="Clase principal para la simulaci髇 de gravedad."];
+  Node2 [id="Node000002",label="Application::GravitySimulator",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$class_application_1_1_gravity_simulator.html",tooltip="Clase principal para la simulaci贸n de gravedad."];
 }

@@ -9,7 +9,7 @@ namespace Engine::Physic
 
 	void PhysicObject::update(float deltaTime, glm::vec3 force)
 	{
-		deltaTime = (deltaTime * Foundation::Config::getConfig()->time) / 1000.0f;
+		deltaTime = (deltaTime * Foundation::Config::getConfig()->_time) / 1000.0f;
 		this->_acceleration = force / (float)_mass;
 		this->_position = _position + ((_velocity * deltaTime) + 0.5f * _acceleration * (deltaTime * deltaTime));
 		this->_velocity = _velocity + (_acceleration * deltaTime);
