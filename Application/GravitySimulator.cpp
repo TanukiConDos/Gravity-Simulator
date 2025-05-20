@@ -145,7 +145,7 @@ namespace Application
 						_endSync.notify_one();
                         
                         _endedSync.wait(lk, [this]() { return !_end; });
-
+						_ended = false;
                     }
                 }
             }
