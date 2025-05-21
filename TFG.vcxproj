@@ -32,6 +32,7 @@
     <ProjectGuid>{f9bf339b-d123-4481-8be9-c5c9e65a8293}</ProjectGuid>
     <RootNamespace>TFG</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>GravitySimulator</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
