@@ -13,9 +13,9 @@ Las herramientas utilizadas para el desarrollo de este proyecto son las siguient
 - [EnkiTS](https://github.com/dougbinks/enkiTS): Biblioteca para la gestión de tareas y hilos.
 
 ## Instalación
-Descarga el zip de la última versión del proyecto desde la página de [releases]() y descomprímelo en la carpeta que prefieras.
+Descarga el zip de la última versión del proyecto desde la página de [releases](https://github.com/TanukiConDos/TFG/releases) y descomprímelo en la carpeta que prefieras.
 
-Ejecuta el archivo `SimuladorCamposGravitatorios.exe` para iniciar la aplicación.
+Ejecuta el archivo `GravitySimulator.exe` para iniciar la aplicación.
 
 ## Uso de la aplicación
 
@@ -23,7 +23,7 @@ La aplicación cuenta con una interfaz gráfica que permite al usuario definir u
 Los párametros son los siguientes:
 
 - **Multiplicador de tiempo**: Se encarga de establecer la relación entre el tiempo en la simulación y la vida real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.
-- **Modo de creación de la escenca**: Permite seleccionar de donde saca los valores iniciales de la simulación. Puede ser JSON o aleatorio. Los JSON tienen que estar en la carpeta scenes.ç
+- **Modo de creación de la escenca**: Permite seleccionar de donde saca los valores iniciales de la simulación. Puede ser JSON o aleatorio. Los JSON tienen que estar en la carpeta scenes.
 - **Fichero JSON/número de objetos**: Esta opción cambia dependiendo del valor en el parámetro anterior. En el fichero JSON se establerce el nombre del fichero del que se leen los datos. El número de objetos cambia el numero de cuerpos a generar de manera aleatoria.
 - **Algoritmo de colisión**: Permite elegir el algoritmo que resuelve la colisión entre 2 cuerpos.
 - **Algoritmo de Resolución**: Permite elegir el algoritmo que calcula la fuerza gravitatoria entre los cuerpos.
