@@ -135,6 +135,7 @@ namespace Application
                 while (!exit)
                 {
                     timers->setTimer(Foundation::Timer::TICK, true);
+                    if (_tickTime < 0.001f) std::this_thread::sleep_for(std::chrono::microseconds(1));
                     _physicSystem.update(_tickTime, _objects);
                     timers->setTimer(Foundation::Timer::TICK, false);
                     _tickTime = timers->getElapsedTime(Foundation::Timer::TICK);
