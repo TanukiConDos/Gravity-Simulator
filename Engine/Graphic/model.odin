@@ -12,54 +12,54 @@ Model :: struct {
 	gpu:          ^GPU,
 }
 
-model_create :: proc(gpu: ^GPU, cp: ^CommandPool, sector_count, stack_count: i32) -> (m: Model, ok: bool) {
+model_create :: proc(gpu: ^GPU, command_pool: ^CommandPool, sector_count, stack_count: i32) -> (model_result: Model, ok: bool) {
 	log.debugf("[VULKAN] Model initialization (sphere %dx%d)...", sector_count, stack_count)
-	m.gpu = gpu
+	model_result.gpu = gpu
 	vertices, indices := _gen_sphere(sector_count, stack_count)
 	defer {delete(vertices); delete(indices)}
 
-	vs := vulkan.DeviceSize(len(vertices) * size_of(Vertex))
-	is := vulkan.DeviceSize(len(indices) * size_of(u32))
-	total_size := vs + is
+	vertex_size := vulkan.DeviceSize(len(vertices) * size_of(Vertex))
+	index_size := vulkan.DeviceSize(len(indices) * size_of(u32))
+	total_size := vertex_size + index_size
 
 	log.debugf("[VULKAN]   Uploading mesh to GPU (%d verts, %d indices)...", len(vertices), len(indices))
 
-	staging_buf, staging_mem, _ := gpu_create_buffer(gpu, total_size, {.TRANSFER_SRC}, {.HOST_VISIBLE, .HOST_COHERENT})
+	staging_buffer, staging_memory, _ := gpu_create_buffer(gpu, total_size, {.TRANSFER_SRC}, {.HOST_VISIBLE, .HOST_COHERENT})
 	mapped: rawptr
-	vulkan.MapMemory(gpu.device, staging_mem, 0, total_size, {}, &mapped)
-	intrinsics.mem_copy(mapped, raw_data(vertices), int(vs))
-	intrinsics.mem_copy(rawptr(uintptr(mapped) + uintptr(vs)), raw_data(indices), int(is))
-	vulkan.UnmapMemory(gpu.device, staging_mem)
+	vulkan.MapMemory(gpu.device, staging_memory, 0, total_size, {}, &mapped)
+	intrinsics.mem_copy(mapped, raw_data(vertices), int(vertex_size))
+	intrinsics.mem_copy(rawptr(uintptr(mapped) + uintptr(vertex_size)), raw_data(indices), int(index_size))
+	vulkan.UnmapMemory(gpu.device, staging_memory)
 
-	m.buffer, _ = buffer_create(gpu, total_size, {.TRANSFER_DST, .VERTEX_BUFFER, .INDEX_BUFFER}, {.DEVICE_LOCAL})
-	m.index_count = u32(len(indices))
-	m.index_offset = vs
+	model_result.buffer, _ = buffer_create(gpu, total_size, {.TRANSFER_DST, .VERTEX_BUFFER, .INDEX_BUFFER}, {.DEVICE_LOCAL})
+	model_result.index_count = u32(len(indices))
+	model_result.index_offset = vertex_size
 
-	cmd := command_pool_begin_one_shot(cp)
-	gpu_copy_buffer(gpu, staging_buf, m.buffer.buffer, total_size, cmd)
-	command_pool_end_one_shot(cp, cmd)
+	command_buffer := command_pool_begin_one_shot(command_pool)
+	gpu_copy_buffer(gpu, staging_buffer, model_result.buffer.buffer, total_size, command_buffer)
+	command_pool_end_one_shot(command_pool, command_buffer)
 
-	vulkan.DestroyBuffer(gpu.device, staging_buf, nil)
-	vulkan.FreeMemory(gpu.device, staging_mem, nil)
+	vulkan.DestroyBuffer(gpu.device, staging_buffer, nil)
+	vulkan.FreeMemory(gpu.device, staging_memory, nil)
 
 	log.debugf("[VULKAN]   Model ready")
-	return m, true
+	return model_result, true
 }
 
-model_destroy :: proc(m: ^Model) {
+model_destroy :: proc(self: ^Model) {
 	log.debugf("[VULKAN] Destroying Model...")
-	buffer_destroy(&m.buffer)
+	buffer_destroy(&self.buffer)
 	log.debugf("[VULKAN]   Model destroyed")
 }
 
-model_bind :: proc(m: ^Model, cmd: vulkan.CommandBuffer) {
-	off: vulkan.DeviceSize = 0
-	vulkan.CmdBindVertexBuffers(cmd, 0, 1, &m.buffer.buffer, &off)
-	vulkan.CmdBindIndexBuffer(cmd, m.buffer.buffer, m.index_offset, .UINT32)
+model_bind :: proc(self: ^Model, cmd: vulkan.CommandBuffer) {
+	offset: vulkan.DeviceSize = 0
+	vulkan.CmdBindVertexBuffers(cmd, 0, 1, &self.buffer.buffer, &offset)
+	vulkan.CmdBindIndexBuffer(cmd, self.buffer.buffer, self.index_offset, .UINT32)
 }
 
-model_get_index_count :: proc(m: ^Model) -> u32 {
-	return m.index_count
+model_get_index_count :: proc(self: ^Model) -> u32 {
+	return self.index_count
 }
 
 _gen_sphere :: proc(sector_count, stack_count: i32) -> (vertices: [dynamic]Vertex, indices: [dynamic]u32) {

@@ -14,7 +14,7 @@ import "core:time"
 @(private) g_physic_system: physic.PhysicSystem
 @(private) g_objects: ^[dynamic]physic.PhysicObject
 
-@(private) _read_json_scene :: proc(filename: string) -> (objects: ^[dynamic]physic.PhysicObject, ok: bool) {
+@(private) _read_json_scene :: proc(filename: string) -> (objects: ^[dynamic]physic.PhysicObject, success: bool) {
 	data, read_ok := os.read_entire_file(filename, context.temp_allocator); if !read_ok {return nil, false}
 	text := string(data); objects = new([dynamic]physic.PhysicObject)
 	pos := 0; _skip_whitespace(text, &pos)
@@ -56,20 +56,20 @@ import "core:time"
 @(private) _parse_string :: proc(text: string, pos: ^int) -> string {_skip_whitespace(text, pos); if pos^>=len(text)||text[pos^]!='"' {return ""}; pos^+=1; start:=pos^; for pos^<len(text)&&text[pos^]!='"' {pos^+=1}; result:=text[start:pos^]; if pos^<len(text){pos^+=1}; return result}
 @(private) _parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, pos); start:=pos^; for pos^<len(text) {c:=text[pos^]; if (c>='0'&&c<='9')||c=='-'||c=='+'||c=='.'||c=='e'||c=='E' {pos^+=1} else {break}}; val,_:=strconv.parse_f64(text[start:pos^]); return val}
 @(private) _parse_array :: proc(text: string, pos: ^int) -> [dynamic]f64 {arr:=make([dynamic]f64); _skip_whitespace(text,pos); if pos^>=len(text)||text[pos^]!='[' {return arr}; pos^+=1; for {_skip_whitespace(text,pos); if pos^>=len(text){break}; if text[pos^]==']' {pos^+=1;break}; if text[pos^]==',' {pos^+=1;continue}; append(&arr,_parse_number(text,pos))}; return arr}
-@(private) _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text,pos); if pos^>=len(text){return}; switch text[pos^] {case '"': _parse_string(text,pos); case '[': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '[': depth+=1; case ']': depth-=1}; pos^+=1}; case '{': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '{': depth+=1; case '}': depth-=1}; pos^+=1}; case: _parse_number(text,pos)}}
+@(private) _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text,pos); if pos^>=len(text){return}; switch text[pos^] {case '"': _parse_string(text,pos); case '[': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '[': depth+=1; case ']': depth-=1}; pos^+=1}; case '{': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '{': depth+=1; case '}': depth-=1}; pos^+=1}; case: for pos^<len(text) {c:=text[pos^]; if c==','||c=='}'||c==']'||c==' '||c=='\t'||c=='\n'||c=='\r' {break}; pos^+=1}}}
 
-@(private) _sim_init :: proc(sm: ^state.StateMachine) {
+@(private) _sim_init :: proc(state_machine: ^state.StateMachine) {
 	config := foundation.config_get()
 	switch config.system_creation_mode {
-	case .RANDOM: sim_random_init(sm)
-	case .FILE: sim_file_init(sm)
+	case .RANDOM: sim_random_init(state_machine)
+	case .FILE: sim_file_init(state_machine)
 	}
-	sm.objects = g_objects; sm.renderer.objects = g_objects
-	graphic.renderer_update_objects(sm.renderer)
+	state_machine.objects = g_objects; state_machine.renderer.objects = g_objects
+	graphic.renderer_update_objects(state_machine.renderer)
 	g_physic_system = physic.physic_system_create(g_objects, config)
 }
 
-@(private) _sim_end :: proc(sm: ^state.StateMachine) {
+@(private) _sim_end :: proc(state_machine: ^state.StateMachine) {
 	physic.physic_system_destroy(&g_physic_system)
 	delete(g_objects^); g_objects = nil
 }
@@ -77,8 +77,8 @@ import "core:time"
 @(private) sim_file_init :: proc(sm: ^state.StateMachine) {
 	config := foundation.config_get()
 	path := strings.concatenate({"./scenes/", config.filename}, context.temp_allocator)
-	objects, ok := _read_json_scene(path)
-	if !ok || objects == nil {log.errorf("Failed to load scene: %s", path); objects = new([dynamic]physic.PhysicObject)}
+	objects, success := _read_json_scene(path)
+	if !success || objects == nil {log.errorf("Failed to load scene: %s", path); objects = new([dynamic]physic.PhysicObject)}
 	g_objects = objects
 }
 
@@ -98,21 +98,21 @@ main :: proc() {
 		logger := log.create_console_logger(); context.logger = logger
 	}
 	log.infof("Gravity Simulator - Odin Edition")
-	window, win_ok := graphic.window_create(1280, 720)
-	if !win_ok {log.errorf("Failed to create window!"); return}
+	window, window_ok := graphic.window_create(1280, 720)
+	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
 
 	frame_time: f32; tick_time: f32
-	renderer, render_ok := graphic.renderer_create(window, nil, &frame_time, &tick_time)
-	if !render_ok {log.errorf("Failed to create renderer!"); return}
+	renderer, renderer_ok := graphic.renderer_create(window, nil, &frame_time, &tick_time)
+	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 
 	graphic.input_subscribe(&window.input, &renderer.camera)
-	cfg := foundation.config_get()
-	sm := state.state_machine_create(renderer, nil, cfg, &frame_time, &tick_time, _sim_init, _sim_end)
+	config := foundation.config_get()
+	sm := state.state_machine_create(renderer, nil, config, &frame_time, &tick_time, _sim_init, _sim_end)
 
-	renderer.draw_ui = proc(ud: rawptr) {
-		sm := (^state.StateMachine)(ud)
+	renderer.draw_ui = proc(user_data: rawptr) {
+		sm := (^state.StateMachine)(user_data)
 		state.state_machine_frame(sm)
 	}
 	renderer.draw_ui_data = &sm
@@ -121,15 +121,15 @@ main :: proc() {
 	for !graphic.window_should_close(window) {
 		graphic.window_poll_events()
 		now := time.tick_now()
-		delta_ms := f32(time.duration_milliseconds(time.tick_diff(last_tick, now)))
-		delta_s := f32(time.duration_seconds(time.tick_diff(last_tick, now)))
-		last_tick = now; frame_time = delta_ms
+		delta_milliseconds := f32(time.duration_milliseconds(time.tick_diff(last_tick, now)))
+		delta_seconds := f32(time.duration_seconds(time.tick_diff(last_tick, now)))
+		last_tick = now; frame_time = delta_milliseconds
 
 		if g_objects != nil {
 			config := foundation.config_get()
-			dt := delta_s * config.time; if dt < 0.000001 {dt = 0.016}
+			delta_time := delta_seconds * config.time; if delta_time < 0.000001 {delta_time = 0.016}
 			tick_start := time.tick_now()
-			physic.physic_system_update(&g_physic_system, dt, g_objects)
+			physic.physic_system_update(&g_physic_system, delta_time, g_objects)
 			tick_time = f32(time.duration_microseconds(time.tick_diff(tick_start, time.tick_now())))
 		}
 

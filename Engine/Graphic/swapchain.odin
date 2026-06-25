@@ -21,129 +21,129 @@ SwapChain :: struct {
 	in_flight_fences:      [dynamic]vulkan.Fence,
 }
 
-swapchain_create :: proc(gpu: ^GPU, window: ^Window) -> (s: SwapChain, ok: bool) {
+swapchain_create :: proc(gpu: ^GPU, window: ^Window) -> (self: SwapChain, ok: bool) {
 	log.debugf("[VULKAN] SwapChain initialization...")
-	s.gpu = gpu; s.window = window
+	self.gpu = gpu; self.window = window
 	log.debugf("[VULKAN]   Creating swap chain...")
-	if !_swapchain_create(&s) {return {}, false}
+	if !_swapchain_create(&self) {return {}, false}
 	log.debugf("[VULKAN]   Creating image views...")
-	_swapchain_create_image_views(&s)
-	log.debugf("[VULKAN]     Created %d image views", len(s.image_views))
+	_swapchain_create_image_views(&self)
+	log.debugf("[VULKAN]     Created %d image views", len(self.image_views))
 	log.debugf("[VULKAN]   Creating render pass...")
-	_swapchain_create_render_pass(&s)
+	_swapchain_create_render_pass(&self)
 	log.debugf("[VULKAN]     Render pass created")
 	log.debugf("[VULKAN]   Creating depth resources...")
-	_swapchain_create_depth_resources(&s)
+	_swapchain_create_depth_resources(&self)
 	log.debugf("[VULKAN]     Depth resources created")
 	log.debugf("[VULKAN]   Creating framebuffers...")
-	_swapchain_create_framebuffers(&s)
-	log.debugf("[VULKAN]     Created %d framebuffers", len(s.framebuffers))
+	_swapchain_create_framebuffers(&self)
+	log.debugf("[VULKAN]     Created %d framebuffers", len(self.framebuffers))
 	log.debugf("[VULKAN]   Creating sync objects...")
-	_swapchain_create_sync_objects(&s)
+	_swapchain_create_sync_objects(&self)
 	log.debugf("[VULKAN]     Sync objects created (%d frames in flight)", MAX_FRAMES_IN_FLIGHT)
 	log.debugf("[VULKAN]   SwapChain ready")
-	return s, true
+	return self, true
 }
 
-swapchain_destroy :: proc(s: ^SwapChain) {
+swapchain_destroy :: proc(self: ^SwapChain) {
 	log.debugf("[VULKAN] Destroying SwapChain...")
-	gpu := s.gpu
-	for &sema in s.image_available_semas {vulkan.DestroySemaphore(gpu.device, sema, nil)}
-	for &sema in s.render_finished_semas {vulkan.DestroySemaphore(gpu.device, sema, nil)}
-	for &fence in s.in_flight_fences {vulkan.DestroyFence(gpu.device, fence, nil)}
-	for &fb in s.framebuffers {vulkan.DestroyFramebuffer(gpu.device, fb, nil)}
-	vulkan.DestroyImageView(gpu.device, s.depth_image_view, nil)
-	vulkan.DestroyImage(gpu.device, s.depth_image, nil)
-	vulkan.FreeMemory(gpu.device, s.depth_image_memory, nil)
-	vulkan.DestroyRenderPass(gpu.device, s.render_pass, nil)
-	for &iv in s.image_views {vulkan.DestroyImageView(gpu.device, iv, nil)}
-	vulkan.DestroySwapchainKHR(gpu.device, s.handle, nil)
-	delete(s.images); delete(s.image_views); delete(s.framebuffers)
-	delete(s.image_available_semas); delete(s.render_finished_semas); delete(s.in_flight_fences)
+	gpu := self.gpu
+	for &semaphore in self.image_available_semas {vulkan.DestroySemaphore(gpu.device, semaphore, nil)}
+	for &semaphore in self.render_finished_semas {vulkan.DestroySemaphore(gpu.device, semaphore, nil)}
+	for &fence in self.in_flight_fences {vulkan.DestroyFence(gpu.device, fence, nil)}
+	for &framebuffer in self.framebuffers {vulkan.DestroyFramebuffer(gpu.device, framebuffer, nil)}
+	vulkan.DestroyImageView(gpu.device, self.depth_image_view, nil)
+	vulkan.DestroyImage(gpu.device, self.depth_image, nil)
+	vulkan.FreeMemory(gpu.device, self.depth_image_memory, nil)
+	vulkan.DestroyRenderPass(gpu.device, self.render_pass, nil)
+	for &image_view in self.image_views {vulkan.DestroyImageView(gpu.device, image_view, nil)}
+	vulkan.DestroySwapchainKHR(gpu.device, self.handle, nil)
+	delete(self.images); delete(self.image_views); delete(self.framebuffers)
+	delete(self.image_available_semas); delete(self.render_finished_semas); delete(self.in_flight_fences)
 	log.debugf("[VULKAN]   SwapChain destroyed")
 }
 
-swapchain_recreate :: proc(s: ^SwapChain) {
+swapchain_recreate :: proc(self: ^SwapChain) {
 	log.debugf("[VULKAN] Recreating SwapChain...")
-	gpu_wait(s.gpu)
-	swapchain_destroy(s)
-	if !_swapchain_create(s) {log.errorf("[VULKAN] Failed to recreate swapchain!")}
-	_swapchain_create_image_views(s)
-	_swapchain_create_render_pass(s)
-	_swapchain_create_depth_resources(s)
-	_swapchain_create_framebuffers(s)
-	_swapchain_create_sync_objects(s)
+	gpu_wait(self.gpu)
+	swapchain_destroy(self)
+	if !_swapchain_create(self) {log.errorf("[VULKAN] Failed to recreate swapchain!")}
+	_swapchain_create_image_views(self)
+	_swapchain_create_render_pass(self)
+	_swapchain_create_depth_resources(self)
+	_swapchain_create_framebuffers(self)
+	_swapchain_create_sync_objects(self)
 	log.debugf("[VULKAN]   SwapChain recreated")
 }
 
-swapchain_acquire_next :: proc(s: ^SwapChain, current_frame: u32) -> (vulkan.Result, u32) {
+swapchain_acquire_next :: proc(self: ^SwapChain, current_frame: u32) -> (vulkan.Result, u32) {
 	image_index: u32
-	result := vulkan.AcquireNextImageKHR(s.gpu.device, s.handle, max(u64), s.image_available_semas[current_frame], 0, &image_index)
+	result := vulkan.AcquireNextImageKHR(self.gpu.device, self.handle, max(u64), self.image_available_semas[current_frame], 0, &image_index)
 	return result, image_index
 }
 
-swapchain_reset_fences :: proc(s: ^SwapChain, current_frame: u32) {
-	vulkan.WaitForFences(s.gpu.device, 1, &s.in_flight_fences[current_frame], true, max(u64))
-	vulkan.ResetFences(s.gpu.device, 1, &s.in_flight_fences[current_frame])
+swapchain_reset_fences :: proc(self: ^SwapChain, current_frame: u32) {
+	vulkan.WaitForFences(self.gpu.device, 1, &self.in_flight_fences[current_frame], true, max(u64))
+	vulkan.ResetFences(self.gpu.device, 1, &self.in_flight_fences[current_frame])
 }
 
-swapchain_begin_render_pass :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, image_index: u32) {
+swapchain_begin_render_pass :: proc(self: ^SwapChain, command_buffer: vulkan.CommandBuffer, image_index: u32) {
 	clear_color := vulkan.ClearValue{color = vulkan.ClearColorValue{float32 = {0, 0, 0, 1}}}
 	clear_depth := vulkan.ClearValue{depthStencil = vulkan.ClearDepthStencilValue{depth = 1, stencil = 0}}
 	clear_values := [?]vulkan.ClearValue{clear_color, clear_depth}
 
 	render_info := vulkan.RenderPassBeginInfo{
 		sType = .RENDER_PASS_BEGIN_INFO,
-		renderPass = s.render_pass,
-		framebuffer = s.framebuffers[image_index],
-		renderArea = vulkan.Rect2D{offset = {0, 0}, extent = s.extent},
+		renderPass = self.render_pass,
+		framebuffer = self.framebuffers[image_index],
+		renderArea = vulkan.Rect2D{offset = {0, 0}, extent = self.extent},
 		clearValueCount = 2,
 		pClearValues = &clear_values[0],
 	}
-	vulkan.CmdBeginRenderPass(cmd, &render_info, .INLINE)
+	vulkan.CmdBeginRenderPass(command_buffer, &render_info, .INLINE)
 
-	viewport := vulkan.Viewport{width = f32(s.extent.width), height = f32(s.extent.height), minDepth = 0, maxDepth = 1}
-	vulkan.CmdSetViewport(cmd, 0, 1, &viewport)
-	scissor := vulkan.Rect2D{extent = s.extent}
-	vulkan.CmdSetScissor(cmd, 0, 1, &scissor)
+	viewport := vulkan.Viewport{width = f32(self.extent.width), height = f32(self.extent.height), minDepth = 0, maxDepth = 1}
+	vulkan.CmdSetViewport(command_buffer, 0, 1, &viewport)
+	scissor := vulkan.Rect2D{extent = self.extent}
+	vulkan.CmdSetScissor(command_buffer, 0, 1, &scissor)
 }
 
-swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current_frame, image_index: u32) -> vulkan.Result {
-	cmd_copy := cmd
+swapchain_queue_submit :: proc(self: ^SwapChain, command_buffer: vulkan.CommandBuffer, current_frame, image_index_param: u32) -> vulkan.Result {
+	cmd_copy := command_buffer
 	wait_stages := [?]vulkan.PipelineStageFlags{{.COLOR_ATTACHMENT_OUTPUT}}
 	submit_info := vulkan.SubmitInfo{
 		sType = .SUBMIT_INFO,
 		waitSemaphoreCount = 1,
-		pWaitSemaphores = &s.image_available_semas[current_frame],
+		pWaitSemaphores = &self.image_available_semas[current_frame],
 		pWaitDstStageMask = &wait_stages[0],
 		commandBufferCount = 1,
 		pCommandBuffers = &cmd_copy,
 		signalSemaphoreCount = 1,
-		pSignalSemaphores = &s.render_finished_semas[current_frame],
+		pSignalSemaphores = &self.render_finished_semas[current_frame],
 	}
-	if vulkan.QueueSubmit(s.gpu.graphics_queue, 1, &submit_info, s.in_flight_fences[current_frame]) != .SUCCESS {
+	if vulkan.QueueSubmit(self.gpu.graphics_queue, 1, &submit_info, self.in_flight_fences[current_frame]) != .SUCCESS {
 		log.errorf("[VULKAN] Failed to submit!")
 		return .ERROR_UNKNOWN
 	}
-	img_idx := image_index
+	image_index := image_index_param
 	present_info := vulkan.PresentInfoKHR{
 		sType = .PRESENT_INFO_KHR,
 		waitSemaphoreCount = 1,
-		pWaitSemaphores = &s.render_finished_semas[current_frame],
+		pWaitSemaphores = &self.render_finished_semas[current_frame],
 		swapchainCount = 1,
-		pSwapchains = &s.handle,
-		pImageIndices = &img_idx,
+		pSwapchains = &self.handle,
+		pImageIndices = &image_index,
 	}
-	return vulkan.QueuePresentKHR(s.gpu.present_queue, &present_info)
+	return vulkan.QueuePresentKHR(self.gpu.present_queue, &present_info)
 }
 
-@(private) _swapchain_create :: proc(s: ^SwapChain) -> bool {
-	support := _gpu_query_swap_chain_support(s.gpu, s.gpu.physical_device)
+@(private) _swapchain_create :: proc(self: ^SwapChain) -> bool {
+	support := _gpu_query_swap_chain_support(self.gpu, self.gpu.physical_device)
 	defer {delete(support.formats); delete(support.present_modes)}
 
 	surface_format := _choose_swap_surface_format(support.formats)
 	present_mode := _choose_swap_present_mode(support.present_modes)
-	extent := _choose_swap_extent(s.window, support.capabilities)
+	extent := _choose_swap_extent(self.window, support.capabilities)
 
 	image_count := support.capabilities.minImageCount + 1
 	if support.capabilities.maxImageCount > 0 && image_count > support.capabilities.maxImageCount {
@@ -152,7 +152,7 @@ swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current
 
 	create_info := vulkan.SwapchainCreateInfoKHR{
 		sType = .SWAPCHAIN_CREATE_INFO_KHR,
-		surface = s.gpu.surface,
+		surface = self.gpu.surface,
 		minImageCount = image_count,
 		imageFormat = surface_format.format,
 		imageColorSpace = surface_format.colorSpace,
@@ -167,36 +167,36 @@ swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current
 		oldSwapchain = 0,
 	}
 
-	if vulkan.CreateSwapchainKHR(s.gpu.device, &create_info, nil, &s.handle) != .SUCCESS {
+	if vulkan.CreateSwapchainKHR(self.gpu.device, &create_info, nil, &self.handle) != .SUCCESS {
 		log.errorf("[VULKAN] Failed to create swapchain!")
 		return false
 	}
 
-	s.image_format = surface_format.format; s.extent = extent
-	img_count: u32; vulkan.GetSwapchainImagesKHR(s.gpu.device, s.handle, &img_count, nil)
-	s.images = make([dynamic]vulkan.Image, int(img_count))
-	vulkan.GetSwapchainImagesKHR(s.gpu.device, s.handle, &img_count, raw_data(s.images))
+	self.image_format = surface_format.format; self.extent = extent
+	img_count: u32; vulkan.GetSwapchainImagesKHR(self.gpu.device, self.handle, &img_count, nil)
+	self.images = make([dynamic]vulkan.Image, int(img_count))
+	vulkan.GetSwapchainImagesKHR(self.gpu.device, self.handle, &img_count, raw_data(self.images))
 	log.debugf("[VULKAN]     Format: %v  Extent: %d x %d", surface_format.format, extent.width, extent.height)
 	return true
 }
 
-@(private) _swapchain_create_image_views :: proc(s: ^SwapChain) {
-	s.image_views = make([dynamic]vulkan.ImageView, len(s.images))
-	for image, i in s.images {
+@(private) _swapchain_create_image_views :: proc(self: ^SwapChain) {
+	self.image_views = make([dynamic]vulkan.ImageView, len(self.images))
+	for image, i in self.images {
 		view_info := vulkan.ImageViewCreateInfo{
 			sType = .IMAGE_VIEW_CREATE_INFO,
 			image = image,
 			viewType = .D2,
-			format = s.image_format,
+			format = self.image_format,
 			subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.COLOR}, levelCount = 1, layerCount = 1},
 		}
-		vulkan.CreateImageView(s.gpu.device, &view_info, nil, &s.image_views[i])
+		vulkan.CreateImageView(self.gpu.device, &view_info, nil, &self.image_views[i])
 	}
 }
 
-@(private) _swapchain_create_render_pass :: proc(s: ^SwapChain) {
+@(private) _swapchain_create_render_pass :: proc(self: ^SwapChain) {
 	color_attach := vulkan.AttachmentDescription{
-		format = s.image_format,
+		format = self.image_format,
 		samples = {._1},
 		loadOp = .CLEAR,
 		storeOp = .STORE,
@@ -206,7 +206,7 @@ swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current
 		finalLayout = .PRESENT_SRC_KHR,
 	}
 	depth_attach := vulkan.AttachmentDescription{
-		format = _find_depth_format(s.gpu),
+		format = _find_depth_format(self.gpu),
 		samples = {._1},
 		loadOp = .CLEAR,
 		storeOp = .DONT_CARE,
@@ -221,17 +221,17 @@ swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current
 	dependency := vulkan.SubpassDependency{srcSubpass = vulkan.SUBPASS_EXTERNAL, dstSubpass = 0, srcStageMask = {.COLOR_ATTACHMENT_OUTPUT, .LATE_FRAGMENT_TESTS}, srcAccessMask = {.DEPTH_STENCIL_ATTACHMENT_WRITE}, dstStageMask = {.COLOR_ATTACHMENT_OUTPUT, .EARLY_FRAGMENT_TESTS}, dstAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE}}
 	attachments := [?]vulkan.AttachmentDescription{color_attach, depth_attach}
 	render_pass_info := vulkan.RenderPassCreateInfo{sType = .RENDER_PASS_CREATE_INFO, attachmentCount = 2, pAttachments = &attachments[0], subpassCount = 1, pSubpasses = &subpass, dependencyCount = 1, pDependencies = &dependency}
-	vulkan.CreateRenderPass(s.gpu.device, &render_pass_info, nil, &s.render_pass)
+	vulkan.CreateRenderPass(self.gpu.device, &render_pass_info, nil, &self.render_pass)
 }
 
-@(private) _swapchain_create_depth_resources :: proc(s: ^SwapChain) {
-	depth_format := _find_depth_format(s.gpu)
+@(private) _swapchain_create_depth_resources :: proc(self: ^SwapChain) {
+	depth_format := _find_depth_format(self.gpu)
 
 	image_info := vulkan.ImageCreateInfo{
 		sType         = .IMAGE_CREATE_INFO,
 		imageType     = .D2,
 		format        = depth_format,
-		extent        = vulkan.Extent3D{width = s.extent.width, height = s.extent.height, depth = 1},
+		extent        = vulkan.Extent3D{width = self.extent.width, height = self.extent.height, depth = 1},
 		mipLevels     = 1,
 		arrayLayers   = 1,
 		samples       = {._1},
@@ -240,61 +240,61 @@ swapchain_queue_submit :: proc(s: ^SwapChain, cmd: vulkan.CommandBuffer, current
 		sharingMode   = .EXCLUSIVE,
 		initialLayout = .UNDEFINED,
 	}
-	if vulkan.CreateImage(s.gpu.device, &image_info, nil, &s.depth_image) != .SUCCESS {
+	if vulkan.CreateImage(self.gpu.device, &image_info, nil, &self.depth_image) != .SUCCESS {
 		log.errorf("[VULKAN] Failed to create depth image!")
 		return
 	}
 
 	mem_reqs: vulkan.MemoryRequirements
-	vulkan.GetImageMemoryRequirements(s.gpu.device, s.depth_image, &mem_reqs)
-	mem_idx, found := gpu_find_memory_type(s.gpu, mem_reqs.memoryTypeBits, {.DEVICE_LOCAL})
+	vulkan.GetImageMemoryRequirements(self.gpu.device, self.depth_image, &mem_reqs)
+	memory_index, found := gpu_find_memory_type(self.gpu, mem_reqs.memoryTypeBits, {.DEVICE_LOCAL})
 	assert(found)
 
 	alloc_info := vulkan.MemoryAllocateInfo{
 		sType           = .MEMORY_ALLOCATE_INFO,
 		allocationSize  = mem_reqs.size,
-		memoryTypeIndex = mem_idx,
+		memoryTypeIndex = memory_index,
 	}
-	vulkan.AllocateMemory(s.gpu.device, &alloc_info, nil, &s.depth_image_memory)
-	vulkan.BindImageMemory(s.gpu.device, s.depth_image, s.depth_image_memory, 0)
+	vulkan.AllocateMemory(self.gpu.device, &alloc_info, nil, &self.depth_image_memory)
+	vulkan.BindImageMemory(self.gpu.device, self.depth_image, self.depth_image_memory, 0)
 
 	view_info := vulkan.ImageViewCreateInfo{
 		sType = .IMAGE_VIEW_CREATE_INFO,
-		image = s.depth_image,
+		image = self.depth_image,
 		viewType = .D2,
 		format = depth_format,
 		subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.DEPTH}, levelCount = 1, layerCount = 1},
 	}
-	vulkan.CreateImageView(s.gpu.device, &view_info, nil, &s.depth_image_view)
+	vulkan.CreateImageView(self.gpu.device, &view_info, nil, &self.depth_image_view)
 }
 
-@(private) _swapchain_create_framebuffers :: proc(s: ^SwapChain) {
-	s.framebuffers = make([dynamic]vulkan.Framebuffer, len(s.image_views))
-	for view, i in s.image_views {
-		attachments := [?]vulkan.ImageView{view, s.depth_image_view}
-		fb_info := vulkan.FramebufferCreateInfo{sType = .FRAMEBUFFER_CREATE_INFO, renderPass = s.render_pass, attachmentCount = 2, pAttachments = &attachments[0], width = s.extent.width, height = s.extent.height, layers = 1}
-		vulkan.CreateFramebuffer(s.gpu.device, &fb_info, nil, &s.framebuffers[i])
+@(private) _swapchain_create_framebuffers :: proc(self: ^SwapChain) {
+	self.framebuffers = make([dynamic]vulkan.Framebuffer, len(self.image_views))
+	for view, i in self.image_views {
+		attachments := [?]vulkan.ImageView{view, self.depth_image_view}
+		framebuffer_info := vulkan.FramebufferCreateInfo{sType = .FRAMEBUFFER_CREATE_INFO, renderPass = self.render_pass, attachmentCount = 2, pAttachments = &attachments[0], width = self.extent.width, height = self.extent.height, layers = 1}
+		vulkan.CreateFramebuffer(self.gpu.device, &framebuffer_info, nil, &self.framebuffers[i])
 	}
 }
 
-@(private) _swapchain_create_sync_objects :: proc(s: ^SwapChain) {
-	s.image_available_semas = make([dynamic]vulkan.Semaphore, MAX_FRAMES_IN_FLIGHT)
-	s.render_finished_semas = make([dynamic]vulkan.Semaphore, MAX_FRAMES_IN_FLIGHT)
-	s.in_flight_fences = make([dynamic]vulkan.Fence, MAX_FRAMES_IN_FLIGHT)
+@(private) _swapchain_create_sync_objects :: proc(self: ^SwapChain) {
+	self.image_available_semas = make([dynamic]vulkan.Semaphore, MAX_FRAMES_IN_FLIGHT)
+	self.render_finished_semas = make([dynamic]vulkan.Semaphore, MAX_FRAMES_IN_FLIGHT)
+	self.in_flight_fences = make([dynamic]vulkan.Fence, MAX_FRAMES_IN_FLIGHT)
 	for i in 0..<MAX_FRAMES_IN_FLIGHT {
-		vulkan.CreateSemaphore(s.gpu.device, &vulkan.SemaphoreCreateInfo{sType = .SEMAPHORE_CREATE_INFO}, nil, &s.image_available_semas[i])
-		vulkan.CreateSemaphore(s.gpu.device, &vulkan.SemaphoreCreateInfo{sType = .SEMAPHORE_CREATE_INFO}, nil, &s.render_finished_semas[i])
-		vulkan.CreateFence(s.gpu.device, &vulkan.FenceCreateInfo{sType = .FENCE_CREATE_INFO, flags = {.SIGNALED}}, nil, &s.in_flight_fences[i])
+		vulkan.CreateSemaphore(self.gpu.device, &vulkan.SemaphoreCreateInfo{sType = .SEMAPHORE_CREATE_INFO}, nil, &self.image_available_semas[i])
+		vulkan.CreateSemaphore(self.gpu.device, &vulkan.SemaphoreCreateInfo{sType = .SEMAPHORE_CREATE_INFO}, nil, &self.render_finished_semas[i])
+		vulkan.CreateFence(self.gpu.device, &vulkan.FenceCreateInfo{sType = .FENCE_CREATE_INFO, flags = {.SIGNALED}}, nil, &self.in_flight_fences[i])
 	}
 }
 
 _choose_swap_surface_format :: proc(formats: [dynamic]vulkan.SurfaceFormatKHR) -> vulkan.SurfaceFormatKHR {
-	for f in formats {if f.format == .B8G8R8A8_SRGB && f.colorSpace == .SRGB_NONLINEAR {return f}}
+	for format in formats {if format.format == .B8G8R8A8_SRGB && format.colorSpace == .SRGB_NONLINEAR {return format}}
 	return formats[0]
 }
 
 _choose_swap_present_mode :: proc(modes: [dynamic]vulkan.PresentModeKHR) -> vulkan.PresentModeKHR {
-	for m in modes {if m == .MAILBOX {return m}}
+	for mode in modes {if mode == .MAILBOX {return mode}}
 	return .FIFO
 }
 

@@ -33,55 +33,55 @@ gpu_create :: proc(window: ^Window) -> (g: GPU, ok: bool) {
 	return g, true
 }
 
-gpu_destroy :: proc(g: ^GPU) {
+gpu_destroy :: proc(self: ^GPU) {
 	log.debugf("[VULKAN] Destroying GPU...")
-	if g.device != nil {vulkan.DeviceWaitIdle(g.device); vulkan.DestroyDevice(g.device, nil)}
-	if g.surface != 0 {vulkan.DestroySurfaceKHR(g.instance, g.surface, nil)}
-	if g.instance != nil {vulkan.DestroyInstance(g.instance, nil)}
+	if self.device != nil {vulkan.DeviceWaitIdle(self.device); vulkan.DestroyDevice(self.device, nil)}
+	if self.surface != 0 {vulkan.DestroySurfaceKHR(self.instance, self.surface, nil)}
+	if self.instance != nil {vulkan.DestroyInstance(self.instance, nil)}
 	log.debugf("[VULKAN]   GPU destroyed")
 }
 
-gpu_wait :: proc(g: ^GPU) {vulkan.DeviceWaitIdle(g.device)}
+gpu_wait :: proc(self: ^GPU) {vulkan.DeviceWaitIdle(self.device)}
 
-gpu_find_memory_type :: proc(g: ^GPU, type_filter: u32, properties: vulkan.MemoryPropertyFlags) -> (u32, bool) {
-	mem_properties: vulkan.PhysicalDeviceMemoryProperties; vulkan.GetPhysicalDeviceMemoryProperties(g.physical_device, &mem_properties)
+gpu_find_memory_type :: proc(self: ^GPU, type_filter: u32, properties: vulkan.MemoryPropertyFlags) -> (u32, bool) {
+	mem_properties: vulkan.PhysicalDeviceMemoryProperties; vulkan.GetPhysicalDeviceMemoryProperties(self.physical_device, &mem_properties)
 	for i in 0..<mem_properties.memoryTypeCount {if (type_filter & (1<<i)) != 0 && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties {return i, true}}
 	return 0, false
 }
 
-gpu_create_buffer :: proc(g: ^GPU, size: vulkan.DeviceSize, usage: vulkan.BufferUsageFlags, props: vulkan.MemoryPropertyFlags) -> (vulkan.Buffer, vulkan.DeviceMemory, bool) {
+gpu_create_buffer :: proc(self: ^GPU, size: vulkan.DeviceSize, usage: vulkan.BufferUsageFlags, props: vulkan.MemoryPropertyFlags) -> (vulkan.Buffer, vulkan.DeviceMemory, bool) {
 	buf_info := vulkan.BufferCreateInfo{sType=.BUFFER_CREATE_INFO,size=size,usage=usage,sharingMode=.EXCLUSIVE}
-	buf: vulkan.Buffer
-	mem: vulkan.DeviceMemory
-	if vulkan.CreateBuffer(g.device, &buf_info, nil, &buf) != .SUCCESS {return {}, {}, false}
-	mem_reqs: vulkan.MemoryRequirements; vulkan.GetBufferMemoryRequirements(g.device, buf, &mem_reqs)
-	idx, fd := gpu_find_memory_type(g, mem_reqs.memoryTypeBits, props); if !fd {return {}, {}, false}
+	buffer: vulkan.Buffer
+	memory: vulkan.DeviceMemory
+	if vulkan.CreateBuffer(self.device, &buf_info, nil, &buffer) != .SUCCESS {return {}, {}, false}
+	mem_reqs: vulkan.MemoryRequirements; vulkan.GetBufferMemoryRequirements(self.device, buffer, &mem_reqs)
+	idx, found := gpu_find_memory_type(self, mem_reqs.memoryTypeBits, props); if !found {return {}, {}, false}
 	alloc := vulkan.MemoryAllocateInfo{sType=.MEMORY_ALLOCATE_INFO,allocationSize=mem_reqs.size,memoryTypeIndex=idx}
-	if vulkan.AllocateMemory(g.device, &alloc, nil, &mem) != .SUCCESS {return {}, {}, false}
-	vulkan.BindBufferMemory(g.device, buf, mem, 0)
-	return buf, mem, true
+	if vulkan.AllocateMemory(self.device, &alloc, nil, &memory) != .SUCCESS {return {}, {}, false}
+	vulkan.BindBufferMemory(self.device, buffer, memory, 0)
+	return buffer, memory, true
 }
 
-gpu_copy_buffer :: proc(g: ^GPU, src, dst: vulkan.Buffer, size: vulkan.DeviceSize, cmd: vulkan.CommandBuffer) {
-	cr := vulkan.BufferCopy{srcOffset=0,dstOffset=0,size=size}; vulkan.CmdCopyBuffer(cmd, src, dst, 1, &cr)
+gpu_copy_buffer :: proc(self: ^GPU, source, destination: vulkan.Buffer, size: vulkan.DeviceSize, cmd: vulkan.CommandBuffer) {
+	copy_region := vulkan.BufferCopy{srcOffset=0,dstOffset=0,size=size}; vulkan.CmdCopyBuffer(cmd, source, destination, 1, &copy_region)
 }
 
-gpu_get_aligned_ubo_size :: proc(g: ^GPU) -> vulkan.DeviceSize {raw:=vulkan.DeviceSize(size_of(UniformBufferObject)); align:=g.ubo_alignment; if align==0 {align=256}; return ((raw+align-1)/align)*align}
-gpu_get_instance :: proc(g: ^GPU) -> vulkan.Instance {return g.instance}
-gpu_get_device :: proc(g: ^GPU) -> vulkan.Device {return g.device}
-gpu_get_physical_device :: proc(g: ^GPU) -> vulkan.PhysicalDevice {return g.physical_device}
-gpu_get_graphics_queue :: proc(g: ^GPU) -> vulkan.Queue {return g.graphics_queue}
-gpu_get_queue_family :: proc(g: ^GPU) -> u32 {return g.graphics_queue_family_index}
+gpu_get_aligned_ubo_size :: proc(self: ^GPU) -> vulkan.DeviceSize {raw_size:=vulkan.DeviceSize(size_of(UniformBufferObject)); alignment:=self.ubo_alignment; if alignment==0 {alignment=256}; return ((raw_size+alignment-1)/alignment)*alignment}
+gpu_get_instance :: proc(self: ^GPU) -> vulkan.Instance {return self.instance}
+gpu_get_device :: proc(self: ^GPU) -> vulkan.Device {return self.device}
+gpu_get_physical_device :: proc(self: ^GPU) -> vulkan.PhysicalDevice {return self.physical_device}
+gpu_get_graphics_queue :: proc(self: ^GPU) -> vulkan.Queue {return self.graphics_queue}
+gpu_get_queue_family :: proc(self: ^GPU) -> u32 {return self.graphics_queue_family_index}
 
-@(private) _gpu_create_instance :: proc(g: ^GPU) -> bool {
+@(private) _gpu_create_instance :: proc(self: ^GPU) -> bool {
 	log.debugf("[VULKAN]   Creating Vulkan instance...")
 	app_info := vulkan.ApplicationInfo{sType=.APPLICATION_INFO,pApplicationName="Gravity Simulation",applicationVersion=vulkan.MAKE_VERSION(1,0,0),pEngineName="No Engine",engineVersion=vulkan.MAKE_VERSION(1,0,0),apiVersion=vulkan.API_VERSION_1_1}
-		glfw_exts := glfw.GetRequiredInstanceExtensions(); ec := len(glfw_exts); en := make([dynamic]cstring, ec); defer delete(en)
-		for ext,i in glfw_exts {en[i]=ext; log.debugf("[VULKAN]     Extension: %s", string(ext))}
-		ci := vulkan.InstanceCreateInfo{sType=.INSTANCE_CREATE_INFO,pApplicationInfo=&app_info,enabledExtensionCount=u32(ec),ppEnabledExtensionNames=raw_data(en)}
-	log.debugf("[VULKAN]     Calling vkCreateInstance (ext_count=%d)...", ec)
-	r := vulkan.CreateInstance(&ci, nil, &g.instance); log.debugf("[VULKAN]     vkCreateInstance returned: %v", r)
-	if r != .SUCCESS {log.errorf("[VULKAN]     FAILED: vkCreateInstance (result=%v)", r); return false}
+		glfw_exts := glfw.GetRequiredInstanceExtensions(); extension_count := len(glfw_exts); extension_names := make([dynamic]cstring, extension_count); defer delete(extension_names)
+		for extension,i in glfw_exts {extension_names[i]=extension; log.debugf("[VULKAN]     Extension: %s", string(extension))}
+		create_info := vulkan.InstanceCreateInfo{sType=.INSTANCE_CREATE_INFO,pApplicationInfo=&app_info,enabledExtensionCount=u32(extension_count),ppEnabledExtensionNames=raw_data(extension_names)}
+	log.debugf("[VULKAN]     Calling vkCreateInstance (ext_count=%d)...", extension_count)
+	result := vulkan.CreateInstance(&create_info, nil, &self.instance); log.debugf("[VULKAN]     vkCreateInstance returned: %v", result)
+	if result != .SUCCESS {log.errorf("[VULKAN]     FAILED: vkCreateInstance (result=%v)", result); return false}
 	log.debugf("[VULKAN]     Instance created"); return true
 }
 
@@ -89,89 +89,89 @@ SwapChainSupportDetails :: struct {capabilities: vulkan.SurfaceCapabilitiesKHR, 
 QueueFamilyIndices :: struct {graphics_family: Maybe(u32), present_family: Maybe(u32)}
 queue_family_indices_complete :: proc(i: QueueFamilyIndices) -> bool {return i.graphics_family != nil && i.present_family != nil}
 
-@(private) _gpu_pick_physical_device :: proc(g: ^GPU) -> bool {
+@(private) _gpu_pick_physical_device :: proc(self: ^GPU) -> bool {
 	log.debugf("[VULKAN]   Picking physical device...")
-	count: u32; vulkan.EnumeratePhysicalDevices(g.instance, &count, nil)
+	count: u32; vulkan.EnumeratePhysicalDevices(self.instance, &count, nil)
 	if count == 0 {log.errorf("[VULKAN]     No Vulkan-capable GPU found!"); return false}
 	log.debugf("[VULKAN]     Found %d device(s)", count)
 	devices := make([]vulkan.PhysicalDevice, int(count)); defer delete(devices)
-	vulkan.EnumeratePhysicalDevices(g.instance, &count, raw_data(devices))
+	vulkan.EnumeratePhysicalDevices(self.instance, &count, raw_data(devices))
 	best_score := 0; best_device: vulkan.PhysicalDevice
 	for device in devices {
-		score, suitable := _gpu_rate_device(g, device)
+		score, suitable := _gpu_rate_device(self, device)
 		props: vulkan.PhysicalDeviceProperties; vulkan.GetPhysicalDeviceProperties(device, &props)
 		name := string(cstring(&props.deviceName[0]))
 		if suitable {log.debugf("[VULKAN]       %s - score=%d", name, score); if score>best_score {best_score=score; best_device=device}}
 		else {log.debugf("[VULKAN]       %s - skipped", name)}
 	}
 	if best_score == 0 {log.errorf("[VULKAN]     No suitable GPU found!"); return false}
-	g.physical_device = best_device
+	self.physical_device = best_device
 	props: vulkan.PhysicalDeviceProperties; vulkan.GetPhysicalDeviceProperties(best_device, &props)
 	log.infof("GPU: %v", string(cstring(&props.deviceName[0])))
-	g.ubo_alignment = props.limits.minUniformBufferOffsetAlignment
-	log.debugf("[VULKAN]     UBO alignment: %v bytes", g.ubo_alignment)
+	self.ubo_alignment = props.limits.minUniformBufferOffsetAlignment
+	log.debugf("[VULKAN]     UBO alignment: %v bytes", self.ubo_alignment)
 	return true
 }
 
-@(private) _gpu_rate_device :: proc(g: ^GPU, device: vulkan.PhysicalDevice) -> (int, bool) {
-	props: vulkan.PhysicalDeviceProperties; feats: vulkan.PhysicalDeviceFeatures
-	vulkan.GetPhysicalDeviceProperties(device, &props); vulkan.GetPhysicalDeviceFeatures(device, &feats)
-	if !feats.geometryShader {return 0, false}
-	qf := _gpu_find_queue_families(g, device); if !queue_family_indices_complete(qf) {return 0, false}
+@(private) _gpu_rate_device :: proc(self: ^GPU, device: vulkan.PhysicalDevice) -> (int, bool) {
+	props: vulkan.PhysicalDeviceProperties; features: vulkan.PhysicalDeviceFeatures
+	vulkan.GetPhysicalDeviceProperties(device, &props); vulkan.GetPhysicalDeviceFeatures(device, &features)
+	if !features.geometryShader {return 0, false}
+	queue_family := _gpu_find_queue_families(self, device); if !queue_family_indices_complete(queue_family) {return 0, false}
 	if !_gpu_check_device_extensions(device) {return 0, false}
-	sw := _gpu_query_swap_chain_support(g, device); defer {delete(sw.formats); delete(sw.present_modes)}
-	if len(sw.formats)==0||len(sw.present_modes)==0 {return 0, false}
+	swapchain_support := _gpu_query_swap_chain_support(self, device); defer {delete(swapchain_support.formats); delete(swapchain_support.present_modes)}
+	if len(swapchain_support.formats)==0||len(swapchain_support.present_modes)==0 {return 0, false}
 	score := int(props.limits.maxImageDimension2D); if props.deviceType==.DISCRETE_GPU {score+=1000}
 	return score, true
 }
 
-@(private) _gpu_create_logical_device :: proc(g: ^GPU) -> bool {
+@(private) _gpu_create_logical_device :: proc(self: ^GPU) -> bool {
 	log.debugf("[VULKAN]   Creating logical device...")
-	indices := _gpu_find_queue_families(g, g.physical_device)
-	uf: map[u32]struct{}; defer delete(uf); uf[indices.graphics_family.?]={}; uf[indices.present_family.?]={}
-	qp: f32 = 1.0; qi: [dynamic]vulkan.DeviceQueueCreateInfo; defer delete(qi)
-	for family in uf {append(&qi, vulkan.DeviceQueueCreateInfo{sType=.DEVICE_QUEUE_CREATE_INFO,queueFamilyIndex=family,queueCount=1,pQueuePriorities=&qp})}
-	df: vulkan.PhysicalDeviceFeatures
-	ci := vulkan.DeviceCreateInfo{sType=.DEVICE_CREATE_INFO,queueCreateInfoCount=u32(len(qi)),pQueueCreateInfos=raw_data(qi),pEnabledFeatures=&df,enabledExtensionCount=u32(len(DEVICE_EXTENSIONS)),ppEnabledExtensionNames=raw_data(DEVICE_EXTENSIONS)}
-	if vulkan.CreateDevice(g.physical_device, &ci, nil, &g.device) != .SUCCESS {log.errorf("[VULKAN]     FAILED: vkCreateDevice"); return false}
+	indices := _gpu_find_queue_families(self, self.physical_device)
+	unique_families: map[u32]struct{}; defer delete(unique_families); unique_families[indices.graphics_family.?]={}; unique_families[indices.present_family.?]={}
+	queue_priority: f32 = 1.0; queue_infos: [dynamic]vulkan.DeviceQueueCreateInfo; defer delete(queue_infos)
+	for family in unique_families {append(&queue_infos, vulkan.DeviceQueueCreateInfo{sType=.DEVICE_QUEUE_CREATE_INFO,queueFamilyIndex=family,queueCount=1,pQueuePriorities=&queue_priority})}
+	device_features: vulkan.PhysicalDeviceFeatures
+	create_info := vulkan.DeviceCreateInfo{sType=.DEVICE_CREATE_INFO,queueCreateInfoCount=u32(len(queue_infos)),pQueueCreateInfos=raw_data(queue_infos),pEnabledFeatures=&device_features,enabledExtensionCount=u32(len(DEVICE_EXTENSIONS)),ppEnabledExtensionNames=raw_data(DEVICE_EXTENSIONS)}
+	if vulkan.CreateDevice(self.physical_device, &create_info, nil, &self.device) != .SUCCESS {log.errorf("[VULKAN]     FAILED: vkCreateDevice"); return false}
 	log.debugf("[VULKAN]     Logical device created")
-	vulkan.load_proc_addresses_device(g.device)
-	g.graphics_queue_family_index = indices.graphics_family.?
-	vulkan.GetDeviceQueue(g.device, indices.graphics_family.?, 0, &g.graphics_queue)
-	vulkan.GetDeviceQueue(g.device, indices.present_family.?, 0, &g.present_queue)
+	vulkan.load_proc_addresses_device(self.device)
+	self.graphics_queue_family_index = indices.graphics_family.?
+	vulkan.GetDeviceQueue(self.device, indices.graphics_family.?, 0, &self.graphics_queue)
+	vulkan.GetDeviceQueue(self.device, indices.present_family.?, 0, &self.present_queue)
 	log.debugf("[VULKAN]     Graphics queue family: %d  Present queue family: %d", indices.graphics_family.?, indices.present_family.?)
 	return true
 }
 
 @(private) _gpu_check_device_extensions :: proc(device: vulkan.PhysicalDevice) -> bool {
 	count: u32; vulkan.EnumerateDeviceExtensionProperties(device, nil, &count, nil)
-	avail := make([]vulkan.ExtensionProperties, int(count)); defer delete(avail)
-	vulkan.EnumerateDeviceExtensionProperties(device, nil, &count, raw_data(avail))
-	req: map[string]bool; defer delete(req)
-	for ext in DEVICE_EXTENSIONS {req[string(ext)] = true}
-	for ext in avail {n := ext.extensionName; delete_key(&req, string(cstring(&n[0])))}
-	return len(req) == 0
+	available_extensions := make([]vulkan.ExtensionProperties, int(count)); defer delete(available_extensions)
+	vulkan.EnumerateDeviceExtensionProperties(device, nil, &count, raw_data(available_extensions))
+	required_extensions: map[string]bool; defer delete(required_extensions)
+	for extension in DEVICE_EXTENSIONS {required_extensions[string(extension)] = true}
+	for extension in available_extensions {name := extension.extensionName; delete_key(&required_extensions, string(cstring(&name[0])))}
+	return len(required_extensions) == 0
 }
 
-@(private) _gpu_query_swap_chain_support :: proc(g: ^GPU, device: vulkan.PhysicalDevice) -> SwapChainSupportDetails {
+@(private) _gpu_query_swap_chain_support :: proc(self: ^GPU, device: vulkan.PhysicalDevice) -> SwapChainSupportDetails {
 	details: SwapChainSupportDetails
-	vulkan.GetPhysicalDeviceSurfaceCapabilitiesKHR(device, g.window.surface, &details.capabilities)
-	fc: u32; vulkan.GetPhysicalDeviceSurfaceFormatsKHR(device, g.window.surface, &fc, nil)
-	if fc>0 {details.formats=make([dynamic]vulkan.SurfaceFormatKHR, int(fc)); vulkan.GetPhysicalDeviceSurfaceFormatsKHR(device,g.window.surface,&fc,raw_data(details.formats))}
-	mc: u32; vulkan.GetPhysicalDeviceSurfacePresentModesKHR(device, g.window.surface, &mc, nil)
-	if mc>0 {details.present_modes=make([dynamic]vulkan.PresentModeKHR, int(mc)); vulkan.GetPhysicalDeviceSurfacePresentModesKHR(device,g.window.surface,&mc,raw_data(details.present_modes))}
+	vulkan.GetPhysicalDeviceSurfaceCapabilitiesKHR(device, self.window.surface, &details.capabilities)
+	format_count: u32; vulkan.GetPhysicalDeviceSurfaceFormatsKHR(device, self.window.surface, &format_count, nil)
+	if format_count>0 {details.formats=make([dynamic]vulkan.SurfaceFormatKHR, int(format_count)); vulkan.GetPhysicalDeviceSurfaceFormatsKHR(device,self.window.surface,&format_count,raw_data(details.formats))}
+	mode_count: u32; vulkan.GetPhysicalDeviceSurfacePresentModesKHR(device, self.window.surface, &mode_count, nil)
+	if mode_count>0 {details.present_modes=make([dynamic]vulkan.PresentModeKHR, int(mode_count)); vulkan.GetPhysicalDeviceSurfacePresentModesKHR(device,self.window.surface,&mode_count,raw_data(details.present_modes))}
 	return details
 }
 
-@(private) _gpu_find_queue_families :: proc(g: ^GPU, device: vulkan.PhysicalDevice) -> QueueFamilyIndices {
+@(private) _gpu_find_queue_families :: proc(self: ^GPU, device: vulkan.PhysicalDevice) -> QueueFamilyIndices {
 	indices: QueueFamilyIndices
 	count: u32; vulkan.GetPhysicalDeviceQueueFamilyProperties(device, &count, nil)
-	fams := make([]vulkan.QueueFamilyProperties, int(count)); defer delete(fams)
-	vulkan.GetPhysicalDeviceQueueFamilyProperties(device, &count, raw_data(fams))
-	for fam,i in fams {
-		if .GRAPHICS in fam.queueFlags {indices.graphics_family = u32(i)}
-		ps: b32; vulkan.GetPhysicalDeviceSurfaceSupportKHR(device, u32(i), g.window.surface, &ps)
-		if ps {indices.present_family = u32(i)}
+	families := make([]vulkan.QueueFamilyProperties, int(count)); defer delete(families)
+	vulkan.GetPhysicalDeviceQueueFamilyProperties(device, &count, raw_data(families))
+	for family,i in families {
+		if .GRAPHICS in family.queueFlags {indices.graphics_family = u32(i)}
+		present_support: b32; vulkan.GetPhysicalDeviceSurfaceSupportKHR(device, u32(i), self.window.surface, &present_support)
+		if present_support {indices.present_family = u32(i)}
 		if queue_family_indices_complete(indices) {break}
 	}
 	return indices

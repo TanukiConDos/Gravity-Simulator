@@ -15,9 +15,9 @@ physic_system_create :: proc(objects: ^[dynamic]PhysicObject, config: ^found.Con
 	}
 }
 
-physic_system_destroy :: proc(ps: ^PhysicSystem) {}
+physic_system_destroy :: proc(self: ^PhysicSystem) {}
 
-physic_system_update :: proc(ps: ^PhysicSystem, delta_time: f32, objects: ^[dynamic]PhysicObject) {
+physic_system_update :: proc(self: ^PhysicSystem, delta_time: f32, objects: ^[dynamic]PhysicObject) {
 	if objects == nil || len(objects) == 0 {return}
 
 	time_mult := f64(delta_time)
@@ -27,14 +27,14 @@ physic_system_update :: proc(ps: ^PhysicSystem, delta_time: f32, objects: ^[dyna
 		obj.acceleration = {0, 0, 0}
 	}
 
-	switch ps.solver_algo {
+	switch self.solver_algo {
 	case .BRUTE_FORCE:
 		_brute_force_solve(objects[:], seconds)
 	case .OCTREE:
 		_octree_solve(objects[:], delta_time)
 	}
 
-	switch ps.collision_algo {
+	switch self.collision_algo {
 	case .BRUTE_FORCE:
 		_brute_force_collision(objects[:])
 	case .OCTREE:
@@ -62,39 +62,39 @@ _brute_force_solve :: proc(objects: []PhysicObject, seconds: f64) {
 }
 
 _brute_force_collision :: proc(objects: []PhysicObject) {
-	for &a, i in objects {
-		for &b, j in objects {
+	for &object_a, i in objects {
+		for &object_b, j in objects {
 			if i >= j {continue}
-			dir := b.position - a.position
+			dir := object_b.position - object_a.position
 			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 			dist := math.sqrt_f32(dist_sq)
-			if dist < a.radius + b.radius && dist > 0.001 {
+			if dist < object_a.radius + object_b.radius && dist > 0.001 {
 				normal := dir / dist
-				overlap := a.radius + b.radius - dist
-				total_mass := f32(a.mass + b.mass)
-				a.position -= normal * (overlap * f32(b.mass) / total_mass)
-				b.position += normal * (overlap * f32(a.mass) / total_mass)
+				overlap := object_a.radius + object_b.radius - dist
+				total_mass := f32(object_a.mass + object_b.mass)
+				object_a.position -= normal * (overlap * f32(object_b.mass) / total_mass)
+				object_b.position += normal * (overlap * f32(object_a.mass) / total_mass)
 			}
 		}
 	}
 }
 
 _octree_solve :: proc(objects: []PhysicObject, delta_time: f32) {
-	t := octtree_create(objects, 0.5)
-	if t != nil && t.root != nil {
+	tree := octtree_create(objects, 0.5)
+	if tree != nil && tree.root != nil {
 		for &obj in objects {
-			octtree_calc_force(t, &obj, delta_time)
+			octtree_calc_force(tree, &obj, delta_time)
 		}
 	}
-	octtree_destroy(t)
+	octtree_destroy(tree)
 }
 
 _octree_collision :: proc(objects: []PhysicObject) {
 	if len(objects) < 2 {return}
 
-	t := octtree_create(objects, 0.5)
-	defer octtree_destroy(t)
-	if t == nil || t.root == nil {return}
+	tree := octtree_create(objects, 0.5)
+	defer octtree_destroy(tree)
+	if tree == nil || tree.root == nil {return}
 
 	max_radius: f32
 	for obj in objects {
@@ -103,23 +103,23 @@ _octree_collision :: proc(objects: []PhysicObject) {
 
 	nearby := make([dynamic]^PhysicObject, context.temp_allocator)
 
-	for &a, i in objects {
+	for &object_a, i in objects {
 		clear(&nearby)
-		octtree_collect_nearby(t, a.position, a.radius + max_radius, &nearby)
+		octtree_collect_nearby(tree, object_a.position, object_a.radius + max_radius, &nearby)
 
 		for other in nearby {
-			if other == &a {continue}
-			if uintptr(other) < uintptr(&a) {continue}
+			if other == &object_a {continue}
+			if uintptr(other) < uintptr(&object_a) {continue}
 
-			dir := other.position - a.position
+			dir := other.position - object_a.position
 			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 			dist := math.sqrt_f32(dist_sq)
-			if dist < a.radius + other.radius && dist > 0.001 {
+			if dist < object_a.radius + other.radius && dist > 0.001 {
 				normal := dir / dist
-				overlap := a.radius + other.radius - dist
-				total_mass := f32(a.mass + other.mass)
-				a.position -= normal * (overlap * f32(other.mass) / total_mass)
-				other.position += normal * (overlap * f32(a.mass) / total_mass)
+				overlap := object_a.radius + other.radius - dist
+				total_mass := f32(object_a.mass + other.mass)
+				object_a.position -= normal * (overlap * f32(other.mass) / total_mass)
+				other.position += normal * (overlap * f32(object_a.mass) / total_mass)
 			}
 		}
 	}

@@ -47,41 +47,41 @@ octtree_create :: proc(objects: []PhysicObject, theta: f32) -> ^OctTree {
 	return t
 }
 
-octtree_destroy :: proc(t: ^OctTree) {
-	if t == nil {return}
-	_destroy_octant(t.root)
-	free(t)
+octtree_destroy :: proc(self: ^OctTree) {
+	if self == nil {return}
+	_destroy_octant(self.root)
+	free(self)
 }
 
 _build_octant :: proc(objects: []^PhysicObject, center: Vec3, half: f32) -> ^Octant {
-	o := new(Octant)
-	o.center = center
-	o.half_size = half
+	octant := new(Octant)
+	octant.center = center
+	octant.half_size = half
 
 	if len(objects) <= 1 {
-		o.objects = make([dynamic]^PhysicObject, len(objects))
-		copy(o.objects[:], objects)
-		octtree_mass_calculation(o)
-		return o
+		octant.objects = make([dynamic]^PhysicObject, len(objects))
+		copy(octant.objects[:], objects)
+		octtree_mass_calculation(octant)
+		return octant
 	}
 
 	children_objects: [8][dynamic]^PhysicObject
-	for ptr in objects {
-		idx := _get_octant_index(ptr.position, center)
-		append(&children_objects[idx], ptr)
+	for pointer in objects {
+		idx := _get_octant_index(pointer.position, center)
+		append(&children_objects[idx], pointer)
 	}
 
 	non_empty := 0
-	for g in children_objects {
-		if len(g) > 0 {non_empty += 1}
+	for group in children_objects {
+		if len(group) > 0 {non_empty += 1}
 	}
 
 	if non_empty <= 1 {
-		o.objects = make([dynamic]^PhysicObject, len(objects))
-		copy(o.objects[:], objects)
-		octtree_mass_calculation(o)
-		for g in children_objects {delete(g)}
-		return o
+		octant.objects = make([dynamic]^PhysicObject, len(objects))
+		copy(octant.objects[:], objects)
+		octtree_mass_calculation(octant)
+		for group in children_objects {delete(group)}
+		return octant
 	}
 
 	child_half := half * 0.5
@@ -90,84 +90,84 @@ _build_octant :: proc(objects: []^PhysicObject, center: Vec3, half: f32) -> ^Oct
 		child_center.x += (i & 4) != 0 ? child_half : -child_half
 		child_center.y += (i & 2) != 0 ? child_half : -child_half
 		child_center.z += (i & 1) != 0 ? child_half : -child_half
-		o.children[i] = _build_octant(children_objects[i][:], child_center, child_half)
+		octant.children[i] = _build_octant(children_objects[i][:], child_center, child_half)
 	}
-	for g in children_objects {delete(g)}
-	octtree_mass_calculation(o)
-	return o
+	for group in children_objects {delete(group)}
+	octtree_mass_calculation(octant)
+	return octant
 }
 
 _get_octant_index :: proc(pos, center: Vec3) -> int {
 	return (pos.x >= center.x ? 4 : 0) + (pos.y >= center.y ? 2 : 0) + (pos.z >= center.z ? 1 : 0)
 }
 
-octtree_mass_calculation :: proc(o: ^Octant) {
-	if o == nil {return}
-	o.mass = 0
-	o.center_mass = {0, 0, 0}
+octtree_mass_calculation :: proc(octant: ^Octant) {
+	if octant == nil {return}
+	octant.mass = 0
+	octant.center_mass = {0, 0, 0}
 
 	has_children := false
-	for c in o.children {
-		if c != nil {
+	for child in octant.children {
+		if child != nil {
 			has_children = true
-			o.mass += c.mass
-			o.center_mass += c.center_mass * f32(c.mass)
+			octant.mass += child.mass
+			octant.center_mass += child.center_mass * f32(child.mass)
 		}
 	}
 	if has_children {
-		if o.mass > 0 {o.center_mass /= f32(o.mass)}
+		if octant.mass > 0 {octant.center_mass /= f32(octant.mass)}
 		return
 	}
 
-	for ptr in o.objects {
-		o.mass += ptr.mass
-		o.center_mass += ptr.position * f32(ptr.mass)
+	for pointer in octant.objects {
+		octant.mass += pointer.mass
+		octant.center_mass += pointer.position * f32(pointer.mass)
 	}
-	if o.mass > 0 {o.center_mass /= f32(o.mass)}
+	if octant.mass > 0 {octant.center_mass /= f32(octant.mass)}
 }
 
-octtree_calc_force :: proc(t: ^OctTree, obj: ^PhysicObject, dt: f32) {
-	if t == nil || t.root == nil {return}
-	_calc_force_octant(t.root, obj, t.theta, dt)
+octtree_calc_force :: proc(self: ^OctTree, obj: ^PhysicObject, dt: f32) {
+	if self == nil || self.root == nil {return}
+	_calc_force_octant(self.root, obj, self.theta, dt)
 }
 
-_calc_force_octant :: proc(o: ^Octant, obj: ^PhysicObject, theta: f32, dt: f32) {
-	if o == nil {return}
+_calc_force_octant :: proc(octant: ^Octant, obj: ^PhysicObject, theta: f32, dt: f32) {
+	if octant == nil {return}
 
 	has_children := false
-	for c in o.children {
-		if c != nil {has_children = true; break}
+	for child in octant.children {
+		if child != nil {has_children = true; break}
 	}
 
 	if !has_children {
-		if len(o.objects) == 1 {
-			if o.objects[0] != obj {
-				_apply_gravity(obj, o.objects[0].mass, o.objects[0].position, dt)
+		if len(octant.objects) == 1 {
+			if octant.objects[0] != obj {
+				_apply_gravity(obj, octant.objects[0].mass, octant.objects[0].position, dt)
 			}
 			return
 		}
-		for ptr in o.objects {
-			if ptr != obj {
-				_apply_gravity(obj, ptr.mass, ptr.position, dt)
+		for pointer in octant.objects {
+			if pointer != obj {
+				_apply_gravity(obj, pointer.mass, pointer.position, dt)
 			}
 		}
 		return
 	}
 
-	dir := o.center_mass - obj.position
+	dir := octant.center_mass - obj.position
 	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 	if dist_sq < 1e-10 {dist_sq = 1e-10}
 	dist := math.sqrt_f32(dist_sq)
 
-	if (o.half_size * 2) / dist <= theta {
-		if o.mass > 0 && dist > 0.001 {
-			_apply_gravity(obj, o.mass, o.center_mass, dt)
+	if (octant.half_size * 2) / dist <= theta {
+		if octant.mass > 0 && dist > 0.001 {
+			_apply_gravity(obj, octant.mass, octant.center_mass, dt)
 		}
 		return
 	}
 
-	for c in o.children {
-		_calc_force_octant(c, obj, theta, dt)
+	for child in octant.children {
+		_calc_force_octant(child, obj, theta, dt)
 	}
 }
 
@@ -181,39 +181,39 @@ _apply_gravity :: proc(obj: ^PhysicObject, other_mass: f64, other_pos: Vec3, dt:
 	obj.velocity += acc * dt
 }
 
-_collect_nearby_octant :: proc(o: ^Octant, pos: Vec3, radius: f32, result: ^[dynamic]^PhysicObject) {
-	if o == nil {return}
-	half := o.half_size
-	closest_x := math.clamp(pos.x, o.center.x - half, o.center.x + half)
-	closest_y := math.clamp(pos.y, o.center.y - half, o.center.y + half)
-	closest_z := math.clamp(pos.z, o.center.z - half, o.center.z + half)
+_collect_nearby_octant :: proc(octant: ^Octant, pos: Vec3, radius: f32, result: ^[dynamic]^PhysicObject) {
+	if octant == nil {return}
+	half := octant.half_size
+	closest_x := math.clamp(pos.x, octant.center.x - half, octant.center.x + half)
+	closest_y := math.clamp(pos.y, octant.center.y - half, octant.center.y + half)
+	closest_z := math.clamp(pos.z, octant.center.z - half, octant.center.z + half)
 	dx := pos.x - closest_x
 	dy := pos.y - closest_y
 	dz := pos.z - closest_z
 	if dx * dx + dy * dy + dz * dz > radius * radius {return}
 
 	has_children := false
-	for c in o.children {
-		if c != nil {has_children = true; break}
+	for child in octant.children {
+		if child != nil {has_children = true; break}
 	}
 
 	if !has_children {
-		for ptr in o.objects {append(result, ptr)}
+		for pointer in octant.objects {append(result, pointer)}
 	} else {
-		for c in o.children {
-			_collect_nearby_octant(c, pos, radius, result)
+		for child in octant.children {
+			_collect_nearby_octant(child, pos, radius, result)
 		}
 	}
 }
 
-octtree_collect_nearby :: proc(t: ^OctTree, pos: Vec3, radius: f32, result: ^[dynamic]^PhysicObject) {
-	if t == nil || t.root == nil {return}
-	_collect_nearby_octant(t.root, pos, radius, result)
+octtree_collect_nearby :: proc(self: ^OctTree, pos: Vec3, radius: f32, result: ^[dynamic]^PhysicObject) {
+	if self == nil || self.root == nil {return}
+	_collect_nearby_octant(self.root, pos, radius, result)
 }
 
-_destroy_octant :: proc(o: ^Octant) {
-	if o == nil {return}
-	for c in o.children {_destroy_octant(c)}
-	delete(o.objects)
-	free(o)
+_destroy_octant :: proc(octant: ^Octant) {
+	if octant == nil {return}
+	for child in octant.children {_destroy_octant(child)}
+	delete(octant.objects)
+	free(octant)
 }
