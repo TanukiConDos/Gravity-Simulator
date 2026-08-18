@@ -30,9 +30,6 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 
 Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra la ventana. Las estadísticas de rendimiento (frametime y ticktime) se muestran por consola una vez por segundo.
 
-![image](https://github.com/user-attachments/assets/002a02bb-ecdf-4777-b890-5ca9421e6a36)
-
-
 ## Compilación desde código fuente
 1. **Requisitos previos:**
    - [Compilador de Odin](https://odin-lang.org/) (dev-2025-08 o posterior) en el PATH.
