@@ -4,20 +4,66 @@ import found "../../foundation"
 import "core:math"
 
 PhysicSystem :: struct {
-	solver_algo:    found.Algorithm,
-	collision_algo: found.Algorithm,
-	theta:          f32,
+	solver_algo:         found.Algorithm,
+	collision_algo:      found.Algorithm,
+	theta:               f32,
+	rebuild_interval:    f32,
+	tree:                ^OctTree,
+	tree_accumulator:    f32,
+	tree_object_count:   int,
+	tree_objects_data:   rawptr,
+	collision_scratch:   []^PhysicObject,
 }
 
 physic_system_create :: proc(objects: ^[dynamic]PhysicObject, config: ^found.Config) -> PhysicSystem {
 	return PhysicSystem{
-		solver_algo    = config.solver_algorithm,
-		collision_algo = config.collision_algorithm,
-		theta          = config.theta,
+		solver_algo      = config.solver_algorithm,
+		collision_algo   = config.collision_algorithm,
+		theta            = config.theta,
+		rebuild_interval = config.tree_rebuild_interval,
 	}
 }
 
-physic_system_destroy :: proc(self: ^PhysicSystem) {}
+physic_system_destroy :: proc(self: ^PhysicSystem) {
+	if self.tree != nil {
+		octtree_destroy(self.tree)
+		self.tree = nil
+	}
+	if self.collision_scratch != nil {
+		delete(self.collision_scratch)
+		self.collision_scratch = nil
+	}
+}
+
+_ensure_collision_scratch :: proc(self: ^PhysicSystem, count: int) {
+	if self.collision_scratch != nil && len(self.collision_scratch) >= count {return}
+	if self.collision_scratch != nil {delete(self.collision_scratch)}
+	self.collision_scratch = make([]^PhysicObject, count)
+}
+
+_ensure_tree :: proc(self: ^PhysicSystem, objects: ^[dynamic]PhysicObject, delta_time: f32) -> ^OctTree {
+	objects_slice := objects[:]
+	stale :=
+		self.tree == nil ||
+		self.tree_object_count != len(objects_slice) ||
+		self.tree_objects_data != raw_data(objects_slice)
+
+	if !stale && self.rebuild_interval > 0 {
+		self.tree_accumulator += delta_time
+		if self.tree_accumulator >= self.rebuild_interval {
+			stale = true
+		}
+	}
+
+	if stale || self.rebuild_interval <= 0 {
+		if self.tree != nil {octtree_destroy(self.tree)}
+		self.tree = octtree_create(objects_slice, self.theta)
+		self.tree_object_count = len(objects_slice)
+		self.tree_objects_data = raw_data(objects_slice)
+		self.tree_accumulator = 0
+	}
+	return self.tree
+}
 
 physic_system_update :: proc(self: ^PhysicSystem, delta_time: f32, objects: ^[dynamic]PhysicObject) {
 	if objects == nil || len(objects) == 0 {return}
@@ -31,7 +77,7 @@ physic_system_update :: proc(self: ^PhysicSystem, delta_time: f32, objects: ^[dy
 	need_tree := self.solver_algo == .OCTREE || self.collision_algo == .OCTREE
 	tree: ^OctTree
 	if need_tree {
-		tree = octtree_create(objects[:], self.theta)
+		tree = _ensure_tree(self, objects, delta_time)
 	}
 
 	switch self.solver_algo {
@@ -45,11 +91,8 @@ physic_system_update :: proc(self: ^PhysicSystem, delta_time: f32, objects: ^[dy
 	case .BRUTE_FORCE:
 		_brute_force_collision(objects[:])
 	case .OCTREE:
-		_octree_collision(tree, objects[:])
-	}
-
-	if need_tree {
-		octtree_destroy(tree)
+		_ensure_collision_scratch(self, len(objects))
+		_octree_collision(tree, objects[:], self.collision_scratch)
 	}
 
 	for &obj in objects {
@@ -97,16 +140,14 @@ _octree_solve :: proc(tree: ^OctTree, objects: []PhysicObject, seconds: f64) {
 	}
 }
 
-_octree_collision :: proc(tree: ^OctTree, objects: []PhysicObject) {
+_octree_collision :: proc(tree: ^OctTree, objects: []PhysicObject, nearby: []^PhysicObject) {
 	if tree == nil || len(objects) < 2 {return}
+	if nearby == nil || len(nearby) < len(objects) {return}
 
 	max_radius: f32
 	for obj in objects {
 		if obj.radius > max_radius {max_radius = obj.radius}
 	}
-
-	nearby := _arena_slice(^PhysicObject, &tree.arena, len(objects))
-	if nearby == nil {return}
 
 	for &object_a in objects {
 		count := 0

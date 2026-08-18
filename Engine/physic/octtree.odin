@@ -40,7 +40,7 @@ octtree_create :: proc(objects: []PhysicObject, theta: f32) -> ^OctTree {
 
 	node_capacity := len(objects) * 8 + 1024
 	buffer_size :=
-		node_capacity * size_of(OctTreeNode) + 2 * len(objects) * size_of(^PhysicObject) + 1024
+		node_capacity * size_of(OctTreeNode) + len(objects) * size_of(^PhysicObject) + 1024
 	t.arena = found.arena_create(buffer_size)
 	t.nodes = _arena_slice(OctTreeNode, &t.arena, node_capacity)
 	t.objects = _arena_slice(^PhysicObject, &t.arena, len(objects))
@@ -206,36 +206,44 @@ _node_mass_calculation :: proc(t: ^OctTree, node_idx: u32) {
 
 octtree_calc_force :: proc(self: ^OctTree, obj: ^PhysicObject, dt: f32) {
 	if self == nil || self.nodes == nil || obj == nil {return}
-	_calc_force_node(self, 0, obj, self.theta, dt)
+	_calc_force(self, obj, self.theta, dt)
 }
 
-_calc_force_node :: proc(t: ^OctTree, node_idx: u32, obj: ^PhysicObject, theta: f32, dt: f32) {
-	node := &t.nodes[node_idx]
+_calc_force :: proc(t: ^OctTree, obj: ^PhysicObject, theta: f32, dt: f32) {
+	stack: [1024]u32
+	stack_count := 1
+	stack[0] = 0
 
-	if node.child_count == 0 {
-		for i in node.first_obj ..< node.first_obj + node.obj_count {
-			other := t.objects[i]
-			if other != obj {
-				_apply_gravity(obj, other.mass, other.position, dt)
+	for stack_count > 0 {
+		stack_count -= 1
+		node := &t.nodes[stack[stack_count]]
+
+		if node.child_count == 0 {
+			for i in node.first_obj ..< node.first_obj + node.obj_count {
+				other := t.objects[i]
+				if other != obj {
+					_apply_gravity(obj, other.mass, other.position, dt)
+				}
 			}
+			continue
 		}
-		return
-	}
 
-	dir := node.center_mass - obj.position
-	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
-	if dist_sq < 1e-10 {dist_sq = 1e-10}
-	dist := math.sqrt_f32(dist_sq)
+		dir := node.center_mass - obj.position
+		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+		if dist_sq < 1e-10 {dist_sq = 1e-10}
+		dist := math.sqrt_f32(dist_sq)
 
-	if (node.half_size * 2) / dist <= theta {
-		if node.mass > 0 && dist > 0.001 {
-			_apply_gravity(obj, node.mass, node.center_mass, dt)
+		if (node.half_size * 2) / dist <= theta {
+			if node.mass > 0 && dist > 0.001 {
+				_apply_gravity(obj, node.mass, node.center_mass, dt)
+			}
+			continue
 		}
-		return
-	}
 
-	for ci in 0 ..< node.child_count {
-		_calc_force_node(t, node.children[ci], obj, theta, dt)
+		for ci in 0 ..< node.child_count {
+			stack[stack_count] = node.children[ci]
+			stack_count += 1
+		}
 	}
 }
 
@@ -258,38 +266,45 @@ octtree_collect_nearby :: proc(
 ) {
 	if self == nil || self.nodes == nil {return}
 	count^ = 0
-	_collect_nearby_node(self, 0, pos, radius, result, count)
+	_collect_nearby(self, pos, radius, result, count)
 }
 
-_collect_nearby_node :: proc(
+_collect_nearby :: proc(
 	t: ^OctTree,
-	node_idx: u32,
 	pos: Vec3,
 	radius: f32,
 	result: []^PhysicObject,
 	count: ^int,
 ) {
-	node := &t.nodes[node_idx]
-	half := node.half_size
-	closest_x := math.clamp(pos.x, node.center.x - half, node.center.x + half)
-	closest_y := math.clamp(pos.y, node.center.y - half, node.center.y + half)
-	closest_z := math.clamp(pos.z, node.center.z - half, node.center.z + half)
-	dx := pos.x - closest_x
-	dy := pos.y - closest_y
-	dz := pos.z - closest_z
-	if dx * dx + dy * dy + dz * dz > radius * radius {return}
+	stack: [1024]u32
+	stack_count := 1
+	stack[0] = 0
 
-	if node.child_count == 0 {
-		for i in node.first_obj ..< node.first_obj + node.obj_count {
-			if count^ < len(result) {
-				result[count^] = t.objects[i]
-				count^ += 1
+	for stack_count > 0 {
+		stack_count -= 1
+		node := &t.nodes[stack[stack_count]]
+		half := node.half_size
+		closest_x := math.clamp(pos.x, node.center.x - half, node.center.x + half)
+		closest_y := math.clamp(pos.y, node.center.y - half, node.center.y + half)
+		closest_z := math.clamp(pos.z, node.center.z - half, node.center.z + half)
+		dx := pos.x - closest_x
+		dy := pos.y - closest_y
+		dz := pos.z - closest_z
+		if dx * dx + dy * dy + dz * dz > radius * radius {continue}
+
+		if node.child_count == 0 {
+			for i in node.first_obj ..< node.first_obj + node.obj_count {
+				if count^ < len(result) {
+					result[count^] = t.objects[i]
+					count^ += 1
+				}
 			}
+			continue
 		}
-		return
-	}
-	for ci in 0 ..< node.child_count {
-		_collect_nearby_node(t, node.children[ci], pos, radius, result, count)
+		for ci in 0 ..< node.child_count {
+			stack[stack_count] = node.children[ci]
+			stack_count += 1
+		}
 	}
 }
 

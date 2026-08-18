@@ -15,24 +15,26 @@ Mode :: enum {
 }
 
 Config :: struct {
-	system_creation_mode: Mode,
-	num_objects:          int,
-	time:                 f32,
-	filename:             string,
-	collision_algorithm:  Algorithm,
-	solver_algorithm:     Algorithm,
-	theta:                f32,
+	system_creation_mode:  Mode,
+	num_objects:           int,
+	time:                  f32,
+	filename:              string,
+	collision_algorithm:   Algorithm,
+	solver_algorithm:      Algorithm,
+	theta:                 f32,
+	tree_rebuild_interval: f32,
 }
 
 @(private)
 _config: Config = {
-	system_creation_mode = .FILE,
-	num_objects          = 998,
-	time                 = 1000,
-	filename             = "tierra.json",
-	collision_algorithm  = .BRUTE_FORCE,
-	solver_algorithm     = .BRUTE_FORCE,
-	theta                = 0.5,
+	system_creation_mode  = .FILE,
+	num_objects           = 998,
+	time                  = 1000,
+	filename              = "tierra.json",
+	collision_algorithm   = .BRUTE_FORCE,
+	solver_algorithm      = .BRUTE_FORCE,
+	theta                 = 0.5,
+	tree_rebuild_interval = 50.0,
 }
 
 config_get :: proc() -> ^Config {
@@ -82,6 +84,8 @@ _apply_config :: proc(text: string) {
 			if algo == "OCTREE" {_config.solver_algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.solver_algorithm = .BRUTE_FORCE}
 		case "theta":
 			_config.theta = f32(_parse_number(text, &pos))
+		case "tree_rebuild_interval":
+			_config.tree_rebuild_interval = f32(_parse_number(text, &pos))
 		case:
 			_skip_value(text, &pos)
 		}

@@ -37,11 +37,14 @@ Simulation parameters are read from `config.json` at startup. It can be edited b
     "time": 1000,                     // simulation time multiplier
     "filename": "tierra.json",        // scene file when mode = FILE (in scenes/)
     "collision_algorithm": "BRUTE_FORCE", // "BRUTE_FORCE" or "OCTREE"
-    "solver_algorithm": "BRUTE_FORCE"     // "BRUTE_FORCE" or "OCTREE"
+    "solver_algorithm": "BRUTE_FORCE",    // "BRUTE_FORCE" or "OCTREE"
+    "tree_rebuild_interval": 50       // sim-seconds between octree rebuilds
 }
 ```
 
 `theta` (Barnes-Hut opening angle, default 0.5) can be added to tune octree approximation vs. accuracy.
+
+`tree_rebuild_interval` (sim-seconds, default 50) controls octree reuse. The tree is rebuilt when the accumulated sim time since the last build exceeds it (0 disables reuse = rebuild every tick). Note: at a `time` multiplier of 1000 a tick advances ~450 sim-seconds, so the default rebuilds every tick (no reuse); raise the interval to get reuse, accepting a stale tree.
 
 ## Physics
 

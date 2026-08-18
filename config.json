@@ -5,4 +5,6 @@
     "filename": "tierra.json",
     "collision_algorithm": "OCTREE",
     "solver_algorithm": "OCTREE"
+    "tree_rebuild_interval": 1000,
+    "theta": 0.8
 }
