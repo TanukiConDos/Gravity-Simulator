@@ -24,6 +24,10 @@ Config :: struct {
 	theta:                 f32,
 	tree_rebuild_interval: f32,
 	worker_threads:        int,
+	auto_adjust:           bool,
+	target_tickrate:       f32,
+	theta_min:             f32,
+	theta_max:             f32,
 }
 
 @(private)
@@ -37,6 +41,10 @@ _config: Config = {
 	theta                 = 0.5,
 	tree_rebuild_interval = 50.0,
 	worker_threads        = 8,
+	auto_adjust           = false,
+	target_tickrate       = 60.0,
+	theta_min             = 0.2,
+	theta_max             = 1.2,
 }
 
 config_get :: proc() -> ^Config {
@@ -90,6 +98,14 @@ _apply_config :: proc(text: string) {
 			_config.tree_rebuild_interval = f32(_parse_number(text, &pos))
 		case "worker_threads":
 			_config.worker_threads = int(_parse_number(text, &pos))
+		case "auto_adjust":
+			_config.auto_adjust = _parse_bool(text, &pos)
+		case "target_tickrate":
+			_config.target_tickrate = f32(_parse_number(text, &pos))
+		case "theta_min":
+			_config.theta_min = f32(_parse_number(text, &pos))
+		case "theta_max":
+			_config.theta_max = f32(_parse_number(text, &pos))
 		case:
 			_skip_value(text, &pos)
 		}
@@ -104,6 +120,20 @@ _parse_string :: proc(text: string, pos: ^int) -> string {_skip_whitespace(text,
 
 @(private)
 _parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, pos); start:=pos^; for pos^<len(text) {c:=text[pos^]; if (c>='0'&&c<='9')||c=='-'||c=='+'||c=='.'||c=='e'||c=='E' {pos^+=1} else {break}}; val,_:=strconv.parse_f64(text[start:pos^]); return val}
+
+@(private)
+_parse_bool :: proc(text: string, pos: ^int) -> bool {
+	_skip_whitespace(text, pos)
+	if pos^ >= len(text) {return false}
+	if text[pos^] == '"' {return _parse_string(text, pos) == "true"}
+	start := pos^
+	for pos^ < len(text) {
+		c := text[pos^]
+		if c == ',' || c == '}' || c == ']' || c == ' ' || c == '\t' || c == '\n' || c == '\r' {break}
+		pos^ += 1
+	}
+	return text[start:pos^] == "true"
+}
 
 @(private)
 _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text,pos); if pos^>=len(text){return}; switch text[pos^] {case '"': _parse_string(text,pos); case '[': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '[': depth+=1; case ']': depth-=1}; pos^+=1}; case '{': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '{': depth+=1; case '}': depth-=1}; pos^+=1}; case: for pos^<len(text) {c:=text[pos^]; if c==','||c=='}'||c==']'||c==' '||c=='\t'||c=='\n'||c=='\r' {break}; pos^+=1}}}

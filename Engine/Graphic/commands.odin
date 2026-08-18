@@ -8,7 +8,7 @@ CommandPool :: struct {gpu: ^GPU, pool: vulkan.CommandPool, command_buffers: [dy
 
 command_pool_create :: proc(gpu: ^GPU) -> (command_pool: CommandPool, ok: bool) {
 	log.debugf("[VULKAN] CommandPool initialization..."); command_pool.gpu = gpu
-	pool_info := vulkan.CommandPoolCreateInfo{sType=.COMMAND_POOL_CREATE_INFO,queueFamilyIndex=gpu_get_queue_family(gpu),flags={.RESET_COMMAND_BUFFER}}
+	pool_info := vulkan.CommandPoolCreateInfo{sType=.COMMAND_POOL_CREATE_INFO,queueFamilyIndex=gpu.graphics_queue_family_index,flags={.RESET_COMMAND_BUFFER}}
 	if vulkan.CreateCommandPool(gpu.device, &pool_info, nil, &command_pool.pool) != .SUCCESS {return {}, false}
 	command_pool.command_buffers = make([dynamic]vulkan.CommandBuffer, MAX_FRAMES_IN_FLIGHT)
 	allocate_info := vulkan.CommandBufferAllocateInfo{sType=.COMMAND_BUFFER_ALLOCATE_INFO,commandPool=command_pool.pool,level=.PRIMARY,commandBufferCount=MAX_FRAMES_IN_FLIGHT}

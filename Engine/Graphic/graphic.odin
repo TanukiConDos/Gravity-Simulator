@@ -2,7 +2,7 @@ package graphic
 
 import "vendor:vulkan"
 
-MAX_FRAMES_IN_FLIGHT :: 1
+MAX_FRAMES_IN_FLIGHT :: 2
 
 Vec3 :: [3]f32
 

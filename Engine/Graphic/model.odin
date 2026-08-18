@@ -83,10 +83,6 @@ model_bind :: proc(self: ^Model, cmd: vulkan.CommandBuffer) {
 	vulkan.CmdBindIndexBuffer(cmd, self.buffer.buffer, self.index_offset, .UINT32)
 }
 
-model_get_index_count :: proc(self: ^Model) -> u32 {
-	return self.index_count
-}
-
 _gen_sphere :: proc(
 	sector_count, stack_count: i32,
 ) -> (

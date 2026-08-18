@@ -18,14 +18,16 @@ Renderer :: struct {
 	model:           Model,
 	camera:          Camera,
 	objects:         ^[dynamic]phys.PhysicObject,
+	physic_system:   ^phys.PhysicSystem,
 	instances:       InstanceBuffer,
+	positions:       [dynamic]Vec3,
 	delta_time:      ^f32,
 	current_frame:   u32,
 	initialized:     bool,
 }
 
-renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, delta_time: ^f32) -> (^Renderer, bool) {
-	r := new(Renderer); r.window = window; r.objects = objects; r.delta_time = delta_time
+renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, physic_system: ^phys.PhysicSystem, delta_time: ^f32) -> (^Renderer, bool) {
+	r := new(Renderer); r.window = window; r.objects = objects; r.physic_system = physic_system; r.delta_time = delta_time
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION START"); log.infof("========================================")
 	gpu, gpu_ok := gpu_create(window); if !gpu_ok {return nil, false}
 	r.gpu = gpu
@@ -42,7 +44,10 @@ renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, d
 	r.descriptor_pool = descriptor_pool
 	instances, instances_ok := instance_buffer_create(&r.gpu); if !instances_ok {return nil, false}
 	r.instances = instances
-	if objects != nil && len(objects) > 0 {renderer_update_instances(r)}
+	if objects != nil && len(objects) > 0 {
+		r.positions = make([dynamic]Vec3, len(objects))
+		renderer_update_instances(r)
+	}
 	r.initialized = true
 	obj_count := 0; if objects != nil {obj_count = len(objects)}
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION COMPLETE (%d objects)", obj_count); log.infof("========================================")
@@ -55,6 +60,7 @@ renderer_destroy :: proc(self: ^Renderer) {
 	gpu_wait(&self.gpu)
 	model_destroy(&self.model); descriptor_pool_destroy(&self.descriptor_pool)
 	instance_buffer_destroy(&self.instances)
+	delete(self.positions)
 	pipeline_destroy(&self.pipeline); swapchain_destroy(&self.swapchain); command_pool_destroy(&self.command_pool); gpu_destroy(&self.gpu)
 	free(self)
 	log.infof("[VULKAN] Renderer shutdown complete")
@@ -62,7 +68,7 @@ renderer_destroy :: proc(self: ^Renderer) {
 
 renderer_update_instances :: proc(self: ^Renderer) {
 	if self.objects != nil {
-		instance_buffer_update(&self.instances, self.objects[:])
+		instance_buffer_write_static(&self.instances, self.objects[:])
 	}
 }
 
@@ -94,14 +100,17 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	}
 	descriptor_pool_update_ubo(&self.descriptor_pool, ubo, self.current_frame)
 
-	instance_buffer_update(&self.instances, self.objects[:])
+	if self.physic_system != nil && self.objects != nil && len(self.positions) >= len(self.objects) {
+		phys.physic_snapshot_read(self.physic_system, raw_data(self.positions), len(self.positions))
+		instance_buffer_update_positions(&self.instances, self.current_frame, self.positions[:])
+	}
 
-	set := descriptor_pool_get_set(&self.descriptor_pool, self.current_frame)
+	set := self.descriptor_pool.sets[self.current_frame]
 	vulkan.CmdBindDescriptorSets(command_buffer, .GRAPHICS, self.pipeline.layout, 0, 1, &set, 0, nil)
 	model_bind(&self.model, command_buffer)
-	instance_buffer_bind(&self.instances, command_buffer)
+	instance_buffer_bind(&self.instances, command_buffer, self.current_frame)
 	if len(self.objects) > 0 {
-		vulkan.CmdDrawIndexed(command_buffer, model_get_index_count(&self.model), u32(len(self.objects)), 0, 0, 0)
+		vulkan.CmdDrawIndexed(command_buffer, self.model.index_count, u32(len(self.objects)), 0, 0, 0)
 	}
 
 	vulkan.CmdEndRenderPass(command_buffer)

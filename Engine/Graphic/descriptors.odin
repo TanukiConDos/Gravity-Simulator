@@ -30,15 +30,10 @@ descriptor_pool_destroy :: proc(self: ^DescriptorPool) {
 	log.debugf("[VULKAN]   DescriptorPool destroyed")
 }
 
-descriptor_pool_get_set :: proc(self: ^DescriptorPool, current_frame: u32) -> vulkan.DescriptorSet {
-	return self.sets[current_frame]
-}
-
 descriptor_pool_update_ubo :: proc(self: ^DescriptorPool, ubo: UniformBufferObject, current_frame: u32) {
 	mut := ubo
 	mut.proj[1, 1] *= -1
 	buffer_write(&self.uniform_bufs[current_frame], &mut, size_of(UniformBufferObject), 0)
-	buffer_flush(&self.uniform_bufs[current_frame])
 }
 
 @(private) _dp_create_pool :: proc(self: ^DescriptorPool) {
@@ -51,7 +46,7 @@ descriptor_pool_update_ubo :: proc(self: ^DescriptorPool, ubo: UniformBufferObje
 	buffer_size := vulkan.DeviceSize(size_of(UniformBufferObject))
 	self.uniform_bufs = make([dynamic]Buffer, MAX_FRAMES_IN_FLIGHT)
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-		buffer, _ := buffer_create(self.gpu, buffer_size, {.UNIFORM_BUFFER}, {.HOST_VISIBLE})
+		buffer, _ := buffer_create(self.gpu, buffer_size, {.UNIFORM_BUFFER}, {.HOST_VISIBLE, .HOST_COHERENT})
 		self.uniform_bufs[i] = buffer
 		buffer_map(&self.uniform_bufs[i])
 	}

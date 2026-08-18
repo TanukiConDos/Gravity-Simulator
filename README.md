@@ -24,6 +24,9 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 - **collision_algorithm**: Algoritmo que resuelve la colisión entre 2 cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
 - **solver_algorithm**: Algoritmo que calcula la fuerza gravitatoria entre los cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
 - **worker_threads**: Número de hilos usados para paralelizar el solver de gravedad (octree).
+- **auto_adjust**: Si es `true`, `theta` y el intervalo de reconstrucción del octree se ajustan automáticamente para mantener la velocidad objetivo de simulación.
+- **target_tickrate**: Actualizaciones de física por segundo objetivo (por defecto 60) cuando `auto_adjust` está activo.
+- **theta_min** / **theta_max**: Límites del rango en el que `theta` se puede ajustar cuando `auto_adjust` está activo.
 
 Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra la ventana. Las estadísticas de rendimiento (frametime y ticktime) se muestran por consola una vez por segundo.
 

@@ -23,10 +23,12 @@ OctTreeNode :: struct {
 }
 
 OctTree :: struct {
-	nodes:   []OctTreeNode,
-	objects: []^PhysicObject,
-	theta:   f32,
-	arena:   found.Arena,
+	nodes:            []OctTreeNode,
+	objects:          []^PhysicObject,
+	theta:            f32,
+	arena:            found.Arena,
+	typical_half:     f32,
+	leaf_obj_hist:    [MAX_DEPTH + 1]u32,
 }
 
 ChildRange :: struct {
@@ -86,8 +88,25 @@ _octtree_build :: proc(t: ^OctTree, objects: []PhysicObject) {
 	half := math.max(math.max(max.x - min.x, max.y - min.y), max.z - min.z) * 0.5 + 1.0
 	if half <= 0 {half = 1e6}
 
+	t.leaf_obj_hist = {}
 	next_node: u32 = 0
 	_build_octant(t, 0, len(objects), center, half, 0, &next_node)
+
+	total_objects := 0
+	for d in 0 ..= MAX_DEPTH {
+		total_objects += int(t.leaf_obj_hist[d])
+	}
+	half_total := total_objects / 2
+	cumulative := 0
+	median_depth := 0
+	for d in 0 ..= MAX_DEPTH {
+		cumulative += int(t.leaf_obj_hist[d])
+		if cumulative >= half_total {
+			median_depth = d
+			break
+		}
+	}
+	t.typical_half = half / f32(uint(1) << uint(median_depth))
 }
 
 octtree_destroy :: proc(self: ^OctTree) {
@@ -117,6 +136,7 @@ _build_octant :: proc(
 		node.first_obj = u32(start)
 		node.obj_count = u32(count)
 		node.child_count = 0
+		t.leaf_obj_hist[depth] += u32(count)
 		_node_mass_calculation(t, node_idx)
 		return
 	}
@@ -232,7 +252,7 @@ octtree_calc_force :: proc(self: ^OctTree, obj: ^PhysicObject, dt: f32) {
 }
 
 _calc_force :: proc(t: ^OctTree, obj: ^PhysicObject, theta: f32, dt: f32) {
-	stack: [1024]u32
+	stack: [4096]u32
 	stack_count := 1
 	stack[0] = 0
 
@@ -263,8 +283,10 @@ _calc_force :: proc(t: ^OctTree, obj: ^PhysicObject, theta: f32, dt: f32) {
 		}
 
 		for ci in 0 ..< node.child_count {
-			stack[stack_count] = node.children[ci]
-			stack_count += 1
+			if stack_count < len(stack) {
+				stack[stack_count] = node.children[ci]
+				stack_count += 1
+			}
 		}
 	}
 }
@@ -298,7 +320,7 @@ _collect_nearby :: proc(
 	result: []^PhysicObject,
 	count: ^int,
 ) {
-	stack: [1024]u32
+	stack: [4096]u32
 	stack_count := 1
 	stack[0] = 0
 
@@ -324,8 +346,10 @@ _collect_nearby :: proc(
 			continue
 		}
 		for ci in 0 ..< node.child_count {
-			stack[stack_count] = node.children[ci]
-			stack_count += 1
+			if stack_count < len(stack) {
+				stack[stack_count] = node.children[ci]
+				stack_count += 1
+			}
 		}
 	}
 }

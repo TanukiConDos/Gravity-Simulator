@@ -13,7 +13,6 @@ GPU :: struct {
 	present_queue:              vulkan.Queue,
 	surface:                    vulkan.SurfaceKHR,
 	window:                     ^Window,
-	ubo_alignment:              vulkan.DeviceSize,
 	graphics_queue_family_index: u32,
 }
 
@@ -66,11 +65,6 @@ gpu_copy_buffer :: proc(self: ^GPU, source, destination: vulkan.Buffer, size: vu
 	copy_region := vulkan.BufferCopy{srcOffset=0,dstOffset=0,size=size}; vulkan.CmdCopyBuffer(cmd, source, destination, 1, &copy_region)
 }
 
-gpu_get_aligned_ubo_size :: proc(self: ^GPU) -> vulkan.DeviceSize {raw_size:=vulkan.DeviceSize(size_of(UniformBufferObject)); alignment:=self.ubo_alignment; if alignment==0 {alignment=256}; return ((raw_size+alignment-1)/alignment)*alignment}
-gpu_get_instance :: proc(self: ^GPU) -> vulkan.Instance {return self.instance}
-gpu_get_device :: proc(self: ^GPU) -> vulkan.Device {return self.device}
-gpu_get_physical_device :: proc(self: ^GPU) -> vulkan.PhysicalDevice {return self.physical_device}
-gpu_get_graphics_queue :: proc(self: ^GPU) -> vulkan.Queue {return self.graphics_queue}
 gpu_get_queue_family :: proc(self: ^GPU) -> u32 {return self.graphics_queue_family_index}
 
 @(private) _gpu_create_instance :: proc(self: ^GPU) -> bool {
@@ -108,8 +102,6 @@ queue_family_indices_complete :: proc(i: QueueFamilyIndices) -> bool {return i.g
 	self.physical_device = best_device
 	props: vulkan.PhysicalDeviceProperties; vulkan.GetPhysicalDeviceProperties(best_device, &props)
 	log.infof("GPU: %v", string(cstring(&props.deviceName[0])))
-	self.ubo_alignment = props.limits.minUniformBufferOffsetAlignment
-	log.debugf("[VULKAN]     UBO alignment: %v bytes", self.ubo_alignment)
 	return true
 }
 
