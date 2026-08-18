@@ -1,0 +1,14 @@
+{
+    "system_creation_mode": "RANDOM",
+    "num_objects": 1000,
+    "time": 1000,
+    "filename": "tierra.json",
+    "collision_algorithm": "OCTREE",
+    "solver_algorithm": "OCTREE",
+    "tree_rebuild_interval": 1000,
+    "theta": 0.8,
+    "auto_adjust": true,
+    "target_tickrate": 300,
+    "theta_min": 0.2,
+    "theta_max": 1.2
+}

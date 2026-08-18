@@ -2,15 +2,11 @@
 # Simulador de Campos Gravitatorios
 
 ## Descripción
-Este proyecto es una aplicación desarrollada en C++20 que se enfoca en aprender las bases de la computación gráfica y la simulaciones de fenomenos físicos.
+Este proyecto es una aplicación desarrollada en [Odin](https://odin-lang.org/) que se enfoca en aprender las bases de la computación gráfica y la simulaciones de fenomenos físicos.
 Especiíficamente, se trata de un simulador de campos gravitatorios que permite al usuario definir las condiciones iniciales de los cuerpos celestes y observar su interacción gravitatoria.
 Las herramientas utilizadas para el desarrollo de este proyecto son las siguientes:
 - [Vulkan](https://www.vulkan.org/): API de gráficos de bajo nivel.
-- [GLFW](https://www.glfw.org/): Biblioteca para la creación de ventanas y la gestión de eventos.
-- [GLM](https://glm.g-truc.net): Biblioteca de matemáticas para gráficos en 3D.
-- [ImGui](https://github.com/ocornut/imgui): Biblioteca para la creación de interfaces de usuario.
-- [json](https://json.nlohmann.me/): Biblioteca para el manejo de archivos JSON.
-- [EnkiTS](https://github.com/dougbinks/enkiTS): Biblioteca para la gestión de tareas y hilos.
+- [GLFW](https://www.glfw.org/): Biblioteca para la creación de ventanas y la gestión de eventos (a través de los bindings de Odin).
 
 ## Instalación
 Descarga el zip de la última versión del proyecto desde la página de [releases](https://github.com/TanukiConDos/TFG/releases) y descomprímelo en la carpeta que prefieras.
@@ -19,41 +15,37 @@ Ejecuta el archivo `GravitySimulator.exe` para iniciar la aplicación.
 
 ## Uso de la aplicación
 
-La aplicación cuenta con una interfaz gráfica que permite al usuario definir una serie de parámetros utilizados en la aplicación. Estos parámetros se cambian en la ventana de cónfiguración de la aplicación.
-Los párametros son los siguientes:
+Los parámetros de la simulación se configuran editando a mano el archivo `config.json`, que se lee al iniciar la aplicación:
 
-- **Multiplicador de tiempo**: Se encarga de establecer la relación entre el tiempo en la simulación y la vida real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.
-- **Modo de creación de la escenca**: Permite seleccionar de donde saca los valores iniciales de la simulación. Puede ser JSON o aleatorio. Los JSON tienen que estar en la carpeta scenes.
-- **Fichero JSON/número de objetos**: Esta opción cambia dependiendo del valor en el parámetro anterior. En el fichero JSON se establerce el nombre del fichero del que se leen los datos. El número de objetos cambia el numero de cuerpos a generar de manera aleatoria.
-- **Algoritmo de colisión**: Permite elegir el algoritmo que resuelve la colisión entre 2 cuerpos.
-- **Algoritmo de Resolución**: Permite elegir el algoritmo que calcula la fuerza gravitatoria entre los cuerpos.
+- **system_creation_mode**: De dónde se toman los valores iniciales de la simulación. Puede ser `"FILE"` (se carga un fichero de la carpeta scenes) o `"RANDOM"` (se generan cuerpos de forma aleatoria).
+- **num_objects**: Número de cuerpos generados cuando el modo de creación es `"RANDOM"`.
+- **time**: Multiplicador de tiempo. Relación entre el tiempo de la simulación y el tiempo real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.
+- **filename**: Nombre del fichero JSON a cargar (en la carpeta scenes) cuando el modo de creación es `"FILE"`.
+- **collision_algorithm**: Algoritmo que resuelve la colisión entre 2 cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **solver_algorithm**: Algoritmo que calcula la fuerza gravitatoria entre los cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **worker_threads**: Número de hilos usados para paralelizar el solver de gravedad (octree).
+- **auto_adjust**: Si es `true`, `theta` y el intervalo de reconstrucción del octree se ajustan automáticamente para mantener la velocidad objetivo de simulación.
+- **target_tickrate**: Actualizaciones de física por segundo objetivo (por defecto 60) cuando `auto_adjust` está activo.
+- **theta_min** / **theta_max**: Límites del rango en el que `theta` se puede ajustar cuando `auto_adjust` está activo.
+
+Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra la ventana. Las estadísticas de rendimiento (frametime y ticktime) se muestran por consola una vez por segundo.
 
 ![image](https://github.com/user-attachments/assets/002a02bb-ecdf-4777-b890-5ca9421e6a36)
 
 
-Una vez configurada la simulación podemos pulsar en iniciar simulación. Esto nos lleva a una pantalla en la que se ve la simulación en tiempo real y 2 ventanas.
-- **La ventana de debug**: Muestra estadisticas de cuanto tarda en realizar la renderización y los calculos del motor de físicas.
-- **Datos del cuerpo**: Muestra los datos del cuerpo selecionado.
-
-![image](https://github.com/user-attachments/assets/bac0c520-61ef-4081-a132-24fd5c3f4ae9)
-
-
 ## Compilación desde código fuente
 1. **Requisitos previos:**
-   - Sistema operativo Windows.
-   - [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) con soporte para C++ y C++20.
+   - [Compilador de Odin](https://odin-lang.org/) (dev-2025-08 o posterior) en el PATH.
    - Descargar e instalar [Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows).
-   - Descargar e instalar [GLFW](https://www.glfw.org/download.html).
 
 2. **Preparación del entorno:**
 
-   Abre el archivo `SimuladorCamposGravitatorios.sln` con Visual Studio 2022. En la configuración de la solución, asegúrate de que las rutas de las librerías de Vulkan,
-   GLFW y GLM sean las rutas en las que te has descargado las librerias. Para ello, ve a `Propiedades de la solución -> Configuración de propiedades -> C/C++ -> Directorios de inclusión adicionales` 
-   y añade las rutas a la carpeta include de las librerías.
+   Asegúrate de que el compilador de Odin y el Vulkan SDK están disponibles en el PATH. Para compilar los shaders, edita el script `compilar.bat` en la carpeta `Engine/Graphic/shader` cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK.
 
-   A continuación, ve a `Propiedades de la solución -> Configuración de propiedades -> Vinculador -> Directorios de bibliotecas adicionales` y añade las rutas a las carpetas lib de las librerías.
-   Después, ve a `Propiedades de la solución -> Configuración de propiedades -> Vinculador -> Entrada -> Dependencias adicionales` y añade las librerías vulkan-1.lib y glfw3.lib.
-   Por ultimo, edita el script compilar.bat en la carpeta `Engine/Graphic/shader` cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK.
-   Ya puedes compilar el proyecto y ejecutarlo.
+3. **Compilación y ejecución:**
 
-   Para la ejecución de los test se debe añadir la ruta de la librería GLM a los directorios de inclusión adicionales siguiendo el mismo procedimiento que antes en el projecto de test.
+   Ejecuta `odin run . -debug` desde la raíz del proyecto para compilar y lanzar la aplicación. La simulación se ejecuta en tiempo real hasta que se cierra la ventana.
+
+4. **Ejecución de los tests:**
+
+   Ejecuta `odin test tests -debug` desde la raíz del proyecto para compilar y lanzar la suite de tests.
