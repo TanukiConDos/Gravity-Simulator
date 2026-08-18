@@ -12,11 +12,17 @@ Vertex :: struct #packed {
 }
 
 UniformBufferObject :: struct #align(16) {
-	model:    matrix[4, 4]f32,
-	view:     matrix[4, 4]f32,
-	proj:     matrix[4, 4]f32,
+	view: matrix[4, 4]f32,
+	proj: matrix[4, 4]f32,
+}
+
+#assert(size_of(UniformBufferObject) == 128)
+
+InstanceData :: struct #packed {
+	position: Vec3,
+	radius:   f32,
 	selected: i32,
 	_pad:     [12]u8,
 }
 
-#assert(size_of(UniformBufferObject) == 208)
+#assert(size_of(InstanceData) == 32)

@@ -2,12 +2,13 @@ package graphic
 
 import "core:log"
 import "base:runtime"
+import "core:sync"
 import "vendor:glfw"
 import "vendor:vulkan"
 
 Window :: struct {handle: glfw.WindowHandle, width: i32, height: i32, framebuffer_resized: bool, surface: vulkan.SurfaceKHR}
 
-@(private) _framebuffer_resize_callback :: proc"c"(handle: glfw.WindowHandle, w, height: i32) {context=runtime.default_context(); p:=cast(^Window)glfw.GetWindowUserPointer(handle); if p!=nil {p.framebuffer_resized=true}}
+@(private) _framebuffer_resize_callback :: proc"c"(handle: glfw.WindowHandle, w, height: i32) {context=runtime.default_context(); p:=cast(^Window)glfw.GetWindowUserPointer(handle); if p!=nil {sync.atomic_store(&p.framebuffer_resized, true)}}
 
 window_create :: proc(w, h: i32) -> (^Window, bool) {
 	log.debugf("[VULKAN] Creating window...")

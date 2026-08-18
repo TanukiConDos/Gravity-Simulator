@@ -26,10 +26,16 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 	fragment_module := _create_shader_module(gpu, fragment_code)
 	log.debugf("[VULKAN]     Shader modules created")
 
-	binding_desc := vulkan.VertexInputBindingDescription{binding = 0, stride = u32(size_of(Vertex)), inputRate = .VERTEX}
+	binding_descriptions := [?]vulkan.VertexInputBindingDescription{
+		{binding = 0, stride = u32(size_of(Vertex)), inputRate = .VERTEX},
+		{binding = 1, stride = u32(size_of(InstanceData)), inputRate = .INSTANCE},
+	}
 	attribute_descriptions := [?]vulkan.VertexInputAttributeDescription{
 		{location = 0, binding = 0, format = .R32G32B32_SFLOAT, offset = u32(offset_of(Vertex, pos))},
 		{location = 1, binding = 0, format = .R32G32B32_SFLOAT, offset = u32(offset_of(Vertex, color))},
+		{location = 2, binding = 1, format = .R32G32B32_SFLOAT, offset = u32(offset_of(InstanceData, position))},
+		{location = 3, binding = 1, format = .R32_SFLOAT, offset = u32(offset_of(InstanceData, radius))},
+		{location = 4, binding = 1, format = .R32_SINT, offset = u32(offset_of(InstanceData, selected))},
 	}
 
 	log.debugf("[VULKAN]   Creating descriptor set layout...")
@@ -46,9 +52,9 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 	log.debugf("[VULKAN]   Creating graphics pipeline...")
 	vertex_info := vulkan.PipelineVertexInputStateCreateInfo{
 		sType = .PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		vertexBindingDescriptionCount = 1,
-		pVertexBindingDescriptions = &binding_desc,
-		vertexAttributeDescriptionCount = 2,
+		vertexBindingDescriptionCount = 2,
+		pVertexBindingDescriptions = &binding_descriptions[0],
+		vertexAttributeDescriptionCount = 5,
 		pVertexAttributeDescriptions = &attribute_descriptions[0],
 	}
 	input_assembly := vulkan.PipelineInputAssemblyStateCreateInfo{

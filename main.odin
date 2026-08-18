@@ -8,6 +8,7 @@ import "core:math/rand"
 import "core:os"
 import "core:strconv"
 import "core:strings"
+import "core:sync"
 import "core:time"
 
 @(private) g_physic_system: physic.PhysicSystem
@@ -93,47 +94,46 @@ import "core:time"
 main :: proc() {
 	when ODIN_DEBUG {
 		logger := log.create_console_logger(); context.logger = logger
+		g_sim_logger = logger
 	}
 	log.infof("Gravity Simulator - Odin Edition")
 
 	config := foundation.config_load("./config.json")
+	foundation.parallel_init(config.worker_threads)
+	defer foundation.parallel_destroy()
 
 	window, window_ok := graphic.window_create(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
 
-	frame_time: f32; tick_time: f32
-	delta_seconds: f32
-
 	_sim_init()
 	defer _sim_end()
 
-	renderer, renderer_ok := graphic.renderer_create(window, g_objects, &frame_time, &tick_time, &delta_seconds)
+	ctx := SimulationContext{
+		objects       = g_objects,
+		physic_system = &g_physic_system,
+		window        = window,
+	}
+
+	renderer, renderer_ok := graphic.renderer_create(window, g_objects, &ctx.delta_time)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
+	ctx.renderer = renderer
 
-	last_tick := time.tick_now()
+	physics_thread, graphics_thread := parallel_start(&ctx)
+
 	last_log := time.tick_now()
 	for !graphic.window_should_close(window) {
 		graphic.window_poll_events()
-		now := time.tick_now()
-		delta_seconds = f32(time.duration_seconds(time.tick_diff(last_tick, now)))
-		frame_time = f32(time.duration_milliseconds(time.tick_diff(last_tick, now)))
-		last_tick = now
-
-		if g_objects != nil {
-			config := foundation.config_get()
-			delta_time := delta_seconds * config.time; if delta_time < 0.000001 {delta_time = 0.016}
-			tick_start := time.tick_now()
-			physic.physic_system_update(&g_physic_system, delta_time, g_objects)
-			tick_time = f32(time.duration_microseconds(time.tick_diff(tick_start, time.tick_now())))
-		}
 
 		if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
 			last_log = time.tick_now()
-			log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame_time, tick_time)
+			frame := sync.atomic_load(&ctx.frame_time)
+			tick := sync.atomic_load(&ctx.tick_time)
+			log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame, tick)
 		}
-
-		if !graphic.renderer_draw_frame(renderer) {break}
 	}
+
+	sync.atomic_store(&ctx.exit, true)
+	parallel_stop(physics_thread, graphics_thread)
 }

@@ -23,6 +23,7 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 - **filename**: Nombre del fichero JSON a cargar (en la carpeta scenes) cuando el modo de creación es `"FILE"`.
 - **collision_algorithm**: Algoritmo que resuelve la colisión entre 2 cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
 - **solver_algorithm**: Algoritmo que calcula la fuerza gravitatoria entre los cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **worker_threads**: Número de hilos usados para paralelizar el solver de gravedad (octree).
 
 Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra la ventana. Las estadísticas de rendimiento (frametime y ticktime) se muestran por consola una vez por segundo.
 

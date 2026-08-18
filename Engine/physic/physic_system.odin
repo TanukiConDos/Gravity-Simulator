@@ -56,8 +56,11 @@ _ensure_tree :: proc(self: ^PhysicSystem, objects: ^[dynamic]PhysicObject, delta
 	}
 
 	if stale || self.rebuild_interval <= 0 {
-		if self.tree != nil {octtree_destroy(self.tree)}
-		self.tree = octtree_create(objects_slice, self.theta)
+		if self.tree != nil {
+			octtree_rebuild(self.tree, objects_slice, self.theta)
+		} else {
+			self.tree = octtree_create(objects_slice, self.theta)
+		}
 		self.tree_object_count = len(objects_slice)
 		self.tree_objects_data = raw_data(objects_slice)
 		self.tree_accumulator = 0
@@ -135,9 +138,19 @@ _brute_force_collision :: proc(objects: []PhysicObject) {
 
 _octree_solve :: proc(tree: ^OctTree, objects: []PhysicObject, seconds: f64) {
 	if tree == nil {return}
-	for &obj in objects {
-		octtree_calc_force(tree, &obj, f32(seconds))
-	}
+	data := _OctreeSolveData{tree = tree, objects = objects, dt = f32(seconds)}
+	found.parallel_for(_octree_solve_worker, &data, len(objects))
+}
+
+_OctreeSolveData :: struct {
+	tree:    ^OctTree,
+	objects: []PhysicObject,
+	dt:      f32,
+}
+
+_octree_solve_worker :: proc(index: int, data: rawptr) {
+	ctx := cast(^_OctreeSolveData)data
+	octtree_calc_force(ctx.tree, &ctx.objects[index], ctx.dt)
 }
 
 _octree_collision :: proc(tree: ^OctTree, objects: []PhysicObject, nearby: []^PhysicObject) {

@@ -23,6 +23,7 @@ Config :: struct {
 	solver_algorithm:      Algorithm,
 	theta:                 f32,
 	tree_rebuild_interval: f32,
+	worker_threads:        int,
 }
 
 @(private)
@@ -35,6 +36,7 @@ _config: Config = {
 	solver_algorithm      = .BRUTE_FORCE,
 	theta                 = 0.5,
 	tree_rebuild_interval = 50.0,
+	worker_threads        = 8,
 }
 
 config_get :: proc() -> ^Config {
@@ -86,6 +88,8 @@ _apply_config :: proc(text: string) {
 			_config.theta = f32(_parse_number(text, &pos))
 		case "tree_rebuild_interval":
 			_config.tree_rebuild_interval = f32(_parse_number(text, &pos))
+		case "worker_threads":
+			_config.worker_threads = int(_parse_number(text, &pos))
 		case:
 			_skip_value(text, &pos)
 		}

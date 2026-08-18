@@ -38,13 +38,36 @@ octtree_create :: proc(objects: []PhysicObject, theta: f32) -> ^OctTree {
 	t := new(OctTree)
 	t.theta = theta
 
-	node_capacity := len(objects) * 8 + 1024
-	buffer_size :=
-		node_capacity * size_of(OctTreeNode) + len(objects) * size_of(^PhysicObject) + 1024
-	t.arena = found.arena_create(buffer_size)
-	t.nodes = _arena_slice(OctTreeNode, &t.arena, node_capacity)
+	need := octtree_buffer_size(len(objects))
+	t.arena = found.arena_create(need)
+	t.nodes = _arena_slice(OctTreeNode, &t.arena, len(objects) * 8 + 1024)
 	t.objects = _arena_slice(^PhysicObject, &t.arena, len(objects))
 
+	_octtree_build(t, objects)
+	return t
+}
+
+octtree_rebuild :: proc(self: ^OctTree, objects: []PhysicObject, theta: f32) {
+	if self == nil {return}
+	self.theta = theta
+
+	need := octtree_buffer_size(len(objects))
+	if need > len(self.arena.data) {
+		found.arena_destroy(&self.arena)
+		self.arena = found.arena_create(need)
+	}
+	found.arena_reset(&self.arena)
+	self.nodes = _arena_slice(OctTreeNode, &self.arena, len(objects) * 8 + 1024)
+	self.objects = _arena_slice(^PhysicObject, &self.arena, len(objects))
+
+	_octtree_build(self, objects)
+}
+
+octtree_buffer_size :: proc(object_count: int) -> int {
+	return (object_count * 8 + 1024) * size_of(OctTreeNode) + object_count * size_of(^PhysicObject) + 1024
+}
+
+_octtree_build :: proc(t: ^OctTree, objects: []PhysicObject) {
 	for &obj, i in objects {
 		t.objects[i] = &obj
 	}
@@ -65,7 +88,6 @@ octtree_create :: proc(objects: []PhysicObject, theta: f32) -> ^OctTree {
 
 	next_node: u32 = 0
 	_build_octant(t, 0, len(objects), center, half, 0, &next_node)
-	return t
 }
 
 octtree_destroy :: proc(self: ^OctTree) {
