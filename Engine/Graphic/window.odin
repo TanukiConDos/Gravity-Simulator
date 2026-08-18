@@ -4,28 +4,8 @@ import "core:log"
 import "base:runtime"
 import "vendor:glfw"
 import "vendor:vulkan"
-import imgui "../../External/odin-imgui"
 
-Window :: struct {handle: glfw.WindowHandle, width: i32, height: i32, framebuffer_resized: bool, surface: vulkan.SurfaceKHR, input: InputEvent}
-
-@(private) _key_callback :: proc"c"(handle: glfw.WindowHandle, key, scancode, action, mods: i32) {
-	context = runtime.default_context()
-	if action == glfw.RELEASE {return}
-	if imgui.GetIO().WantCaptureKeyboard {return}
-	w := cast(^Window)glfw.GetWindowUserPointer(handle); if w == nil {return}
-	switch key {
-	case glfw.KEY_W: input_submit(&w.input,.MOVE_FORWARD)
-	case glfw.KEY_A: input_submit(&w.input,.MOVE_LEFT_SIDE)
-	case glfw.KEY_S: input_submit(&w.input,.MOVE_BACKWARD)
-	case glfw.KEY_D: input_submit(&w.input,.MOVE_RIGHT_SIDE)
-	case glfw.KEY_Q: input_submit(&w.input,.MOVE_DOWN)
-	case glfw.KEY_E: input_submit(&w.input,.MOVE_UP)
-	case glfw.KEY_UP: input_submit(&w.input,.ROTATE_UP)
-	case glfw.KEY_DOWN: input_submit(&w.input,.ROTATE_DOWN)
-	case glfw.KEY_LEFT: input_submit(&w.input,.ROTATE_LEFT)
-	case glfw.KEY_RIGHT: input_submit(&w.input,.ROTATE_RIGHT)
-	}
-}
+Window :: struct {handle: glfw.WindowHandle, width: i32, height: i32, framebuffer_resized: bool, surface: vulkan.SurfaceKHR}
 
 @(private) _framebuffer_resize_callback :: proc"c"(handle: glfw.WindowHandle, w, height: i32) {context=runtime.default_context(); p:=cast(^Window)glfw.GetWindowUserPointer(handle); if p!=nil {p.framebuffer_resized=true}}
 
@@ -40,7 +20,6 @@ window_create :: proc(w, h: i32) -> (^Window, bool) {
 	window := new(Window); window.handle=handle; window.width=w; window.height=h
 	glfw.SetWindowUserPointer(handle, window)
 	glfw.SetFramebufferSizeCallback(handle, _framebuffer_resize_callback)
-	glfw.SetKeyCallback(handle, _key_callback)
 	return window, true
 }
 

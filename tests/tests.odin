@@ -1,6 +1,6 @@
 package tests
 
-import physics "../engine/physic"
+import physics "../Engine/physic"
 import foundation "../foundation"
 import "core:testing"
 
@@ -13,7 +13,7 @@ test_octtree_create :: proc(t: ^testing.T) {
 	}
 	tree := physics.octtree_create(objects[:], 0.5)
 	testing.expect(t, tree != nil)
-	testing.expect(t, tree.root != nil)
+	testing.expect(t, len(tree.nodes) > 0)
 	physics.octtree_destroy(tree)
 }
 

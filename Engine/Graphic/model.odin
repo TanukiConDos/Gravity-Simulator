@@ -12,7 +12,14 @@ Model :: struct {
 	gpu:          ^GPU,
 }
 
-model_create :: proc(gpu: ^GPU, command_pool: ^CommandPool, sector_count, stack_count: i32) -> (model_result: Model, ok: bool) {
+model_create :: proc(
+	gpu: ^GPU,
+	command_pool: ^CommandPool,
+	sector_count, stack_count: i32,
+) -> (
+	model_result: Model,
+	ok: bool,
+) {
 	log.debugf("[VULKAN] Model initialization (sphere %dx%d)...", sector_count, stack_count)
 	model_result.gpu = gpu
 	vertices, indices := _gen_sphere(sector_count, stack_count)
@@ -22,16 +29,34 @@ model_create :: proc(gpu: ^GPU, command_pool: ^CommandPool, sector_count, stack_
 	index_size := vulkan.DeviceSize(len(indices) * size_of(u32))
 	total_size := vertex_size + index_size
 
-	log.debugf("[VULKAN]   Uploading mesh to GPU (%d verts, %d indices)...", len(vertices), len(indices))
+	log.debugf(
+		"[VULKAN]   Uploading mesh to GPU (%d verts, %d indices)...",
+		len(vertices),
+		len(indices),
+	)
 
-	staging_buffer, staging_memory, _ := gpu_create_buffer(gpu, total_size, {.TRANSFER_SRC}, {.HOST_VISIBLE, .HOST_COHERENT})
+	staging_buffer, staging_memory, _ := gpu_create_buffer(
+		gpu,
+		total_size,
+		{.TRANSFER_SRC},
+		{.HOST_VISIBLE, .HOST_COHERENT},
+	)
 	mapped: rawptr
 	vulkan.MapMemory(gpu.device, staging_memory, 0, total_size, {}, &mapped)
 	intrinsics.mem_copy(mapped, raw_data(vertices), int(vertex_size))
-	intrinsics.mem_copy(rawptr(uintptr(mapped) + uintptr(vertex_size)), raw_data(indices), int(index_size))
+	intrinsics.mem_copy(
+		rawptr(uintptr(mapped) + uintptr(vertex_size)),
+		raw_data(indices),
+		int(index_size),
+	)
 	vulkan.UnmapMemory(gpu.device, staging_memory)
 
-	model_result.buffer, _ = buffer_create(gpu, total_size, {.TRANSFER_DST, .VERTEX_BUFFER, .INDEX_BUFFER}, {.DEVICE_LOCAL})
+	model_result.buffer, _ = buffer_create(
+		gpu,
+		total_size,
+		{.TRANSFER_DST, .VERTEX_BUFFER, .INDEX_BUFFER},
+		{.DEVICE_LOCAL},
+	)
 	model_result.index_count = u32(len(indices))
 	model_result.index_offset = vertex_size
 
@@ -62,7 +87,12 @@ model_get_index_count :: proc(self: ^Model) -> u32 {
 	return self.index_count
 }
 
-_gen_sphere :: proc(sector_count, stack_count: i32) -> (vertices: [dynamic]Vertex, indices: [dynamic]u32) {
+_gen_sphere :: proc(
+	sector_count, stack_count: i32,
+) -> (
+	vertices: [dynamic]Vertex,
+	indices: [dynamic]u32,
+) {
 	radius: f32 = 1.0
 	stack_step := math.PI / f32(stack_count)
 	sector_step := 2.0 * math.PI / f32(sector_count)
@@ -75,7 +105,7 @@ _gen_sphere :: proc(sector_count, stack_count: i32) -> (vertices: [dynamic]Verte
 			sector_angle := f32(j) * sector_step
 			x := xy * math.cos(sector_angle)
 			y := xy * math.sin(sector_angle)
-			append(&vertices, Vertex{pos = {x, y, z}, color = {0.3, 0.5, 0.8}})
+			append(&vertices, Vertex{pos = {x, y, z}, color = {x, y, z}})
 		}
 	}
 

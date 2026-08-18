@@ -1,25 +1,23 @@
 package graphic
 
-InputAction :: enum {NONE, MOVE_FORWARD, MOVE_BACKWARD, MOVE_LEFT_SIDE, MOVE_RIGHT_SIDE, MOVE_UP, MOVE_DOWN, ROTATE_UP, ROTATE_DOWN, ROTATE_LEFT, ROTATE_RIGHT}
-InputEvent :: struct {action: InputAction, camera: ^Camera}
+import "vendor:glfw"
 
-input_submit :: proc(event: ^InputEvent, a: InputAction) {event.action = a}
-input_subscribe :: proc(event: ^InputEvent, cam: ^Camera) {event.camera = cam}
+MOVE_SPEED   :: 500.0
+ROTATE_SPEED :: 1.0
 
-input_process :: proc(event: ^InputEvent, delta: f32) {
-	amount := delta * 50.0
-	switch event.action {
-	case .MOVE_FORWARD: event.camera.position.z+=amount; event.camera.target.z+=amount
-	case .MOVE_BACKWARD: event.camera.position.z-=amount; event.camera.target.z-=amount
-	case .MOVE_LEFT_SIDE: event.camera.position.x-=amount; event.camera.target.x-=amount
-	case .MOVE_RIGHT_SIDE: event.camera.position.x+=amount; event.camera.target.x+=amount
-	case .MOVE_UP: event.camera.position.y+=amount; event.camera.target.y+=amount
-	case .MOVE_DOWN: event.camera.position.y-=amount; event.camera.target.y-=amount
-	case .ROTATE_UP: event.camera.target.y+=amount*0.5
-	case .ROTATE_DOWN: event.camera.target.y-=amount*0.5
-	case .ROTATE_LEFT: event.camera.target.x-=amount*0.5
-	case .ROTATE_RIGHT: event.camera.target.x+=amount*0.5
-	case .NONE:
-	}
-	event.action = .NONE
+input_poll :: proc(w: ^Window, cam: ^Camera, delta_seconds: f32) {
+	move := delta_seconds * MOVE_SPEED
+	rotate := delta_seconds * ROTATE_SPEED
+
+	if glfw.GetKey(w.handle, glfw.KEY_W) == glfw.PRESS {camera_move_forward(cam, move)}
+	if glfw.GetKey(w.handle, glfw.KEY_S) == glfw.PRESS {camera_move_backward(cam, move)}
+	if glfw.GetKey(w.handle, glfw.KEY_A) == glfw.PRESS {camera_move_left(cam, move)}
+	if glfw.GetKey(w.handle, glfw.KEY_D) == glfw.PRESS {camera_move_right(cam, move)}
+	if glfw.GetKey(w.handle, glfw.KEY_Q) == glfw.PRESS {camera_move_down(cam, move)}
+	if glfw.GetKey(w.handle, glfw.KEY_E) == glfw.PRESS {camera_move_up(cam, move)}
+
+	if glfw.GetKey(w.handle, glfw.KEY_UP) == glfw.PRESS {camera_rotate_pitch(cam, rotate)}
+	if glfw.GetKey(w.handle, glfw.KEY_DOWN) == glfw.PRESS {camera_rotate_pitch(cam, -rotate)}
+	if glfw.GetKey(w.handle, glfw.KEY_LEFT) == glfw.PRESS {camera_rotate_yaw(cam, -rotate)}
+	if glfw.GetKey(w.handle, glfw.KEY_RIGHT) == glfw.PRESS {camera_rotate_yaw(cam, rotate)}
 }

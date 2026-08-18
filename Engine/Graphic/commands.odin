@@ -17,7 +17,7 @@ command_pool_create :: proc(gpu: ^GPU) -> (command_pool: CommandPool, ok: bool) 
 	return command_pool, true
 }
 
-command_pool_destroy :: proc(command_pool: ^CommandPool) {log.debugf("[VULKAN] Destroying CommandPool..."); vulkan.DestroyCommandPool(command_pool.gpu.device, command_pool.pool, nil); delete(command_pool.command_buffers); log.debugf("[VULKAN]   CommandPool destroyed")}
+command_pool_destroy :: proc(command_pool: ^CommandPool) {log.debugf("[VULKAN] Destroying CommandPool..."); vulkan.DeviceWaitIdle(command_pool.gpu.device); vulkan.DestroyCommandPool(command_pool.gpu.device, command_pool.pool, nil); delete(command_pool.command_buffers); log.debugf("[VULKAN]   CommandPool destroyed")}
 command_pool_reset :: proc(command_pool: ^CommandPool, frame: u32) {vulkan.ResetCommandBuffer(command_pool.command_buffers[frame], {})}
 command_pool_begin :: proc(command_pool: ^CommandPool, frame: u32) -> vulkan.CommandBuffer {command_buffer:=command_pool.command_buffers[frame]; vulkan.BeginCommandBuffer(command_buffer, &vulkan.CommandBufferBeginInfo{sType=.COMMAND_BUFFER_BEGIN_INFO}); return command_buffer}
 command_pool_end :: proc(command_pool: ^CommandPool, cmd: vulkan.CommandBuffer) {vulkan.EndCommandBuffer(cmd)}

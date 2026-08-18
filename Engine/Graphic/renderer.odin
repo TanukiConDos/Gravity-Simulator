@@ -16,20 +16,18 @@ Renderer :: struct {
 	descriptor_pool: DescriptorPool,
 	model:           Model,
 	camera:          Camera,
-	im_gui:          ^ImGuiManager,
 	objects:         ^[dynamic]phys.PhysicObject,
 	game_objects:    [dynamic]UniformBufferObject,
 	frame_time:      ^f32,
 	tick_time:       ^f32,
+	delta_time:      ^f32,
 	time:            f32,
 	current_frame:   u32,
 	initialized:     bool,
-	draw_ui:         proc(ud: rawptr),
-	draw_ui_data:    rawptr,
 }
 
-renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, frame_time, tick_time: ^f32) -> (^Renderer, bool) {
-	r := new(Renderer); r.window = window; r.objects = objects; r.frame_time = frame_time; r.tick_time = tick_time
+renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, frame_time, tick_time, delta_time: ^f32) -> (^Renderer, bool) {
+	r := new(Renderer); r.window = window; r.objects = objects; r.frame_time = frame_time; r.tick_time = tick_time; r.delta_time = delta_time
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION START"); log.infof("========================================")
 	gpu, gpu_ok := gpu_create(window); if !gpu_ok {return nil, false}
 	r.gpu = gpu
@@ -43,9 +41,6 @@ renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, f
 	r.model = model
 	r.camera = camera_create(&r.swapchain)
 	if objects != nil && len(objects) > 0 {renderer_update_objects(r)}
-	imgui_manager, imgui_ok := imgui_manager_create(&r.gpu, &r.swapchain, window)
-	if !imgui_ok {log.errorf("[VULKAN] Failed to create ImGui manager"); return nil, false}
-	r.im_gui = imgui_manager
 	r.initialized = true
 	obj_count := 0; if objects != nil {obj_count = len(objects)}
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION COMPLETE (%d objects)", obj_count); log.infof("========================================")
@@ -55,7 +50,8 @@ renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, f
 renderer_destroy :: proc(self: ^Renderer) {
 	if !self.initialized {return}
 	log.infof("[VULKAN] Renderer shutdown...")
-	imgui_manager_destroy(self.im_gui); model_destroy(&self.model); descriptor_pool_destroy(&self.descriptor_pool)
+	gpu_wait(&self.gpu)
+	model_destroy(&self.model); descriptor_pool_destroy(&self.descriptor_pool)
 	pipeline_destroy(&self.pipeline); swapchain_destroy(&self.swapchain); command_pool_destroy(&self.command_pool); gpu_destroy(&self.gpu)
 	delete(self.game_objects); free(self)
 	log.infof("[VULKAN] Renderer shutdown complete")
@@ -90,13 +86,7 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	swapchain_begin_render_pass(&self.swapchain, command_buffer, image_idx)
 	pipeline_bind(&self.pipeline, command_buffer)
 
-	imgui_manager_new_frame()
-
-	if self.draw_ui != nil {
-		self.draw_ui(self.draw_ui_data)
-	}
-
-	input_process(&self.window.input, self.frame_time^)
+	input_poll(self.window, &self.camera, self.delta_time^)
 
 	for &ubo, i in self.game_objects {
 		obj := &self.objects[i]
@@ -115,9 +105,6 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	}
 
 	descriptor_pool_flush_all(&self.descriptor_pool)
-
-	imgui_manager_end_frame()
-	imgui_manager_draw(self.im_gui, command_buffer)
 
 	vulkan.CmdEndRenderPass(command_buffer)
 	command_pool_end(&self.command_pool, command_buffer)

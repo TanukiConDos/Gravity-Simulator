@@ -1,0 +1,8 @@
+{
+    "system_creation_mode": "RANDOM",
+    "num_objects": 9998,
+    "time": 1000,
+    "filename": "tierra.json",
+    "collision_algorithm": "OCTREE",
+    "solver_algorithm": "OCTREE"
+}

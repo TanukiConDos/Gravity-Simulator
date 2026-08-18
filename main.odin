@@ -1,9 +1,8 @@
 package main
 
-import graphic "./engine/graphic"
-import physic "./engine/physic"
+import graphic "./Engine/Graphic"
+import physic "./Engine/physic"
 import foundation "./foundation"
-import state "./engine/state"
 import "core:log"
 import "core:math/rand"
 import "core:os"
@@ -15,7 +14,7 @@ import "core:time"
 @(private) g_objects: ^[dynamic]physic.PhysicObject
 
 @(private) _read_json_scene :: proc(filename: string) -> (objects: ^[dynamic]physic.PhysicObject, success: bool) {
-	data, read_ok := os.read_entire_file(filename, context.temp_allocator); if !read_ok {return nil, false}
+	data, err := os.read_entire_file(filename, context.temp_allocator); if err != nil {return nil, false}
 	text := string(data); objects = new([dynamic]physic.PhysicObject)
 	pos := 0; _skip_whitespace(text, &pos)
 	if pos >= len(text) || text[pos] != '[' {return objects, true}
@@ -58,23 +57,21 @@ import "core:time"
 @(private) _parse_array :: proc(text: string, pos: ^int) -> [dynamic]f64 {arr:=make([dynamic]f64); _skip_whitespace(text,pos); if pos^>=len(text)||text[pos^]!='[' {return arr}; pos^+=1; for {_skip_whitespace(text,pos); if pos^>=len(text){break}; if text[pos^]==']' {pos^+=1;break}; if text[pos^]==',' {pos^+=1;continue}; append(&arr,_parse_number(text,pos))}; return arr}
 @(private) _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text,pos); if pos^>=len(text){return}; switch text[pos^] {case '"': _parse_string(text,pos); case '[': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '[': depth+=1; case ']': depth-=1}; pos^+=1}; case '{': depth:=1;pos^+=1; for pos^<len(text)&&depth>0 {switch text[pos^]{case '{': depth+=1; case '}': depth-=1}; pos^+=1}; case: for pos^<len(text) {c:=text[pos^]; if c==','||c=='}'||c==']'||c==' '||c=='\t'||c=='\n'||c=='\r' {break}; pos^+=1}}}
 
-@(private) _sim_init :: proc(state_machine: ^state.StateMachine) {
+@(private) _sim_init :: proc() {
 	config := foundation.config_get()
 	switch config.system_creation_mode {
-	case .RANDOM: sim_random_init(state_machine)
-	case .FILE: sim_file_init(state_machine)
+	case .RANDOM: sim_random_init()
+	case .FILE: sim_file_init()
 	}
-	state_machine.objects = g_objects; state_machine.renderer.objects = g_objects
-	graphic.renderer_update_objects(state_machine.renderer)
 	g_physic_system = physic.physic_system_create(g_objects, config)
 }
 
-@(private) _sim_end :: proc(state_machine: ^state.StateMachine) {
+@(private) _sim_end :: proc() {
 	physic.physic_system_destroy(&g_physic_system)
 	delete(g_objects^); g_objects = nil
 }
 
-@(private) sim_file_init :: proc(sm: ^state.StateMachine) {
+@(private) sim_file_init :: proc() {
 	config := foundation.config_get()
 	path := strings.concatenate({"./scenes/", config.filename}, context.temp_allocator)
 	objects, success := _read_json_scene(path)
@@ -82,7 +79,7 @@ import "core:time"
 	g_objects = objects
 }
 
-@(private) sim_random_init :: proc(sm: ^state.StateMachine) {
+@(private) sim_random_init :: proc() {
 	config := foundation.config_get(); objects := new([dynamic]physic.PhysicObject)
 	append(objects, physic.physic_object_make({0,0,0}, {0,0,0}, 6e27, 12371e3))
 	append(objects, physic.physic_object_make({0,383400e3,0}, {20e3,0,0}, 7.35e25, 6737e3))
@@ -98,32 +95,31 @@ main :: proc() {
 		logger := log.create_console_logger(); context.logger = logger
 	}
 	log.infof("Gravity Simulator - Odin Edition")
+
+	config := foundation.config_load("./config.json")
+
 	window, window_ok := graphic.window_create(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
 
 	frame_time: f32; tick_time: f32
-	renderer, renderer_ok := graphic.renderer_create(window, nil, &frame_time, &tick_time)
+	delta_seconds: f32
+
+	_sim_init()
+	defer _sim_end()
+
+	renderer, renderer_ok := graphic.renderer_create(window, g_objects, &frame_time, &tick_time, &delta_seconds)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 
-	graphic.input_subscribe(&window.input, &renderer.camera)
-	config := foundation.config_get()
-	sm := state.state_machine_create(renderer, nil, config, &frame_time, &tick_time, _sim_init, _sim_end)
-
-	renderer.draw_ui = proc(user_data: rawptr) {
-		sm := (^state.StateMachine)(user_data)
-		state.state_machine_frame(sm)
-	}
-	renderer.draw_ui_data = &sm
-
 	last_tick := time.tick_now()
+	last_log := time.tick_now()
 	for !graphic.window_should_close(window) {
 		graphic.window_poll_events()
 		now := time.tick_now()
-		delta_milliseconds := f32(time.duration_milliseconds(time.tick_diff(last_tick, now)))
-		delta_seconds := f32(time.duration_seconds(time.tick_diff(last_tick, now)))
-		last_tick = now; frame_time = delta_milliseconds
+		delta_seconds = f32(time.duration_seconds(time.tick_diff(last_tick, now)))
+		frame_time = f32(time.duration_milliseconds(time.tick_diff(last_tick, now)))
+		last_tick = now
 
 		if g_objects != nil {
 			config := foundation.config_get()
@@ -133,7 +129,11 @@ main :: proc() {
 			tick_time = f32(time.duration_microseconds(time.tick_diff(tick_start, time.tick_now())))
 		}
 
+		if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
+			last_log = time.tick_now()
+			log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame_time, tick_time)
+		}
+
 		if !graphic.renderer_draw_frame(renderer) {break}
 	}
-	state.state_machine_destroy(&sm)
 }

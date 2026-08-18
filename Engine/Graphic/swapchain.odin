@@ -48,6 +48,7 @@ swapchain_create :: proc(gpu: ^GPU, window: ^Window) -> (self: SwapChain, ok: bo
 swapchain_destroy :: proc(self: ^SwapChain) {
 	log.debugf("[VULKAN] Destroying SwapChain...")
 	gpu := self.gpu
+	vulkan.DeviceWaitIdle(gpu.device)
 	for &semaphore in self.image_available_semas {vulkan.DestroySemaphore(gpu.device, semaphore, nil)}
 	for &semaphore in self.render_finished_semas {vulkan.DestroySemaphore(gpu.device, semaphore, nil)}
 	for &fence in self.in_flight_fences {vulkan.DestroyFence(gpu.device, fence, nil)}

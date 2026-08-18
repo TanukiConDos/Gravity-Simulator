@@ -6,12 +6,14 @@ import "core:math"
 PhysicSystem :: struct {
 	solver_algo:    found.Algorithm,
 	collision_algo: found.Algorithm,
+	theta:          f32,
 }
 
 physic_system_create :: proc(objects: ^[dynamic]PhysicObject, config: ^found.Config) -> PhysicSystem {
 	return PhysicSystem{
 		solver_algo    = config.solver_algorithm,
 		collision_algo = config.collision_algorithm,
+		theta          = config.theta,
 	}
 }
 
@@ -20,25 +22,34 @@ physic_system_destroy :: proc(self: ^PhysicSystem) {}
 physic_system_update :: proc(self: ^PhysicSystem, delta_time: f32, objects: ^[dynamic]PhysicObject) {
 	if objects == nil || len(objects) == 0 {return}
 
-	time_mult := f64(delta_time)
-	seconds := time_mult
+	seconds := f64(delta_time)
 
 	for &obj in objects {
 		obj.acceleration = {0, 0, 0}
+	}
+
+	need_tree := self.solver_algo == .OCTREE || self.collision_algo == .OCTREE
+	tree: ^OctTree
+	if need_tree {
+		tree = octtree_create(objects[:], self.theta)
 	}
 
 	switch self.solver_algo {
 	case .BRUTE_FORCE:
 		_brute_force_solve(objects[:], seconds)
 	case .OCTREE:
-		_octree_solve(objects[:], delta_time)
+		_octree_solve(tree, objects[:], seconds)
 	}
 
 	switch self.collision_algo {
 	case .BRUTE_FORCE:
 		_brute_force_collision(objects[:])
 	case .OCTREE:
-		_octree_collision(objects[:])
+		_octree_collision(tree, objects[:])
+	}
+
+	if need_tree {
+		octtree_destroy(tree)
 	}
 
 	for &obj in objects {
@@ -79,35 +90,30 @@ _brute_force_collision :: proc(objects: []PhysicObject) {
 	}
 }
 
-_octree_solve :: proc(objects: []PhysicObject, delta_time: f32) {
-	tree := octtree_create(objects, 0.5)
-	if tree != nil && tree.root != nil {
-		for &obj in objects {
-			octtree_calc_force(tree, &obj, delta_time)
-		}
+_octree_solve :: proc(tree: ^OctTree, objects: []PhysicObject, seconds: f64) {
+	if tree == nil {return}
+	for &obj in objects {
+		octtree_calc_force(tree, &obj, f32(seconds))
 	}
-	octtree_destroy(tree)
 }
 
-_octree_collision :: proc(objects: []PhysicObject) {
-	if len(objects) < 2 {return}
-
-	tree := octtree_create(objects, 0.5)
-	defer octtree_destroy(tree)
-	if tree == nil || tree.root == nil {return}
+_octree_collision :: proc(tree: ^OctTree, objects: []PhysicObject) {
+	if tree == nil || len(objects) < 2 {return}
 
 	max_radius: f32
 	for obj in objects {
 		if obj.radius > max_radius {max_radius = obj.radius}
 	}
 
-	nearby := make([dynamic]^PhysicObject, context.temp_allocator)
+	nearby := _arena_slice(^PhysicObject, &tree.arena, len(objects))
+	if nearby == nil {return}
 
-	for &object_a, i in objects {
-		clear(&nearby)
-		octtree_collect_nearby(tree, object_a.position, object_a.radius + max_radius, &nearby)
+	for &object_a in objects {
+		count := 0
+		octtree_collect_nearby(tree, object_a.position, object_a.radius + max_radius, nearby, &count)
 
-		for other in nearby {
+		for j in 0 ..< count {
+			other := nearby[j]
 			if other == &object_a {continue}
 			if uintptr(other) < uintptr(&object_a) {continue}
 

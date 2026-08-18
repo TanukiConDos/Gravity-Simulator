@@ -16,9 +16,9 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 	pipeline_result.gpu = gpu
 
 	log.debugf("[VULKAN]   Loading shaders...")
-	vertex_code, vertex_ok := os.read_entire_file("Engine/Graphic/shader/vert.spv", context.temp_allocator)
-	fragment_code, fragment_ok := os.read_entire_file("Engine/Graphic/shader/frag.spv", context.temp_allocator)
-	if !vertex_ok || !fragment_ok {log.errorf("[VULKAN] Failed to load shaders!"); return {}, false}
+	vertex_code, vertex_err := os.read_entire_file("Engine/Graphic/shader/vert.spv", context.temp_allocator)
+	fragment_code, fragment_err := os.read_entire_file("Engine/Graphic/shader/frag.spv", context.temp_allocator)
+	if vertex_err != nil || fragment_err != nil {log.errorf("[VULKAN] Failed to load shaders!"); return {}, false}
 	log.debugf("[VULKAN]     Vert: %d bytes  Frag: %d bytes", len(vertex_code), len(fragment_code))
 
 	log.debugf("[VULKAN]   Creating shader modules...")
