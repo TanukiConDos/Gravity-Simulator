@@ -2,10 +2,8 @@ package graphic
 
 import phys "../physic"
 import "core:log"
-import "core:math"
-import la "core:math/linalg"
 import "core:sync"
-import "vendor:glfw"
+import "core:time"
 import "vendor:vulkan"
 
 Renderer :: struct {
@@ -13,8 +11,9 @@ Renderer :: struct {
 	gpu:             GPU,
 	command_pool:    CommandPool,
 	swapchain:       SwapChain,
+	config:          Pipeline_Config,
 	pipeline:        Pipeline,
-	descriptor_pool: DescriptorPool,
+	push:            Push_Descriptors,
 	model:           Model,
 	camera:          Camera,
 	objects:         ^[dynamic]phys.PhysicObject,
@@ -23,42 +22,41 @@ Renderer :: struct {
 	positions:       [dynamic]Vec3,
 	delta_time:      ^f32,
 	current_frame:   u32,
-	initialized:     bool,
 }
 
-renderer_create :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, physic_system: ^phys.PhysicSystem, delta_time: ^f32) -> (^Renderer, bool) {
-	r := new(Renderer); r.window = window; r.objects = objects; r.physic_system = physic_system; r.delta_time = delta_time
+renderer_init :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, physic_system: ^phys.PhysicSystem, delta_time: ^f32) -> (result: ^Renderer, ok: bool) {
+	renderer := new(Renderer)
+	committed := false
+	defer if !committed {renderer_destroy(renderer)}
+
+	renderer.window = window; renderer.objects = objects; renderer.physic_system = physic_system; renderer.delta_time = delta_time
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION START"); log.infof("========================================")
-	gpu, gpu_ok := gpu_create(window); if !gpu_ok {return nil, false}
-	r.gpu = gpu
-	command_pool, command_pool_ok := command_pool_create(&r.gpu); if !command_pool_ok {return nil, false}
-	r.command_pool = command_pool
-	swapchain, swapchain_ok := swapchain_create(&r.gpu, window); if !swapchain_ok {return nil, false}
-	r.swapchain = swapchain
-	pipeline, pipeline_ok := pipeline_create(&r.gpu, r.swapchain.render_pass); if !pipeline_ok {return nil, false}
-	r.pipeline = pipeline
-	model, model_ok := model_create(&r.gpu, &r.command_pool, 30, 30); if !model_ok {return nil, false}
-	r.model = model
-	r.camera = camera_create(&r.swapchain)
-	descriptor_pool, descriptor_pool_ok := descriptor_pool_create(&r.gpu, &r.pipeline); if !descriptor_pool_ok {return nil, false}
-	r.descriptor_pool = descriptor_pool
-	instances, instances_ok := instance_buffer_create(&r.gpu); if !instances_ok {return nil, false}
-	r.instances = instances
+	renderer.gpu = gpu_init(window) or_return
+	renderer.command_pool = command_pool_init(&renderer.gpu) or_return
+	renderer.swapchain = swapchain_init(&renderer.gpu, window) or_return
+	renderer.config = renderer_pipeline_config()
+	renderer.pipeline = pipeline_init(&renderer.gpu, renderer.config, renderer.swapchain.image_format, renderer.swapchain.depth_format) or_return
+	renderer.model = model_init(&renderer.gpu, &renderer.command_pool, 30, 30) or_return
+	renderer.camera = camera_create(&renderer.swapchain)
+	renderer.push = push_descriptors_init(&renderer.gpu, RENDERER_PUSH_BINDINGS[:]) or_return
+	if !push_descriptors_validate(&renderer.push, &renderer.pipeline) {return nil, false}
+	renderer.instances = instance_buffer_init(&renderer.gpu)
 	if objects != nil && len(objects) > 0 {
-		r.positions = make([dynamic]Vec3, len(objects))
-		renderer_update_instances(r)
+		renderer.positions = make([dynamic]Vec3, len(objects))
+		renderer_update_instances(renderer)
 	}
-	r.initialized = true
 	obj_count := 0; if objects != nil {obj_count = len(objects)}
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION COMPLETE (%d objects)", obj_count); log.infof("========================================")
-	return r, true
+	committed = true
+	result = renderer
+	return result, true
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
-	if !self.initialized {return}
+	if self == nil {return}
 	log.infof("[VULKAN] Renderer shutdown...")
 	gpu_wait(&self.gpu)
-	model_destroy(&self.model); descriptor_pool_destroy(&self.descriptor_pool)
+	model_destroy(&self.model); push_descriptors_destroy(&self.push)
 	instance_buffer_destroy(&self.instances)
 	delete(self.positions)
 	pipeline_destroy(&self.pipeline); swapchain_destroy(&self.swapchain); command_pool_destroy(&self.command_pool); gpu_destroy(&self.gpu)
@@ -66,68 +64,108 @@ renderer_destroy :: proc(self: ^Renderer) {
 	log.infof("[VULKAN] Renderer shutdown complete")
 }
 
+@(private)
 renderer_update_instances :: proc(self: ^Renderer) {
 	if self.objects != nil {
 		instance_buffer_write_static(&self.instances, self.objects[:])
 	}
 }
 
-renderer_draw_frame :: proc(self: ^Renderer) -> bool {
-	result, image_idx := swapchain_acquire_next(&self.swapchain, self.current_frame)
-	if result == .ERROR_OUT_OF_DATE_KHR {
-		swapchain_recreate(&self.swapchain)
-		pipeline_destroy(&self.pipeline); pipeline, pipeline_ok := pipeline_create(&self.gpu, self.swapchain.render_pass)
-		if !pipeline_ok {log.errorf("[VULKAN] Failed to recreate pipeline after swapchain!"); return false}
-		self.pipeline = pipeline
-		self.camera = camera_create(&self.swapchain)
+// Recreates the swapchain and, only if the attachment formats actually changed,
+// rebuilds the pipeline. The pipeline no longer references the swapchain, so a
+// plain resize reuses it as-is.
+@(private)
+_renderer_recreate_swapchain :: proc(self: ^Renderer) -> bool {
+	swapchain_recreate(&self.swapchain) or_return
+	format_changed := self.pipeline.color_format != self.swapchain.image_format || self.pipeline.depth_format != self.swapchain.depth_format
+	if format_changed {
+		pipeline_destroy(&self.pipeline)
+		self.pipeline = pipeline_init(&self.gpu, self.config, self.swapchain.image_format, self.swapchain.depth_format) or_return
+	}
+	self.camera = camera_create(&self.swapchain)
+	return true
+}
+
+// Rebuilding a 0x0 swapchain is invalid. GLFW only updates the framebuffer size
+// while processing events on the main thread, so while minimized this backs off
+// and lets the next frame retry. Returns false only on a fatal error.
+@(private)
+_renderer_recreate_if_possible :: proc(self: ^Renderer) -> bool {
+	if !window_update_size(self.window) {
+		time.sleep(16 * time.Millisecond)
 		return true
 	}
-	if result != .SUCCESS && result != .SUBOPTIMAL_KHR {
+	return _renderer_recreate_swapchain(self)
+}
+
+renderer_draw_frame :: proc(self: ^Renderer) -> bool {
+	if sync.atomic_load(&self.window.framebuffer_resized) {
+		sync.atomic_store(&self.window.framebuffer_resized, false)
+		if !_renderer_recreate_if_possible(self) {return false}
+		return true
+	}
+
+	frame := self.current_frame
+	swapchain_wait_for_frame(&self.swapchain, frame)
+
+	recreate := false
+	result, image_idx := swapchain_acquire_next(&self.swapchain, frame)
+	if result == .ERROR_OUT_OF_DATE_KHR {
+		if !_renderer_recreate_if_possible(self) {return false}
+		return true
+	} else if result != .SUCCESS && result != .SUBOPTIMAL_KHR {
 		log.errorf("[VULKAN] Failed to acquire swapchain image!")
 		return false
+	} else if result == .SUBOPTIMAL_KHR {
+		recreate = true
 	}
-	swapchain_reset_fences(&self.swapchain, self.current_frame)
-	command_pool_reset(&self.command_pool, self.current_frame)
-	command_buffer := command_pool_begin(&self.command_pool, self.current_frame)
-	swapchain_begin_render_pass(&self.swapchain, command_buffer, image_idx)
+
+	swapchain_prepare_frame(&self.swapchain, frame, image_idx)
+	command_pool_reset(&self.command_pool, frame)
+	command_buffer := command_pool_begin(&self.command_pool, frame)
+	swapchain_begin_rendering(&self.swapchain, command_buffer, image_idx)
 	pipeline_bind(&self.pipeline, command_buffer)
 
 	input_poll(self.window, &self.camera, sync.atomic_load(self.delta_time))
 
-	ubo := UniformBufferObject{
-		view = la.matrix4_look_at_f32(self.camera.position, self.camera.target, self.camera.up),
-		proj = la.matrix4_perspective_f32(math.to_radians_f32(self.camera.fov), self.camera.aspect, self.camera.near, self.camera.far),
-	}
-	descriptor_pool_update_ubo(&self.descriptor_pool, ubo, self.current_frame)
+	ubo: UniformBufferObject
+	camera_transform(&self.camera, &ubo)
+	push_descriptors_write(&self.push, CAMERA_SET, CAMERA_BINDING, frame, &ubo, size_of(UniformBufferObject))
 
 	if self.physic_system != nil && self.objects != nil && len(self.positions) >= len(self.objects) {
 		phys.physic_snapshot_read(self.physic_system, raw_data(self.positions), len(self.positions))
-		instance_buffer_update_positions(&self.instances, self.current_frame, self.positions[:])
+		instance_buffer_update_positions(&self.instances, frame, self.positions[:])
 	}
 
-	set := self.descriptor_pool.sets[self.current_frame]
-	vulkan.CmdBindDescriptorSets(command_buffer, .GRAPHICS, self.pipeline.layout, 0, 1, &set, 0, nil)
-	model_bind(&self.model, command_buffer)
-	instance_buffer_bind(&self.instances, command_buffer, self.current_frame)
+	push_descriptors_flush(&self.push, command_buffer, self.pipeline.layout, frame)
+	model_bind(&self.model, command_buffer, MESH_BINDING)
+	instance_buffer_bind(&self.instances, command_buffer, frame, INSTANCE_BINDING)
 	if len(self.objects) > 0 {
 		vulkan.CmdDrawIndexed(command_buffer, self.model.index_count, u32(len(self.objects)), 0, 0, 0)
 	}
 
-	vulkan.CmdEndRenderPass(command_buffer)
+	swapchain_end_rendering(&self.swapchain, command_buffer, image_idx)
 	command_pool_end(&self.command_pool, command_buffer)
-	present_result := swapchain_queue_submit(&self.swapchain, command_buffer, self.current_frame, image_idx)
-	if present_result == .ERROR_OUT_OF_DATE_KHR || present_result == .SUBOPTIMAL_KHR || sync.atomic_load(&self.window.framebuffer_resized) {
-		sync.atomic_store(&self.window.framebuffer_resized, false)
-		swapchain_recreate(&self.swapchain)
-		pipeline_destroy(&self.pipeline)
-		pipeline, pipeline_ok := pipeline_create(&self.gpu, self.swapchain.render_pass)
-		if !pipeline_ok {log.errorf("[VULKAN] Failed to recreate pipeline!"); return false}
-		self.pipeline = pipeline
-		self.camera = camera_create(&self.swapchain)
+
+	if res := swapchain_submit(&self.swapchain, command_buffer, frame, image_idx); res != .SUCCESS {
+		log.errorf("[VULKAN] Failed to submit frame!")
+		return false
+	}
+
+	present_result := swapchain_present(&self.swapchain, frame, image_idx)
+	if present_result == .ERROR_OUT_OF_DATE_KHR || present_result == .SUBOPTIMAL_KHR {
+		recreate = true
 	} else if present_result != .SUCCESS {
 		log.errorf("[VULKAN] Failed to present!")
 		return false
 	}
+	if sync.atomic_load(&self.window.framebuffer_resized) {recreate = true}
+
+	if recreate {
+		sync.atomic_store(&self.window.framebuffer_resized, false)
+		if !_renderer_recreate_if_possible(self) {return false}
+	}
+
 	self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT
 	return true
 }

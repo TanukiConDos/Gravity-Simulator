@@ -6,28 +6,58 @@ import "core:sync"
 import "vendor:glfw"
 import "vendor:vulkan"
 
-Window :: struct {handle: glfw.WindowHandle, width: i32, height: i32, framebuffer_resized: bool, surface: vulkan.SurfaceKHR}
+Window :: struct {
+	handle:              glfw.WindowHandle,
+	width:               i32,
+	height:              i32,
+	framebuffer_resized: bool,
+	surface:             vulkan.SurfaceKHR,
+	glfw_initialized:    bool,
+}
 
 @(private) _framebuffer_resize_callback :: proc"c"(handle: glfw.WindowHandle, w, height: i32) {context=runtime.default_context(); p:=cast(^Window)glfw.GetWindowUserPointer(handle); if p!=nil {sync.atomic_store(&p.framebuffer_resized, true)}}
 
-window_create :: proc(w, h: i32) -> (^Window, bool) {
+window_init :: proc(w, h: i32) -> (result: ^Window, ok: bool) {
 	log.debugf("[VULKAN] Creating window...")
-	if !glfw.Init() {log.errorf("[VULKAN]   FAILED: glfw.Init()"); return nil, false}
+	window := new(Window)
+	committed := false
+	defer if !committed {window_destroy(window)}
+
+	if !glfw.Init() {log.errorf("[VULKAN]   FAILED: glfw.Init()"); return}
+	window.glfw_initialized = true
 	log.debugf("[VULKAN]   GLFW initialized")
 	glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API); glfw.WindowHint(glfw.RESIZABLE, glfw.FALSE)
-	handle := glfw.CreateWindow(w, h, "Gravity Simulation", nil, nil)
-	if handle == nil {log.errorf("[VULKAN]   FAILED: glfw.CreateWindow()"); glfw.Terminate(); return nil, false}
+	window.handle = glfw.CreateWindow(w, h, "Gravity Simulation", nil, nil)
+	if window.handle == nil {log.errorf("[VULKAN]   FAILED: glfw.CreateWindow()"); return}
+	window.width = w; window.height = h
 	log.debugf("[VULKAN]   Window created: %d x %d", w, h)
-	window := new(Window); window.handle=handle; window.width=w; window.height=h
-	glfw.SetWindowUserPointer(handle, window)
-	glfw.SetFramebufferSizeCallback(handle, _framebuffer_resize_callback)
-	return window, true
+	glfw.SetWindowUserPointer(window.handle, window)
+	glfw.SetFramebufferSizeCallback(window.handle, _framebuffer_resize_callback)
+	committed = true
+	result = window
+	return result, true
 }
 
-window_destroy :: proc(self: ^Window) {log.debugf("[VULKAN] Destroying window..."); if self.handle!=nil {glfw.DestroyWindow(self.handle)}; glfw.Terminate(); free(self); log.debugf("[VULKAN]   Window destroyed")}
+window_destroy :: proc(self: ^Window) {
+	if self == nil {return}
+	log.debugf("[VULKAN] Destroying window...")
+	if self.handle != nil {glfw.DestroyWindow(self.handle); self.handle = nil}
+	if self.glfw_initialized {glfw.Terminate(); self.glfw_initialized = false}
+	free(self)
+	log.debugf("[VULKAN]   Window destroyed")
+}
+
 window_should_close :: proc(self: ^Window) -> bool {return bool(glfw.WindowShouldClose(self.handle))}
 window_poll_events :: proc() {glfw.PollEvents()}
-window_get_framebuffer_size :: proc(self: ^Window) -> (i32,i32) {return glfw.GetFramebufferSize(self.handle)}
-window_wait_events :: proc() {glfw.WaitEvents()}
-window_check_minimized :: proc(self: ^Window) {self.width,self.height=glfw.GetFramebufferSize(self.handle); for self.width==0||self.height==0 {self.width,self.height=glfw.GetFramebufferSize(self.handle); glfw.WaitEvents()}}
-window_create_surface :: proc(self: ^Window, instance: vulkan.Instance) -> bool {log.debugf("[VULKAN] Creating window surface..."); r:=glfw.CreateWindowSurface(instance,self.handle,nil,&self.surface); if r==.SUCCESS{log.debugf("[VULKAN]   Surface created")}else{log.errorf("[VULKAN]   FAILED: CreateWindowSurface")}; return r==.SUCCESS}
+
+@(private) window_get_framebuffer_size :: proc(self: ^Window) -> (i32,i32) {return glfw.GetFramebufferSize(self.handle)}
+// Refreshes the cached framebuffer size. Returns false while the window is
+// minimized (0x0 framebuffer), in which case the swapchain must not be rebuilt.
+// Event processing stays on the main thread, so this never blocks.
+@(private) window_update_size :: proc(self: ^Window) -> bool {self.width,self.height=glfw.GetFramebufferSize(self.handle); return self.width>0 && self.height>0}
+@(private) window_create_surface :: proc(self: ^Window, instance: vulkan.Instance) -> bool {
+	log.debugf("[VULKAN] Creating window surface...")
+	if !vk_check(glfw.CreateWindowSurface(instance, self.handle, nil, &self.surface), "glfwCreateWindowSurface") {return false}
+	log.debugf("[VULKAN]   Surface created")
+	return true
+}

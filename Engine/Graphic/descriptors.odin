@@ -3,64 +3,180 @@ package graphic
 import "core:log"
 import "vendor:vulkan"
 
-DescriptorPool :: struct {
-	gpu:          ^GPU,
-	pool:         vulkan.DescriptorPool,
-	sets:         [dynamic]vulkan.DescriptorSet,
-	uniform_bufs: [dynamic]Buffer,
+// Push descriptor usage declared by the renderer. Each spec owns one host-visible
+// buffer per frame in flight; (set, binding) must exist in the pipeline's
+// reflected interface and is validated by push_descriptors_validate.
+//
+// The camera uniform is uploaded per draw through vkCmdPushDescriptorSet2
+// (maintenance6, core in Vulkan 1.4), so no descriptor pool or long-lived
+// descriptor sets are needed.
+@(private)
+Push_Binding_Spec :: struct {
+	set:        u32,
+	binding:    u32,
+	descriptor: vulkan.DescriptorType,
+	size:       vulkan.DeviceSize,
 }
 
-descriptor_pool_create :: proc(gpu: ^GPU, pipeline: ^Pipeline) -> (self: DescriptorPool, ok: bool) {
-	self.gpu = gpu
-	log.debugf("[VULKAN] DescriptorPool initialization...")
-	_dp_create_pool(&self)
-	_dp_create_uniform_buffers(&self)
-	_dp_create_sets(&self, pipeline)
-	log.debugf("[VULKAN]   DescriptorPool ready (%d frames in flight)", MAX_FRAMES_IN_FLIGHT)
-	return self, true
+@(private)
+Push_Binding :: struct {
+	set:          u32,
+	binding:      u32,
+	descriptor:   vulkan.DescriptorType,
+	stage:        vulkan.ShaderStageFlags,
+	size:         vulkan.DeviceSize,
+	buffers:      [MAX_FRAMES_IN_FLIGHT]Buffer,
+	buffer_infos: [MAX_FRAMES_IN_FLIGHT]vulkan.DescriptorBufferInfo,
+	writes:       [MAX_FRAMES_IN_FLIGHT]vulkan.WriteDescriptorSet,
 }
 
-descriptor_pool_destroy :: proc(self: ^DescriptorPool) {
-	log.debugf("[VULKAN] Destroying DescriptorPool...")
-	if self.gpu != nil {
-		if self.pool != 0 {vulkan.DestroyDescriptorPool(self.gpu.device, self.pool, nil)}
-		for &buffer in self.uniform_bufs {buffer_destroy(&buffer)}
+@(private)
+Push_Descriptors :: struct {
+	gpu:      ^GPU,
+	bindings: [dynamic]Push_Binding,
+}
+
+@(private)
+push_descriptors_init :: proc(
+	gpu: ^GPU,
+	specs: []Push_Binding_Spec,
+) -> (
+	result: Push_Descriptors,
+	ok: bool,
+) {
+	log.debugf("[VULKAN] Push descriptors initialization...")
+	tmp := Push_Descriptors{gpu = gpu}
+	committed := false
+	defer if !committed {push_descriptors_destroy(&tmp)}
+
+	tmp.bindings = make([dynamic]Push_Binding, 0, len(specs))
+	for spec in specs {
+		append(&tmp.bindings, Push_Binding{
+			set        = spec.set,
+			binding    = spec.binding,
+			descriptor = spec.descriptor,
+			size       = spec.size,
+		})
+
+		binding := &tmp.bindings[len(tmp.bindings) - 1]
+		for frame in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			binding.buffers[frame] = buffer_init(gpu, spec.size, {.UNIFORM_BUFFER}, .HostVisible) or_return
+		}
+		for frame in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			binding.buffer_infos[frame] = vulkan.DescriptorBufferInfo{
+				buffer = binding.buffers[frame].buffer,
+				offset = 0,
+				range  = spec.size,
+			}
+			binding.writes[frame] = vulkan.WriteDescriptorSet{
+				sType           = .WRITE_DESCRIPTOR_SET,
+				dstBinding      = spec.binding,
+				dstArrayElement = 0,
+				descriptorType  = spec.descriptor,
+				descriptorCount = 1,
+				pBufferInfo     = &binding.buffer_infos[frame],
+			}
+		}
 	}
-	delete(self.sets); delete(self.uniform_bufs)
-	log.debugf("[VULKAN]   DescriptorPool destroyed")
+
+	log.debugf("[VULKAN]   Push descriptors ready (%d bindings)", len(tmp.bindings))
+	committed = true
+	return tmp, true
 }
 
-descriptor_pool_update_ubo :: proc(self: ^DescriptorPool, ubo: UniformBufferObject, current_frame: u32) {
-	mut := ubo
-	mut.proj[1, 1] *= -1
-	buffer_write(&self.uniform_bufs[current_frame], &mut, size_of(UniformBufferObject), 0)
-}
-
-@(private) _dp_create_pool :: proc(self: ^DescriptorPool) {
-	pool_size := vulkan.DescriptorPoolSize{type = .UNIFORM_BUFFER, descriptorCount = MAX_FRAMES_IN_FLIGHT}
-	pool_info := vulkan.DescriptorPoolCreateInfo{sType = .DESCRIPTOR_POOL_CREATE_INFO, poolSizeCount = 1, pPoolSizes = &pool_size, maxSets = MAX_FRAMES_IN_FLIGHT}
-	vulkan.CreateDescriptorPool(self.gpu.device, &pool_info, nil, &self.pool)
-}
-
-@(private) _dp_create_uniform_buffers :: proc(self: ^DescriptorPool) {
-	buffer_size := vulkan.DeviceSize(size_of(UniformBufferObject))
-	self.uniform_bufs = make([dynamic]Buffer, MAX_FRAMES_IN_FLIGHT)
-	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-		buffer, _ := buffer_create(self.gpu, buffer_size, {.UNIFORM_BUFFER}, {.HOST_VISIBLE, .HOST_COHERENT})
-		self.uniform_bufs[i] = buffer
-		buffer_map(&self.uniform_bufs[i])
+@(private)
+push_descriptors_destroy :: proc(self: ^Push_Descriptors) {
+	if self.gpu == nil {return}
+	log.debugf("[VULKAN] Destroying Push descriptors...")
+	for &binding in self.bindings {
+		for &buffer in binding.buffers {buffer_destroy(&buffer)}
 	}
+	delete(self.bindings)
+	self.bindings = nil
 }
 
-@(private) _dp_create_sets :: proc(self: ^DescriptorPool, pipeline: ^Pipeline) {
-	total := int(MAX_FRAMES_IN_FLIGHT)
-	layouts := make([dynamic]vulkan.DescriptorSetLayout, total); defer delete(layouts)
-	for i in 0 ..< total {layouts[i] = pipeline.descriptor_set_layout}
-	allocate_info := vulkan.DescriptorSetAllocateInfo{sType = .DESCRIPTOR_SET_ALLOCATE_INFO, descriptorPool = self.pool, descriptorSetCount = u32(total), pSetLayouts = raw_data(layouts)}
-	self.sets = make([dynamic]vulkan.DescriptorSet, total); vulkan.AllocateDescriptorSets(self.gpu.device, &allocate_info, raw_data(self.sets))
-	for i: u32 = 0; i < MAX_FRAMES_IN_FLIGHT; i += 1 {
-		buffer_info := vulkan.DescriptorBufferInfo{buffer = self.uniform_bufs[i].buffer, offset = 0, range = size_of(UniformBufferObject)}
-		write_desc := vulkan.WriteDescriptorSet{sType = .WRITE_DESCRIPTOR_SET, dstSet = self.sets[i], dstBinding = 0, dstArrayElement = 0, descriptorType = .UNIFORM_BUFFER, descriptorCount = 1, pBufferInfo = &buffer_info}
-		vulkan.UpdateDescriptorSets(self.gpu.device, 1, &write_desc, 0, nil)
+@(private)
+push_descriptors_find :: proc(self: ^Push_Descriptors, set, binding: u32) -> ^Push_Binding {
+	for &entry in self.bindings {
+		if entry.set == set && entry.binding == binding {return &entry}
+	}
+	return nil
+}
+
+// push_descriptors_validate checks the configured bindings against the merged
+// shader interface, copies each binding's stage flags and warns about shader
+// resources that no buffer feeds.
+@(private)
+push_descriptors_validate :: proc(self: ^Push_Descriptors, pipeline: ^Pipeline) -> bool {
+	for &entry in self.bindings {
+		merged, found := pipeline_descriptor(pipeline, entry.set, entry.binding)
+		if !found {
+			log.errorf(
+				"[VULKAN] Push descriptor set %d binding %d is not declared by the shaders",
+				entry.set,
+				entry.binding,
+			)
+			return false
+		}
+		if merged.descriptor != entry.descriptor {
+			log.errorf(
+				"[VULKAN] Push descriptor set %d binding %d is %v in the shader but %v in the config",
+				entry.set,
+				entry.binding,
+				merged.descriptor,
+				entry.descriptor,
+			)
+			return false
+		}
+		entry.stage = merged.stage
+	}
+
+	for descriptor in pipeline.descriptors {
+		if push_descriptors_find(self, descriptor.set, descriptor.binding) == nil {
+			log.warnf(
+				"[VULKAN] Shader descriptor set %d binding %d has no configured buffer",
+				descriptor.set,
+				descriptor.binding,
+			)
+		}
+	}
+	return true
+}
+
+@(private)
+push_descriptors_write :: proc(
+	self: ^Push_Descriptors,
+	set, binding: u32,
+	frame: u32,
+	data: rawptr,
+	size: vulkan.DeviceSize,
+) {
+	entry := push_descriptors_find(self, set, binding)
+	assert(entry != nil, "push descriptor binding is not configured")
+	assert(frame < MAX_FRAMES_IN_FLIGHT, "push descriptor frame out of range")
+	assert(size <= entry.size, "push descriptor write exceeds the binding size")
+	buffer_write(&entry.buffers[frame], data, size, 0)
+}
+
+@(private)
+push_descriptors_flush :: proc(
+	self: ^Push_Descriptors,
+	cmd: vulkan.CommandBuffer,
+	layout: vulkan.PipelineLayout,
+	frame: u32,
+) {
+	assert(frame < MAX_FRAMES_IN_FLIGHT, "push descriptor frame out of range")
+	for &entry in self.bindings {
+		// Recomputed every frame so the write never points at a stale address.
+		entry.writes[frame].pBufferInfo = &entry.buffer_infos[frame]
+		info := vulkan.PushDescriptorSetInfo{
+			sType                = .PUSH_DESCRIPTOR_SET_INFO,
+			stageFlags           = entry.stage,
+			layout               = layout,
+			set                  = entry.set,
+			descriptorWriteCount = 1,
+			pDescriptorWrites    = &entry.writes[frame],
+		}
+		vulkan.CmdPushDescriptorSet2(cmd, &info)
 	}
 }

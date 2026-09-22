@@ -1,4 +1,4 @@
-#version 450
+#version 460
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
@@ -21,6 +21,5 @@ void main() {
         vec4(instancePos, 1.0)
     );
     gl_Position = ubo.proj * ubo.view * model * vec4(inPosition, 1.0);
-    vec3 options[2] = vec3[](inColor, vec3(1, inColor.gb));
-    fragColor = options[int(instanceSelected)];
+    fragColor = (instanceSelected != 0) ? vec3(1.0, inColor.gb) : inColor;
 }

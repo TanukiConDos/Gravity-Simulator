@@ -2,9 +2,12 @@ package graphic
 
 import "vendor:glfw"
 
+@(private)
 MOVE_SPEED   :: 500.0
+@(private)
 ROTATE_SPEED :: 1.0
 
+@(private)
 input_poll :: proc(w: ^Window, cam: ^Camera, delta_seconds: f32) {
 	move := delta_seconds * MOVE_SPEED
 	rotate := delta_seconds * ROTATE_SPEED
