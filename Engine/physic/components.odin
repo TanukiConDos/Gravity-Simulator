@@ -17,16 +17,14 @@ Body :: struct {
 	_pad: u8,
 }
 
-// Contiguous views over the body columns, indexed by entity index.
-Body_Arrays :: struct {
+// One non-owning view over the body columns plus the live body list. Every field
+// is a borrowed slice header over a pool; no data is copied. Consumers read only
+// the columns they need.
+Bodies :: struct {
+	bodies:   []u32,
 	position: []Position,
 	velocity: []Velocity,
 	mass:     []Mass,
-}
-
-Body_View :: struct {
-	bodies:   []u32,
-	position: []Position,
 	radius:   []Radius,
 	selected: []Selected,
 }
@@ -53,19 +51,13 @@ body_count :: proc(w: ^ecs.World) -> int {
 	return len(ecs.world_pool(w, Body).dense)
 }
 
-body_view :: proc(w: ^ecs.World) -> Body_View {
-	return Body_View {
+body_view :: proc(w: ^ecs.World) -> Bodies {
+	return Bodies {
 		bodies   = ecs.world_pool(w, Body).dense[:],
-		position = ecs.world_pool(w, Position).data[:],
-		radius   = ecs.world_pool(w, Radius).data[:],
-		selected = ecs.world_pool(w, Selected).data[:],
-	}
-}
-
-body_arrays :: proc(w: ^ecs.World) -> Body_Arrays {
-	return Body_Arrays {
 		position = ecs.world_pool(w, Position).data[:],
 		velocity = ecs.world_pool(w, Velocity).data[:],
 		mass     = ecs.world_pool(w, Mass).data[:],
+		radius   = ecs.world_pool(w, Radius).data[:],
+		selected = ecs.world_pool(w, Selected).data[:],
 	}
 }

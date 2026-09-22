@@ -201,8 +201,8 @@ _ensure_collision_scratch :: proc(state: ^Physic_State, count: int) {
 
 @(private)
 _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^OctTree {
-	bodies := ecs.world_pool(w, Body).dense[:]
-	arrays := body_arrays(w)
+	view := body_view(w)
+	bodies := view.bodies
 	stale :=
 		state.tree == nil ||
 		state.tree_body_count != len(bodies) ||
@@ -229,9 +229,9 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 
 	if stale || (!state.auto_adjust && state.rebuild_interval <= 0) {
 		if state.tree != nil {
-			octtree_rebuild(state.tree, bodies, arrays, state.theta)
+			octtree_rebuild(state.tree, view, state.theta)
 		} else {
-			state.tree = octtree_create(bodies, arrays, state.theta)
+			state.tree = octtree_create(view, state.theta)
 		}
 		state.tree_body_count = len(bodies)
 		state.tree_revision = w.revision
@@ -239,19 +239,19 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 		state.updates_since_build = 0
 		state.rebuild_count += 1
 		if state.auto_adjust {
-			if cap(state.build_positions) < len(arrays.position) {
-				resize(&state.build_positions, len(arrays.position))
+			if cap(state.build_positions) < len(view.position) {
+				resize(&state.build_positions, len(view.position))
 			}
 			for idx in bodies {
 				if int(idx) < len(state.build_positions) {
-					state.build_positions[idx] = Vec3(arrays.position[idx])
+					state.build_positions[idx] = Vec3(view.position[idx])
 				}
 			}
 			state.max_disp_sq = 0
 		}
 	}
 	state.updates_since_build += 1
-	if state.tree != nil {state.tree.arrays = arrays}
+	if state.tree != nil {state.tree.view = view}
 	return state.tree
 }
 

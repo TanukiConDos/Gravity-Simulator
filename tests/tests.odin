@@ -14,9 +14,10 @@ test_octtree_create :: proc(t: ^testing.T) {
 	physics.body_spawn(w, {-100, 0, 0}, {0, 0, 0}, 100, 5)
 
 	bodies := ecs.world_pool(w, physics.Body).dense[:]
-	tree := physics.octtree_create(bodies, physics.body_arrays(w), 0.5)
+	tree := physics.octtree_create(physics.body_view(w), 0.5)
 	testing.expect(t, tree != nil)
 	testing.expect(t, len(tree.nodes) > 0)
+	testing.expect(t, len(tree.order) == len(bodies))
 	physics.octtree_destroy(tree)
 }
 
@@ -27,8 +28,7 @@ test_octtree_force :: proc(t: ^testing.T) {
 	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
 	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
 
-	bodies := ecs.world_pool(w, physics.Body).dense[:]
-	tree := physics.octtree_create(bodies, physics.body_arrays(w), 0.5)
+	tree := physics.octtree_create(physics.body_view(w), 0.5)
 	physics.octtree_calc_force(tree, object_b.index, 16.0)
 
 	velocity := ecs.world_get(w, object_b, physics.Velocity)

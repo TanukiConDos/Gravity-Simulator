@@ -24,11 +24,12 @@ OctTreeNode :: struct {
 
 // The tree stores entity indices and a view over the component columns, so it
 // survives pool reallocation (unlike the previous pointer list) and can be
-// consumed while entities are being merged away.
+// consumed while entities are being merged away. `order` is the tree's own
+// permuted copy of the body list; node ranges index into it.
 OctTree :: struct {
 	nodes:         []OctTreeNode,
-	bodies:        []u32,
-	arrays:        Body_Arrays,
+	order:         []u32,
+	view:          Bodies,
 	theta:         f32,
 	arena:         found.Arena,
 	typical_half:  f32,
@@ -40,27 +41,27 @@ ChildRange :: struct {
 	count: int,
 }
 
-octtree_create :: proc(source: []u32, arrays: Body_Arrays, theta: f32) -> ^OctTree {
+octtree_create :: proc(view: Bodies, theta: f32) -> ^OctTree {
 	t := new(OctTree)
 	t.theta = theta
-	t.arrays = arrays
+	t.view = view
 
-	count := len(source)
+	count := len(view.bodies)
 	need := octtree_buffer_size(count)
 	t.arena = found.arena_create(need)
 	t.nodes = _arena_slice(OctTreeNode, &t.arena, count * 8 + 1024)
-	t.bodies = _arena_slice(u32, &t.arena, count)
+	t.order = _arena_slice(u32, &t.arena, count)
 
-	_octtree_build(t, source)
+	_octtree_build(t)
 	return t
 }
 
-octtree_rebuild :: proc(self: ^OctTree, source: []u32, arrays: Body_Arrays, theta: f32) {
+octtree_rebuild :: proc(self: ^OctTree, view: Bodies, theta: f32) {
 	if self == nil {return}
 	self.theta = theta
-	self.arrays = arrays
+	self.view = view
 
-	count := len(source)
+	count := len(view.bodies)
 	need := octtree_buffer_size(count)
 	if need > len(self.arena.data) {
 		found.arena_destroy(&self.arena)
@@ -68,22 +69,22 @@ octtree_rebuild :: proc(self: ^OctTree, source: []u32, arrays: Body_Arrays, thet
 	}
 	found.arena_reset(&self.arena)
 	self.nodes = _arena_slice(OctTreeNode, &self.arena, count * 8 + 1024)
-	self.bodies = _arena_slice(u32, &self.arena, count)
+	self.order = _arena_slice(u32, &self.arena, count)
 
-	_octtree_build(self, source)
+	_octtree_build(self)
 }
 
 octtree_buffer_size :: proc(object_count: int) -> int {
 	return (object_count * 8 + 1024) * size_of(OctTreeNode) + object_count * size_of(u32) + 1024
 }
 
-_octtree_build :: proc(t: ^OctTree, source: []u32) {
-	copy(t.bodies, source)
+_octtree_build :: proc(t: ^OctTree) {
+	copy(t.order, t.view.bodies)
 
 	min := Vec3{math.F32_MAX, math.F32_MAX, math.F32_MAX}
 	max := Vec3{-math.F32_MAX, -math.F32_MAX, -math.F32_MAX}
-	for idx in t.bodies {
-		p := Vec3(t.arrays.position[idx])
+	for idx in t.order {
+		p := Vec3(t.view.position[idx])
 		if p.x < min.x {min.x = p.x}
 		if p.y < min.y {min.y = p.y}
 		if p.z < min.z {min.z = p.z}
@@ -97,7 +98,7 @@ _octtree_build :: proc(t: ^OctTree, source: []u32) {
 
 	t.leaf_obj_hist = {}
 	next_node: u32 = 0
-	_build_octant(t, 0, len(t.bodies), center, half, 0, &next_node)
+	_build_octant(t, 0, len(t.order), center, half, 0, &next_node)
 
 	total_objects := 0
 	for d in 0 ..= MAX_DEPTH {
@@ -148,7 +149,7 @@ _build_octant :: proc(
 		return
 	}
 
-	ranges := _partition_bodies(t.bodies, start, count, center, t.arrays.position)
+	ranges := _partition_bodies(t.order, start, count, center, t.view.position)
 
 	child_half := half * 0.5
 	child_count := 0
@@ -243,9 +244,9 @@ _node_mass_calculation :: proc(t: ^OctTree, node_idx: u32) {
 		}
 	} else {
 		for i in node.first_obj ..< node.first_obj + node.obj_count {
-			idx := t.bodies[i]
-			m := f64(t.arrays.mass[idx])
-			p := Vec3(t.arrays.position[idx])
+			idx := t.order[i]
+			m := f64(t.view.mass[idx])
+			p := Vec3(t.view.position[idx])
 			node.mass += m
 			cm += [3]f64{f64(p.x), f64(p.y), f64(p.z)} * m
 		}
@@ -265,9 +266,9 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 	stack: [4096]u32
 	stack_count := 1
 	stack[0] = 0
-	arrays := &t.arrays
-	obj_pos := Vec3(arrays.position[index])
-	obj_mass := f64(arrays.mass[index])
+	view := &t.view
+	obj_pos := Vec3(view.position[index])
+	obj_mass := f64(view.mass[index])
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -275,15 +276,15 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 
 		if node.child_count == 0 {
 			for i in node.first_obj ..< node.first_obj + node.obj_count {
-				other := t.bodies[i]
+				other := t.order[i]
 				if other != index {
 					_apply_gravity(
-						arrays,
+						view,
 						index,
 						obj_pos,
 						obj_mass,
-						f64(arrays.mass[other]),
-						Vec3(arrays.position[other]),
+						f64(view.mass[other]),
+						Vec3(view.position[other]),
 						dt,
 					)
 				}
@@ -298,7 +299,7 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 
 		if (node.half_size * 2) / dist <= theta {
 			if node.mass > 0 && dist > 0.001 {
-				_apply_gravity(arrays, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
+				_apply_gravity(view, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
 			}
 			continue
 		}
@@ -313,7 +314,7 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 }
 
 _apply_gravity :: proc(
-	arrays: ^Body_Arrays,
+	view: ^Bodies,
 	index: u32,
 	obj_pos: Vec3,
 	obj_mass: f64,
@@ -327,7 +328,7 @@ _apply_gravity :: proc(
 	dir_norm := dir / math.sqrt_f32(dist_sq)
 	force_mag := f32(GRAVITY_CONSTANT * obj_mass * other_mass / f64(dist_sq))
 	acc := dir_norm * (force_mag / f32(obj_mass))
-	arrays.velocity[index] = Velocity(Vec3(arrays.velocity[index]) + acc * dt)
+	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + acc * dt)
 }
 
 // Appends the entity indices inside `radius` of `pos` into `result`.
@@ -369,7 +370,7 @@ _collect_nearby :: proc(
 		if node.child_count == 0 {
 			for i in node.first_obj ..< node.first_obj + node.obj_count {
 				if count^ < len(result) {
-					result[count^] = t.bodies[i]
+					result[count^] = t.order[i]
 					count^ += 1
 				}
 			}
