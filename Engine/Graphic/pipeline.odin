@@ -4,16 +4,22 @@ import "core:log"
 import "core:os"
 import "vendor:vulkan"
 
+@(private)
 Pipeline :: struct {
 	gpu:                    ^GPU,
 	layout:                 vulkan.PipelineLayout,
 	handle:                 vulkan.Pipeline,
 	descriptor_set_layout:  vulkan.DescriptorSetLayout,
+	color_format:           vulkan.Format,
+	depth_format:           vulkan.Format,
 }
 
-pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_result: Pipeline, ok: bool) {
+@(private)
+pipeline_init :: proc(gpu: ^GPU, color_format, depth_format: vulkan.Format) -> (result: Pipeline, ok: bool) {
 	log.debugf("[VULKAN] Pipeline initialization...")
-	pipeline_result.gpu = gpu
+	tmp := Pipeline{gpu = gpu, color_format = color_format, depth_format = depth_format}
+	committed := false
+	defer if !committed {pipeline_destroy(&tmp)}
 
 	log.debugf("[VULKAN]   Loading shaders...")
 	vertex_code, vertex_err := os.read_entire_file("Engine/Graphic/shader/vert.spv", context.temp_allocator)
@@ -24,6 +30,10 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 	log.debugf("[VULKAN]   Creating shader modules...")
 	vertex_module := _create_shader_module(gpu, vertex_code)
 	fragment_module := _create_shader_module(gpu, fragment_code)
+	defer {
+		vulkan.DestroyShaderModule(gpu.device, vertex_module, nil)
+		vulkan.DestroyShaderModule(gpu.device, fragment_module, nil)
+	}
 	log.debugf("[VULKAN]     Shader modules created")
 
 	binding_descriptions := [?]vulkan.VertexInputBindingDescription{
@@ -39,14 +49,16 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 	}
 
 	log.debugf("[VULKAN]   Creating descriptor set layout...")
+	// PUSH_DESCRIPTOR: the camera uniform is uploaded per draw through
+	// vkCmdPushDescriptorSet2, so no descriptor pool/sets are needed.
 	ubo_layout_binding := vulkan.DescriptorSetLayoutBinding{binding = 0, descriptorType = .UNIFORM_BUFFER, descriptorCount = 1, stageFlags = {.VERTEX}}
-	layout_info := vulkan.DescriptorSetLayoutCreateInfo{sType = .DESCRIPTOR_SET_LAYOUT_CREATE_INFO, bindingCount = 1, pBindings = &ubo_layout_binding}
-	if vulkan.CreateDescriptorSetLayout(gpu.device, &layout_info, nil, &pipeline_result.descriptor_set_layout) != .SUCCESS {return {}, false}
+	layout_info := vulkan.DescriptorSetLayoutCreateInfo{sType = .DESCRIPTOR_SET_LAYOUT_CREATE_INFO, flags = {.PUSH_DESCRIPTOR}, bindingCount = 1, pBindings = &ubo_layout_binding}
+	vk_check(vulkan.CreateDescriptorSetLayout(gpu.device, &layout_info, nil, &tmp.descriptor_set_layout), "vkCreateDescriptorSetLayout") or_return
 	log.debugf("[VULKAN]     Descriptor set layout created")
 
 	log.debugf("[VULKAN]   Creating pipeline layout...")
-	pipeline_layout_info := vulkan.PipelineLayoutCreateInfo{sType = .PIPELINE_LAYOUT_CREATE_INFO, setLayoutCount = 1, pSetLayouts = &pipeline_result.descriptor_set_layout}
-	if vulkan.CreatePipelineLayout(gpu.device, &pipeline_layout_info, nil, &pipeline_result.layout) != .SUCCESS {return {}, false}
+	pipeline_layout_info := vulkan.PipelineLayoutCreateInfo{sType = .PIPELINE_LAYOUT_CREATE_INFO, setLayoutCount = 1, pSetLayouts = &tmp.descriptor_set_layout}
+	vk_check(vulkan.CreatePipelineLayout(gpu.device, &pipeline_layout_info, nil, &tmp.layout), "vkCreatePipelineLayout") or_return
 	log.debugf("[VULKAN]     Pipeline layout created")
 
 	log.debugf("[VULKAN]   Creating graphics pipeline...")
@@ -112,8 +124,18 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 		pDynamicStates = &dynamic_states[0],
 	}
 
+	// Dynamic rendering: the pipeline declares its attachment formats instead of
+	// referencing a VkRenderPass, so it no longer depends on the swapchain.
+	color_format_local := color_format
+	rendering_info := vulkan.PipelineRenderingCreateInfo{
+		sType = .PIPELINE_RENDERING_CREATE_INFO,
+		colorAttachmentCount = 1,
+		pColorAttachmentFormats = &color_format_local,
+		depthAttachmentFormat = depth_format,
+	}
 	pipeline_info := vulkan.GraphicsPipelineCreateInfo{
 		sType = .GRAPHICS_PIPELINE_CREATE_INFO,
+		pNext = &rendering_info,
 		stageCount = 2,
 		pStages = &stages[0],
 		pVertexInputState = &vertex_info,
@@ -124,26 +146,25 @@ pipeline_create :: proc(gpu: ^GPU, render_pass: vulkan.RenderPass) -> (pipeline_
 		pDepthStencilState = &depth_stencil,
 		pColorBlendState = &color_blending,
 		pDynamicState = &dynamic_state,
-		layout = pipeline_result.layout,
-		renderPass = render_pass,
-		subpass = 0,
+		layout = tmp.layout,
 	}
-	if vulkan.CreateGraphicsPipelines(gpu.device, 0, 1, &pipeline_info, nil, &pipeline_result.handle) != .SUCCESS {return {}, false}
-
-	vulkan.DestroyShaderModule(gpu.device, vertex_module, nil)
-	vulkan.DestroyShaderModule(gpu.device, fragment_module, nil)
+	vk_check(vulkan.CreateGraphicsPipelines(gpu.device, 0, 1, &pipeline_info, nil, &tmp.handle), "vkCreateGraphicsPipelines") or_return
 	log.debugf("[VULKAN]   Pipeline ready")
-	return pipeline_result, true
+	committed = true
+	return tmp, true
 }
 
+@(private)
 pipeline_destroy :: proc(self: ^Pipeline) {
+	if self.gpu == nil {return}
 	log.debugf("[VULKAN] Destroying Pipeline...")
-	vulkan.DestroyPipeline(self.gpu.device, self.handle, nil)
-	vulkan.DestroyPipelineLayout(self.gpu.device, self.layout, nil)
-	vulkan.DestroyDescriptorSetLayout(self.gpu.device, self.descriptor_set_layout, nil)
+	if self.handle != 0 {vulkan.DestroyPipeline(self.gpu.device, self.handle, nil); self.handle = 0}
+	if self.layout != 0 {vulkan.DestroyPipelineLayout(self.gpu.device, self.layout, nil); self.layout = 0}
+	if self.descriptor_set_layout != 0 {vulkan.DestroyDescriptorSetLayout(self.gpu.device, self.descriptor_set_layout, nil); self.descriptor_set_layout = 0}
 	log.debugf("[VULKAN]   Pipeline destroyed")
 }
 
+@(private)
 pipeline_bind :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
 	vulkan.CmdBindPipeline(cmd, .GRAPHICS, self.handle)
 }
@@ -151,6 +172,7 @@ pipeline_bind :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
 @(private) _create_shader_module :: proc(gpu: ^GPU, code: []byte) -> vulkan.ShaderModule {
 	create_info := vulkan.ShaderModuleCreateInfo{sType = .SHADER_MODULE_CREATE_INFO, codeSize = len(code), pCode = cast(^u32)(raw_data(code))}
 	module: vulkan.ShaderModule
-	vulkan.CreateShaderModule(gpu.device, &create_info, nil, &module)
+	// Invalid SPIR-V is a programming error, not a runtime condition.
+	vk_assert(vulkan.CreateShaderModule(gpu.device, &create_info, nil, &module), "vkCreateShaderModule")
 	return module
 }

@@ -92,7 +92,8 @@ _parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, po
 	    len(
 		    text,
 	    ) {c := text[pos^]; if (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E' {pos^ += 1} else {break}}
-	val, _ := strconv.parse_f64(text[start:pos^])
+	val, parse_ok := strconv.parse_f64(text[start:pos^])
+	if !parse_ok {log.warnf("[SCENE] Malformed number in scene file: %q", text[start:pos^])}
 	return val}
 @(private)
 _parse_array :: proc(text: string, pos: ^int) -> [dynamic]f64 {arr := make([dynamic]f64)
@@ -183,7 +184,7 @@ main :: proc() {
 	foundation.parallel_init(config.worker_threads)
 	defer foundation.parallel_destroy()
 
-	window, window_ok := graphic.window_create(1280, 720)
+	window, window_ok := graphic.window_init(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
 
@@ -196,12 +197,7 @@ main :: proc() {
 		window        = window,
 	}
 
-	renderer, renderer_ok := graphic.renderer_create(
-		window,
-		g_objects,
-		&g_physic_system,
-		&ctx.delta_time,
-	)
+	renderer, renderer_ok := graphic.renderer_init(window, g_objects, &g_physic_system, &ctx.delta_time)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 	ctx.renderer = renderer
