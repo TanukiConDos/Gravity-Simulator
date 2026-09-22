@@ -11,8 +11,9 @@ Renderer :: struct {
 	gpu:             GPU,
 	command_pool:    CommandPool,
 	swapchain:       SwapChain,
+	config:          Pipeline_Config,
 	pipeline:        Pipeline,
-	uniforms:        Uniforms,
+	push:            Push_Descriptors,
 	model:           Model,
 	camera:          Camera,
 	objects:         ^[dynamic]phys.PhysicObject,
@@ -33,10 +34,12 @@ renderer_init :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, phy
 	renderer.gpu = gpu_init(window) or_return
 	renderer.command_pool = command_pool_init(&renderer.gpu) or_return
 	renderer.swapchain = swapchain_init(&renderer.gpu, window) or_return
-	renderer.pipeline = pipeline_init(&renderer.gpu, renderer.swapchain.image_format, renderer.swapchain.depth_format) or_return
+	renderer.config = renderer_pipeline_config()
+	renderer.pipeline = pipeline_init(&renderer.gpu, renderer.config, renderer.swapchain.image_format, renderer.swapchain.depth_format) or_return
 	renderer.model = model_init(&renderer.gpu, &renderer.command_pool, 30, 30) or_return
 	renderer.camera = camera_create(&renderer.swapchain)
-	renderer.uniforms = uniforms_init(&renderer.gpu) or_return
+	renderer.push = push_descriptors_init(&renderer.gpu, RENDERER_PUSH_BINDINGS[:]) or_return
+	if !push_descriptors_validate(&renderer.push, &renderer.pipeline) {return nil, false}
 	renderer.instances = instance_buffer_init(&renderer.gpu)
 	if objects != nil && len(objects) > 0 {
 		renderer.positions = make([dynamic]Vec3, len(objects))
@@ -53,7 +56,7 @@ renderer_destroy :: proc(self: ^Renderer) {
 	if self == nil {return}
 	log.infof("[VULKAN] Renderer shutdown...")
 	gpu_wait(&self.gpu)
-	model_destroy(&self.model); uniforms_destroy(&self.uniforms)
+	model_destroy(&self.model); push_descriptors_destroy(&self.push)
 	instance_buffer_destroy(&self.instances)
 	delete(self.positions)
 	pipeline_destroy(&self.pipeline); swapchain_destroy(&self.swapchain); command_pool_destroy(&self.command_pool); gpu_destroy(&self.gpu)
@@ -77,7 +80,7 @@ _renderer_recreate_swapchain :: proc(self: ^Renderer) -> bool {
 	format_changed := self.pipeline.color_format != self.swapchain.image_format || self.pipeline.depth_format != self.swapchain.depth_format
 	if format_changed {
 		pipeline_destroy(&self.pipeline)
-		self.pipeline = pipeline_init(&self.gpu, self.swapchain.image_format, self.swapchain.depth_format) or_return
+		self.pipeline = pipeline_init(&self.gpu, self.config, self.swapchain.image_format, self.swapchain.depth_format) or_return
 	}
 	self.camera = camera_create(&self.swapchain)
 	return true
@@ -127,16 +130,16 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 
 	ubo: UniformBufferObject
 	camera_transform(&self.camera, &ubo)
-	uniforms_write(&self.uniforms, ubo, frame)
+	push_descriptors_write(&self.push, CAMERA_SET, CAMERA_BINDING, frame, &ubo, size_of(UniformBufferObject))
 
 	if self.physic_system != nil && self.objects != nil && len(self.positions) >= len(self.objects) {
 		phys.physic_snapshot_read(self.physic_system, raw_data(self.positions), len(self.positions))
 		instance_buffer_update_positions(&self.instances, frame, self.positions[:])
 	}
 
-	uniforms_push(&self.uniforms, command_buffer, self.pipeline.layout, frame)
-	model_bind(&self.model, command_buffer)
-	instance_buffer_bind(&self.instances, command_buffer, frame)
+	push_descriptors_flush(&self.push, command_buffer, self.pipeline.layout, frame)
+	model_bind(&self.model, command_buffer, MESH_BINDING)
+	instance_buffer_bind(&self.instances, command_buffer, frame, INSTANCE_BINDING)
 	if len(self.objects) > 0 {
 		vulkan.CmdDrawIndexed(command_buffer, self.model.index_count, u32(len(self.objects)), 0, 0, 0)
 	}

@@ -43,16 +43,16 @@ A `vk_layer_settings.txt` enabling best practices is generated with
 
 ```
 .
-├── main.odin               # App entry point + scene JSON loader
-├── config.json             # Simulation configuration (edit by hand)
-├── engine/
-│   ├── graphic/            # Vulkan renderer
-│   ├── physic/             # Physics simulation
-│   └── state/              # (removed — ImGui UI panels deleted)
-├── foundation/             # Config, arena, file I/O, timers
-├── tests/                  # Odin test suite
-├── Engine/Graphic/shader/  # SPIR-V shaders + GLSL sources + compilar.bat
-└── scenes/                 # JSON scene files
+├── main.odin                # App entry point + scene JSON loader
+├── config.json              # Simulation configuration (edit by hand)
+├── Engine/Graphic/          # Vulkan renderer
+│   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
+│   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
+│   └── renderer_config.odin # Declarative shaders, vertex streams, descriptors
+├── Engine/physic/           # Physics simulation
+├── foundation/              # Config, arena, file I/O, timers
+├── tests/                   # Odin test suite (+ fixtures/)
+└── scenes/                  # JSON scene files
 ```
 
 ## Configuration
@@ -92,6 +92,30 @@ When `auto_adjust` is `true`, the physics system measures its own per-update cos
 Convergence is smoothed (EMA α=0.1, 20-update warmup, 2-consecutive-out-of-band confirmations, ±15% deadband). If the target is unreachable (e.g. too many objects), the knobs pin at their bounds and the sim simply runs as fast as the hardware allows.
 
 ## Renderer (`Engine/Graphic`)
+
+### Configuration and reflection
+
+The pipeline is built from data, not from hand-written Vulkan structs:
+
+- `Engine/Graphic/spirv/` parses the compiled SPIR-V to expose entry points, stage
+  inputs/outputs, descriptor bindings and push constants. It makes no Vulkan
+  calls and has unit tests (`tests/shader_reflection.odin`).
+- `renderer_config.odin` is the single source of truth for shaders, vertex
+  streams and push descriptors. `pipeline_config.odin` defines those types.
+- `pipeline.odin` derives shader modules, descriptor set layouts and the vertex
+  input from the reflection.
+- Vertex attributes are paired by declarative order: each `Vertex_Buffer_Spec`
+  names a packed CPU struct whose non-`_` fields, in declaration order, consume
+  the shader's input locations in ascending order. Formats are taken from
+  SPIR-V; offsets and strides from the struct. A mismatch (wrong type, reordered
+  field, missing input) fails at pipeline build time with a log error.
+- `descriptors.odin` owns the per-binding buffers and pushes them with
+  `vkCmdPushDescriptorSet2`; `push_descriptors_validate` checks each configured
+  binding against the shader interface.
+
+Adding an attribute therefore means editing the GLSL interface and the CPU
+struct; adding a resource means editing the GLSL interface and
+`renderer_config.odin`.
 
 ### Comments
 
@@ -177,4 +201,10 @@ On launch the app loads `config.json`, creates the simulation accordingly (rando
 
 ## Tests
 
-6 tests: `test_octtree_create`, `test_octtree_force`, `test_brute_force`, `test_physic_object`, `test_adaptive_decide`, `test_adaptive_tree_stale`.
+10 tests: `test_octtree_create`, `test_octtree_force`, `test_brute_force`,
+`test_physic_object`, `test_adaptive_decide`, `test_adaptive_tree_stale`,
+`test_spirv_vertex_reflection`, `test_spirv_fragment_reflection`,
+`test_spirv_descriptors_and_push_constants`, `test_spirv_rejects_invalid_modules`.
+
+Shader reflection tests read the engine's compiled shaders plus the committed
+fixture in `tests/fixtures/` (rebuild it with `tests/fixtures/build.sh`).

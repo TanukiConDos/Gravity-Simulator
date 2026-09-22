@@ -62,9 +62,9 @@ model_destroy :: proc(self: ^Model) {
 }
 
 @(private)
-model_bind :: proc(self: ^Model, cmd: vulkan.CommandBuffer) {
+model_bind :: proc(self: ^Model, cmd: vulkan.CommandBuffer, binding: u32) {
 	offset: vulkan.DeviceSize = 0
-	vulkan.CmdBindVertexBuffers(cmd, 0, 1, &self.buffer.buffer, &offset)
+	vulkan.CmdBindVertexBuffers(cmd, binding, 1, &self.buffer.buffer, &offset)
 	// vkCmdBindIndexBuffer2 (maintenance5, core in Vulkan 1.4) binds the index
 	// subrange of the packed vertex+index buffer directly.
 	vulkan.CmdBindIndexBuffer2(cmd, self.buffer.buffer, self.index_offset, self.index_size, .UINT32)

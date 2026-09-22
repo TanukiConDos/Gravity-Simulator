@@ -74,10 +74,10 @@ instance_buffer_update_positions :: proc(self: ^InstanceBuffer, frame: u32, posi
 }
 
 @(private)
-instance_buffer_bind :: proc(self: ^InstanceBuffer, cmd: vulkan.CommandBuffer, frame: u32) {
+instance_buffer_bind :: proc(self: ^InstanceBuffer, cmd: vulkan.CommandBuffer, frame: u32, binding: u32) {
 	assert(frame < MAX_FRAMES_IN_FLIGHT, "instance frame index out of range")
 	// No static data (empty scene) is a legitimate state, not an error.
 	if !self.has_data[frame] || self.buffers[frame].buffer == 0 {return}
 	offset: vulkan.DeviceSize = 0
-	vulkan.CmdBindVertexBuffers(cmd, 1, 1, &self.buffers[frame].buffer, &offset)
+	vulkan.CmdBindVertexBuffers(cmd, binding, 1, &self.buffers[frame].buffer, &offset)
 }
