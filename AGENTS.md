@@ -6,10 +6,24 @@
 odin run . -debug          # Run main app
 odin test tests -debug     # Run tests
 odin build . -o:speed -disable-assert   # Optimized build (asserts compiled out)
+odin run bench -o:speed    # Physics benchmark
 ```
 
 - Requires Odin compiler (dev-2025-08+) in PATH
 - Requires Vulkan SDK installed (vendor:vulkan)
+
+### CPU features / AVX
+
+By default LLVM targets generic x86-64 (SSE2 only). Adding `-microarch:native`
+lets it use the host ISA (AVX2/AVX-512 here) and is worth ~1.5–4.6% on the bench:
+
+```
+odin build . -o:speed -disable-assert -microarch:native
+odin run bench -o:speed -microarch:native
+```
+
+Use `-microarch:haswell` for a portable AVX2 build, or omit the flag for a
+generic binary that runs anywhere (a `native` binary faults on older CPUs).
 
 ### Shaders
 

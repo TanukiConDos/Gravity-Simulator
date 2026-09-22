@@ -46,6 +46,12 @@ Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra l
 
    Ejecuta `odin run . -debug` desde la raíz del proyecto para compilar y lanzar la aplicación. La simulación se ejecuta en tiempo real hasta que se cierra la ventana.
 
+   Para builds optimizadas puedes añadir `-microarch:native`, que permite al compilador usar las instrucciones SIMD (AVX) de tu CPU. Por defecto Odin solo apunta a SSE2. Usa `-microarch:haswell` si quieres un binario AVX2 portable, u omite el flag para un binario genérico:
+
+   ```
+   odin build . -o:speed -disable-assert -microarch:native
+   ```
+
 4. **Ejecución de los tests:**
 
    Ejecuta `odin test tests -debug` desde la raíz del proyecto para compilar y lanzar la suite de tests.
