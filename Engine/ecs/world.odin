@@ -13,6 +13,9 @@ World :: struct {
 	alive:         [dynamic]bool,
 	free:          [dynamic]u32,
 	alive_count:   int,
+	// Bumped on structural changes only (spawn/despawn/component add/remove),
+	// never on value updates. Physics uses it to know when its octree is stale.
+	revision:      u64,
 	pools:         map[typeid]Pool_Entry,
 	resources:     map[typeid]Resource_Entry,
 	destroy_queue: [dynamic]Entity,
@@ -122,6 +125,7 @@ world_spawn :: proc(w: ^World) -> Entity {
 	}
 	w.alive[index] = true
 	w.alive_count += 1
+	w.revision += 1
 	return Entity{index = index, generation = w.generations[index]}
 }
 
@@ -147,6 +151,7 @@ world_flush_despawns :: proc(w: ^World) {
 		w.alive[e.index] = false
 		w.generations[e.index] += 1
 		w.alive_count -= 1
+		w.revision += 1
 		append(&w.free, e.index)
 	}
 	clear(&w.destroy_queue)
@@ -156,7 +161,9 @@ world_flush_despawns :: proc(w: ^World) {
 
 world_set :: proc(w: ^World, e: Entity, value: $T) {
 	if !world_is_alive(w, e) {return}
-	pool_set(world_pool(w, T), e.index, value)
+	p := world_pool(w, T)
+	if !pool_has(p, e.index) {w.revision += 1}
+	pool_set(p, e.index, value)
 }
 
 world_get :: proc(w: ^World, e: Entity, $T: typeid) -> ^T {
@@ -173,5 +180,7 @@ world_has :: proc(w: ^World, e: Entity, $T: typeid) -> bool {
 
 world_remove :: proc(w: ^World, e: Entity, $T: typeid) {
 	if !world_is_alive(w, e) {return}
-	pool_remove(world_pool(w, T), e.index)
+	p := world_pool(w, T)
+	if pool_has(p, e.index) {w.revision += 1}
+	pool_remove(p, e.index)
 }

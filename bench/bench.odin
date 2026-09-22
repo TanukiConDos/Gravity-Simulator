@@ -1,42 +1,48 @@
 package main
 
 import physic "../Engine/physic"
+import ecs "../Engine/ecs"
 import foundation "../foundation"
 import "core:fmt"
 import "core:math/rand"
 import "core:time"
 
-run :: proc(n, ticks: int, interval, theta: f32, workers: int, solver: foundation.Algorithm) {
-	objects := make([dynamic]physic.PhysicObject, 0, n)
+make_world :: proc(n: int, config: foundation.Config) -> (^ecs.World, ^ecs.Scheduler) {
+	w := ecs.world_create()
 	rand.reset_u64(42)
 	for i in 0 ..< n {
-		append(
-			&objects,
-			physic.physic_object_make(
-				{
-					rand.float32_range(-1e10, 1e10),
-					rand.float32_range(-1e10, 1e10),
-					rand.float32_range(-1e10, 1e10),
-				},
-				{
-					rand.float32_range(-1e4, 1e4),
-					rand.float32_range(-1e4, 1e4),
-					rand.float32_range(-1e4, 1e4),
-				},
-				6e27,
-				12371e3,
-			),
+		physic.body_spawn(
+			w,
+			{
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+			},
+			{
+				rand.float32_range(-1e4, 1e4),
+				rand.float32_range(-1e4, 1e4),
+				rand.float32_range(-1e4, 1e4),
+			},
+			6e27,
+			12371e3,
 		)
 	}
+	physic.physic_init(w, config)
+	s := ecs.scheduler_create()
+	physic.physic_register_systems(s)
+	return w, s
+}
+
+run :: proc(n, ticks: int, interval, theta: f32, workers: int, solver: foundation.Algorithm) {
 	config := foundation.Config {
 		solver_algorithm      = solver,
 		collision_algorithm   = .OCTREE,
 		theta                 = theta,
 		tree_rebuild_interval = interval,
 	}
-	system := physic.physic_system_create(&objects, &config)
-	defer physic.physic_system_destroy(&system)
-	defer delete(objects)
+	w, s := make_world(n, config)
+	defer ecs.scheduler_destroy(s)
+	defer ecs.world_destroy(w)
 
 	foundation.parallel_destroy()
 	foundation.parallel_init(workers)
@@ -44,7 +50,7 @@ run :: proc(n, ticks: int, interval, theta: f32, workers: int, solver: foundatio
 
 	t0 := time.tick_now()
 	for t in 0 ..< ticks {
-		physic.physic_system_update(&system, 450.0, &objects)
+		ecs.scheduler_run(s, .PHYSICS, w, 450.0)
 	}
 	t1 := time.tick_now()
 	dt := time.duration_milliseconds(time.tick_diff(t0, t1))
@@ -62,25 +68,24 @@ run :: proc(n, ticks: int, interval, theta: f32, workers: int, solver: foundatio
 }
 
 run_auto :: proc(n, ticks: int, target_tickrate: f32, start_theta, start_interval: f32) {
-	objects := make([dynamic]physic.PhysicObject, 0, n)
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
 	rand.reset_u64(42)
 	for i in 0 ..< n {
-		append(
-			&objects,
-			physic.physic_object_make(
-				{
-					rand.float32_range(-1e10, 1e10),
-					rand.float32_range(-1e10, 1e10),
-					rand.float32_range(-1e10, 1e10),
-				},
-				{
-					rand.float32_range(-1e2, 1e2),
-					rand.float32_range(-1e2, 1e2),
-					rand.float32_range(-1e2, 1e2),
-				},
-				1e3,
-				1e3,
-			),
+		physic.body_spawn(
+			w,
+			{
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+			},
+			{
+				rand.float32_range(-1e2, 1e2),
+				rand.float32_range(-1e2, 1e2),
+				rand.float32_range(-1e2, 1e2),
+			},
+			1e3,
+			1e3,
 		)
 	}
 	config := foundation.Config {
@@ -93,9 +98,10 @@ run_auto :: proc(n, ticks: int, target_tickrate: f32, start_theta, start_interva
 		theta_min             = 0.2,
 		theta_max             = 1.2,
 	}
-	system := physic.physic_system_create(&objects, &config)
-	defer physic.physic_system_destroy(&system)
-	defer delete(objects)
+	physic.physic_init(w, config)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physic.physic_register_systems(s)
 
 	foundation.parallel_destroy()
 	foundation.parallel_init(8)
@@ -107,9 +113,10 @@ run_auto :: proc(n, ticks: int, target_tickrate: f32, start_theta, start_interva
 		if t == measure_start {
 			t0 = time.tick_now()
 		}
-		physic.physic_system_update(&system, 450.0, &objects)
+		ecs.scheduler_run(s, .PHYSICS, w, 450.0)
 	}
 	t1 := time.tick_now()
+	state := physic.physic_state(w)
 	dt := time.duration_milliseconds(time.tick_diff(t0, t1))
 	measured := f64(max(ticks - measure_start, 1))
 	fmt.printf(
@@ -118,8 +125,8 @@ run_auto :: proc(n, ticks: int, target_tickrate: f32, start_theta, start_interva
 		target_tickrate,
 		start_theta,
 		start_interval,
-		system.theta,
-		system.rebuild_count,
+		state.theta,
+		state.rebuild_count,
 		dt / measured,
 		f64(1000.0) / (dt / measured),
 	)

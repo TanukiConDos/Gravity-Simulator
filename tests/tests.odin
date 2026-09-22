@@ -1,17 +1,20 @@
 package tests
 
 import physics "../Engine/physic"
+import ecs "../Engine/ecs"
 import foundation "../foundation"
 import "core:testing"
 
 @(test)
 test_octtree_create :: proc(t: ^testing.T) {
-	objects := [?]physics.PhysicObject{
-		physics.physic_object_make({0, 0, 0}, {0, 0, 0}, 1000, 10),
-		physics.physic_object_make({100, 0, 0}, {0, 0, 0}, 100, 5),
-		physics.physic_object_make({-100, 0, 0}, {0, 0, 0}, 100, 5),
-	}
-	tree := physics.octtree_create(objects[:], 0.5)
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+	physics.body_spawn(w, {-100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	bodies := ecs.world_pool(w, physics.Body).dense[:]
+	tree := physics.octtree_create(bodies, physics.body_arrays(w), 0.5)
 	testing.expect(t, tree != nil)
 	testing.expect(t, len(tree.nodes) > 0)
 	physics.octtree_destroy(tree)
@@ -19,37 +22,62 @@ test_octtree_create :: proc(t: ^testing.T) {
 
 @(test)
 test_octtree_force :: proc(t: ^testing.T) {
-	object_a := physics.physic_object_make({0, 0, 0}, {0, 0, 0}, 1000, 10)
-	object_b := physics.physic_object_make({100, 0, 0}, {0, 0, 0}, 100, 5)
-	objects := [?]physics.PhysicObject{object_a, object_b}
-	tree := physics.octtree_create(objects[:], 0.5)
-	physics.octtree_calc_force(tree, &objects[1], 16.0)
-	testing.expect(t, objects[1].velocity.x != 0 || objects[1].velocity.y != 0 || objects[1].velocity.z != 0)
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	bodies := ecs.world_pool(w, physics.Body).dense[:]
+	tree := physics.octtree_create(bodies, physics.body_arrays(w), 0.5)
+	physics.octtree_calc_force(tree, object_b.index, 16.0)
+
+	velocity := ecs.world_get(w, object_b, physics.Velocity)
+	testing.expect(t, velocity != nil)
+	testing.expect(t, velocity.x != 0 || velocity.y != 0 || velocity.z != 0)
 	physics.octtree_destroy(tree)
 }
 
 @(test)
 test_brute_force :: proc(t: ^testing.T) {
-	initial_objects := [?]physics.PhysicObject{
-		physics.physic_object_make({0, 0, 0}, {0, 0, 0}, 1000, 10),
-		physics.physic_object_make({100, 0, 0}, {0, 0, 0}, 100, 5),
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	config := foundation.Config {
+		solver_algorithm    = .BRUTE_FORCE,
+		collision_algorithm = .BRUTE_FORCE,
 	}
-	objects := make([dynamic]physics.PhysicObject, 2); defer delete(objects)
-	objects[0] = initial_objects[0]; objects[1] = initial_objects[1]
-	system := physics.physic_system_create(&objects, foundation.config_get())
-	physics.physic_system_update(&system, 16.0, &objects)
-	has_accel := objects[1].acceleration.x != 0 || objects[1].acceleration.y != 0 || objects[1].acceleration.z != 0
-	testing.expect(t, has_accel)
-	physics.physic_system_destroy(&system)
+	physics.physic_init(w, config)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+
+	ecs.scheduler_run(s, .PHYSICS, w, 16.0)
+
+	acceleration := ecs.world_get(w, object_b, physics.Acceleration)
+	testing.expect(t, acceleration != nil)
+	testing.expect(
+		t,
+		acceleration.x != 0 || acceleration.y != 0 || acceleration.z != 0,
+	)
 }
 
 @(test)
-test_physic_object :: proc(t: ^testing.T) {
-	obj := physics.physic_object_make({1, 2, 3}, {4, 5, 6}, 1000, 10)
-	testing.expect(t, obj.mass == 1000)
-	testing.expect(t, obj.radius == 10)
-	testing.expect(t, obj.position.x == 1)
-	testing.expect(t, obj.velocity.z == 6)
+test_body_components :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	e := physics.body_spawn(w, {1, 2, 3}, {4, 5, 6}, 1000, 10)
+
+	mass := ecs.world_get(w, e, physics.Mass)
+	radius := ecs.world_get(w, e, physics.Radius)
+	position := ecs.world_get(w, e, physics.Position)
+	velocity := ecs.world_get(w, e, physics.Velocity)
+
+	testing.expect(t, mass != nil && f64(mass^) == 1000)
+	testing.expect(t, radius != nil && f32(radius^) == 10)
+	testing.expect(t, position != nil && position.x == 1 && position.z == 3)
+	testing.expect(t, velocity != nil && velocity.y == 5 && velocity.z == 6)
 }
 
 @(test)

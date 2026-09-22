@@ -49,7 +49,8 @@ A `vk_layer_settings.txt` enabling best practices is generated with
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
 │   └── renderer_config.odin # Declarative shaders, vertex streams, descriptors
-├── Engine/physic/           # Physics simulation
+├── Engine/ecs/              # Entity-component-system core
+├── Engine/physic/           # Physics components + systems
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
@@ -90,6 +91,50 @@ When `auto_adjust` is `true`, the physics system measures its own per-update cos
 - **Rebuild interval** (motion/staleness-driven): the tree is rebuilt when the maximum object displacement since the last build exceeds `0.5 ×` the median leaf cell size. Fast-moving sims rebuild often; slow/static ones rarely. `tree_rebuild_interval` remains as an upper cap in sim-seconds. Keeping the tree fresh also keeps `theta` effective (aged trees degrade to ~constant traversal cost regardless of theta).
 
 Convergence is smoothed (EMA α=0.1, 20-update warmup, 2-consecutive-out-of-band confirmations, ±15% deadband). If the target is unreachable (e.g. too many objects), the knobs pin at their bounds and the sim simply runs as fast as the hardware allows.
+
+## ECS (`Engine/ecs`)
+
+The engine is built around a small entity-component-system core. There is no
+archetype graph: storage is a struct-of-arrays column per component, indexed by
+`entity.index`.
+
+- `Entity{index, generation}`. Despawning bumps the generation, so a stale
+  handle can never alias the entity that reuses the index.
+- `Pool($T)` is the component column: `data` indexed by entity index, plus
+  `dense`/`dense_pos` for O(1) swap-removal and iteration. Because every pool is
+  indexed the same way, the entries for one entity line up across all of its
+  components — no lookup is needed to walk several components together. That is
+  what keeps the physics hot path cache-friendly.
+- `World` owns the entity registry, the pools keyed by `typeid`, and the
+  resources (singletons such as the solver state and the render snapshot).
+  Access them with `world_pool(w, T)` / `world_resource(w, T)`; systems cache the
+  returned pointer instead of looking it up in a loop.
+- `world_set`/`world_remove` bump `world.revision` only on structural changes
+  (component added/removed, spawn, despawn), never on value updates. Physics uses
+  the revision to know when its octree is stale.
+- Despawns are deferred: `world_despawn` queues, `world_flush_despawns` recycles.
+  This makes it safe to destroy entities while iterating pools.
+- Systems are plain `proc(w, dt)` grouped by `Phase` (`PHYSICS` / `RENDER`) and
+  run in registration order by the `Scheduler`.
+
+### Physics as ECS
+
+The physics components (`Position`, `Velocity`, `Acceleration`, `Mass`,
+`Radius`, `Selected`) live in the physical body's pools; `Body` is a tag marking
+the entities the simulation iterates, and its `dense` list is the canonical body
+list. `Physic_State` is a world resource holding the solver and adaptive-tuning
+state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
+`begin` (reset acceleration, ensure tree), `gravity`, `collision`, `integrate`,
+`publish` (copy positions into `RenderSnapshot`), `adapt` (adaptive controller).
+`physic_register_systems` wires them up.
+
+### Threading
+
+The world is not synchronised; one thread owns it at a time. The physics thread
+runs the `PHYSICS` phase; the graphics thread reads only `RenderSnapshot`, which
+is guarded by its own mutex. All pools and resources are created during
+`physic_init`/`renderer_init`, before the threads start, so afterwards the
+graphics thread only performs concurrent reads of the registries.
 
 ## Renderer (`Engine/Graphic`)
 
@@ -189,22 +234,29 @@ The package exposes only handles and their lifecycle/draw procedures:
 
 ## Physics
 
-Config selects algorithms for collision detection and gravity solving (BRUTE_FORCE or OCTREE). The OctTree implements Barnes-Hut with center-of-mass approximation.
+Config selects algorithms for collision detection and gravity solving (BRUTE_FORCE or OCTREE). The OctTree implements Barnes-Hut with center-of-mass approximation and stores entity indices, so it does not dangle when pools grow.
 
-The physics thread runs a **fixed-timestep** loop: one physics update every 1/60 s of real time, each advancing `(1/60) * time` sim-seconds. An accumulator paces the loop; if the solver cannot keep up, the accumulator caps at 16 pending steps (the sim slows down rather than taking huge, unstable timesteps).
+The physics thread runs a **fixed-timestep** loop: one `PHYSICS` phase every 1/60 s of real time, each advancing `(1/60) * time` sim-seconds. An accumulator paces the loop; if the solver cannot keep up, the accumulator caps at 16 pending steps (the sim slows down rather than taking huge, unstable timesteps).
 
-The octree gravity solver is split across `worker_threads` via `foundation.parallel_for` (a fork-join worker pool). The tree itself is read-only during solve, so per-object queries are embarrassingly parallel.
+The octree gravity solver is split across `worker_threads` via `foundation.parallel_for` (a fork-join worker pool). The tree itself is read-only during solve, so per-body queries are embarrassingly parallel.
+
+Each tick publishes body positions into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
 
 ## App Flow
 
-On launch the app loads `config.json`, creates the simulation accordingly (random or from a scene file), and runs until the window closes. Frame/tick timings are logged to the console once per second.
+On launch the app loads `config.json`, creates a `World`, spawns the initial bodies accordingly (random or from a scene file), calls `physic_init` and builds a `Scheduler` with the physics systems. The renderer is initialised against the same world. Two threads run until the window closes: physics runs the `PHYSICS` phase on a fixed step, graphics runs `renderer_draw_frame`. Frame/tick timings are logged to the console once per second.
 
 ## Tests
 
-10 tests: `test_octtree_create`, `test_octtree_force`, `test_brute_force`,
-`test_physic_object`, `test_adaptive_decide`, `test_adaptive_tree_stale`,
-`test_spirv_vertex_reflection`, `test_spirv_fragment_reflection`,
-`test_spirv_descriptors_and_push_constants`, `test_spirv_rejects_invalid_modules`.
+17 tests, split across the ECS core, physics and SPIR-V reflection:
+
+- ECS: `test_ecs_spawn_despawn`, `test_ecs_components`, `test_ecs_pool_alignment`,
+  `test_ecs_pool_remove_swap`, `test_ecs_flush_clears_all_pools`,
+  `test_ecs_resource`, `test_ecs_scheduler_phase_order`.
+- Physics: `test_octtree_create`, `test_octtree_force`, `test_brute_force`,
+  `test_body_components`, `test_adaptive_decide`, `test_adaptive_tree_stale`.
+- Reflection: `test_spirv_vertex_reflection`, `test_spirv_fragment_reflection`,
+  `test_spirv_descriptors_and_push_constants`, `test_spirv_rejects_invalid_modules`.
 
 Shader reflection tests read the engine's compiled shaders plus the committed
 fixture in `tests/fixtures/` (rebuild it with `tests/fixtures/build.sh`).

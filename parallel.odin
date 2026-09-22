@@ -1,7 +1,7 @@
 package main
 
 import graphic "./Engine/Graphic"
-import physic "./Engine/physic"
+import ecs "./Engine/ecs"
 import foundation "./foundation"
 import "core:log"
 import "core:sync"
@@ -9,14 +9,14 @@ import "core:thread"
 import "core:time"
 
 SimulationContext :: struct {
-	objects:       ^[dynamic]physic.PhysicObject,
-	physic_system: ^physic.PhysicSystem,
-	renderer:      ^graphic.Renderer,
-	window:        ^graphic.Window,
-	frame_time:    f32,
-	tick_time:     f32,
-	delta_time:    f32,
-	exit:          bool,
+	world:        ^ecs.World,
+	scheduler:    ^ecs.Scheduler,
+	renderer:     ^graphic.Renderer,
+	window:       ^graphic.Window,
+	frame_time:   f32,
+	tick_time:    f32,
+	delta_time:   f32,
+	exit:         bool,
 }
 
 @(private)
@@ -50,7 +50,7 @@ _physics_thread :: proc(th: ^thread.Thread) {
 		tick_start := time.tick_now()
 		updates := 0
 		for accumulator >= FIXED_STEP_SEC {
-			physic.physic_system_update(&ctx.physic_system^, sim_dt, ctx.objects)
+			ecs.scheduler_run(ctx.scheduler, .PHYSICS, ctx.world, sim_dt)
 			accumulator -= FIXED_STEP_SEC
 			updates += 1
 		}
