@@ -75,10 +75,12 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 	last_frame := time.tick_now()
 	for !sync.atomic_load(&ctx.exit) {
 		now := time.tick_now()
-		sync.atomic_store(&ctx.delta_time, f32(time.duration_seconds(time.tick_diff(last_frame, now))))
+		delta := f32(time.duration_seconds(time.tick_diff(last_frame, now)))
+		sync.atomic_store(&ctx.delta_time, delta)
 		last_frame = now
 
 		frame_start := time.tick_now()
+		ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta)
 		if ok := graphic.renderer_draw_frame(ctx.renderer); !ok {
 			sync.atomic_store(&ctx.exit, true)
 			break

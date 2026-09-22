@@ -31,3 +31,10 @@ InstanceData :: struct #packed {
 }
 
 #assert(size_of(InstanceData) == 32)
+
+// Stored as a world resource so the input system can reach the window without
+// the scheduler having to carry a context pointer.
+@(private)
+Window_Ref :: struct {
+	window: ^Window,
+}

@@ -1,11 +1,22 @@
 package graphic
 
+import ecs "../ecs"
 import "vendor:glfw"
 
 @(private)
 MOVE_SPEED   :: 500.0
 @(private)
 ROTATE_SPEED :: 1.0
+
+// RENDER-phase system: updates the Camera resource from the keyboard. It runs on
+// the graphics thread, which is also where the window events are polled.
+@(private)
+input_system :: proc(w: ^ecs.World, delta_seconds: f32) {
+	ref := ecs.world_resource(w, Window_Ref)
+	if ref.window == nil {return}
+	cam := ecs.world_resource(w, Camera)
+	input_poll(ref.window, cam, delta_seconds)
+}
 
 @(private)
 input_poll :: proc(w: ^Window, cam: ^Camera, delta_seconds: f32) {

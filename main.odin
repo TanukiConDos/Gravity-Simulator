@@ -219,10 +219,11 @@ main :: proc() {
 		window    = window,
 	}
 
-	renderer, renderer_ok := graphic.renderer_init(window, g_world, &ctx.delta_time)
+	renderer, renderer_ok := graphic.renderer_init(window, g_world)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 	ctx.renderer = renderer
+	graphic.graphic_register_systems(g_scheduler)
 
 	physics_thread, graphics_thread := parallel_start(&ctx)
 

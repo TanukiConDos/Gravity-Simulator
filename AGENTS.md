@@ -128,6 +128,14 @@ state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
 `publish` (copy positions into `RenderSnapshot`), `adapt` (adaptive controller).
 `physic_register_systems` wires them up.
 
+### Graphics as ECS
+
+The Vulkan `Renderer` is a resource, not an entity. The `Camera` is a world
+resource and `graphic_register_systems` adds the `RENDER`-phase input system that
+mutates it from the keyboard (the window is reached through a `Window_Ref`
+resource). The graphics thread runs the `RENDER` phase, then
+`renderer_draw_frame`, which reads the camera resource and the render snapshot.
+
 ### Threading
 
 The world is not synchronised; one thread owns it at a time. The physics thread
