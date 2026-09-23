@@ -3,6 +3,9 @@ package tests
 import physics "../Engine/physic"
 import ecs "../Engine/ecs"
 import foundation "../foundation"
+import "core:math/rand"
+import "core:slice"
+import "core:sync"
 import "core:testing"
 
 @(test)
@@ -19,6 +22,26 @@ test_octtree_create :: proc(t: ^testing.T) {
 	testing.expect(t, len(tree.nodes) > 0)
 	testing.expect(t, len(tree.order) == len(bodies))
 	physics.octtree_destroy(tree)
+}
+
+@(test)
+test_octtree_depth_cap :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+	physics.body_spawn(w, {-100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	view := physics.body_view(w)
+	shallow := physics.octtree_create_ex(view, 0.5, 1, physics.DEFAULT_MIN_HALF_SIZE)
+	testing.expect(t, shallow.max_depth == 1)
+	testing.expect(t, shallow.max_leaf_depth <= 1)
+	testing.expect(t, shallow.node_count > 0)
+	physics.octtree_destroy(shallow)
+
+	clamped := physics.octtree_create_ex(view, 0.5, 999, physics.DEFAULT_MIN_HALF_SIZE)
+	testing.expect(t, clamped.max_depth == physics.MAX_DEPTH_CAP)
+	physics.octtree_destroy(clamped)
 }
 
 @(test)
@@ -61,6 +84,162 @@ test_brute_force :: proc(t: ^testing.T) {
 		t,
 		acceleration.x != 0 || acceleration.y != 0 || acceleration.z != 0,
 	)
+}
+
+@(test)
+test_octree_collision :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	a := physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	b := physics.body_spawn(w, {12, 0, 0}, {0, 0, 0}, 100, 5)
+
+	config := foundation.Config {
+		solver_algorithm    = .OCTREE,
+		collision_algorithm = .OCTREE,
+		theta               = 0.5,
+	}
+	physics.physic_init(w, config)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+
+	pa := ecs.world_get(w, a, physics.Position)
+	pb := ecs.world_get(w, b, physics.Position)
+	before := pb.x - pa.x
+	// dt = 0 keeps gravity/integration out of the way so only collision moves
+	// the bodies: two overlapping spheres (12 < 10 + 5) should separate to 15.
+	ecs.scheduler_run(s, .PHYSICS, w, 0.0)
+	after := pb.x - pa.x
+	testing.expect(t, after > before, "overlapping bodies should separate")
+	testing.expectf(t, after > 14.9 && after < 15.1, "expected ~15, got %v", after)
+}
+
+@(test)
+test_octree_force_collect_equivalence :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	rand.reset_u64(7)
+	for _ in 0 ..< 300 {
+		physics.body_spawn(
+			w,
+			{
+				rand.float32_range(-100, 100),
+				rand.float32_range(-100, 100),
+				rand.float32_range(-100, 100),
+			},
+			{0, 0, 0},
+			f64(rand.float32_range(1, 10)),
+			rand.float32_range(1, 6),
+		)
+	}
+
+	view := physics.body_view(w)
+	n := len(view.bodies)
+
+	max_radius: f32
+	for idx in view.bodies {
+		r := f32(view.radius[idx])
+		if r > max_radius {max_radius = r}
+	}
+
+	tree := physics.octtree_create(view, 0.5)
+	defer physics.octtree_destroy(tree)
+
+	// Expected contacts, from the broad-phase query + exact overlap test. This
+	// is theta-independent: the opening angle must never hide a contact.
+	expected := make([dynamic]physics.Contact, 0, 128)
+	defer delete(expected)
+	scratch := make([]u32, n)
+	defer delete(scratch)
+	for a in view.bodies {
+		count := 0
+		physics.octtree_collect_nearby(
+			tree,
+			physics.Vec3(view.position[a]),
+			f32(view.radius[a]) + max_radius,
+			scratch,
+			&count,
+		)
+		for j in 0 ..< count {
+			b := scratch[j]
+			if b <= a {continue}
+			dir := physics.Vec3(view.position[b]) - physics.Vec3(view.position[a])
+			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+			radius_sum := f32(view.radius[a]) + f32(view.radius[b])
+			if dist_sq < radius_sum * radius_sum && dist_sq > 0.000001 {
+				append(&expected, physics.Contact{a = a, b = b})
+			}
+		}
+	}
+	slice.sort_by(expected[:], _contact_less)
+
+	vel := make([]physics.Vec3, n)
+	defer delete(vel)
+	contacts := make([dynamic]physics.Contact, 0, 128)
+	defer delete(contacts)
+	mutex: sync.Mutex
+
+	for theta in ([]f32{0.2, 0.5, 0.8, 1.2}) {
+		tree.theta = theta
+
+		// Reference: plain gravity only.
+		for idx in view.bodies {view.velocity[idx] = physics.Velocity{0, 0, 0}}
+		for idx in view.bodies {physics.octtree_calc_force(tree, idx, 1.0)}
+		for i in 0 ..< n {vel[i] = physics.Vec3(view.velocity[view.bodies[i]])}
+
+		// Merged gravity + contact collection.
+		for idx in view.bodies {view.velocity[idx] = physics.Velocity{0, 0, 0}}
+		clear(&contacts)
+		for idx in view.bodies {
+			physics.octtree_calc_force_and_collect(
+				tree,
+				idx,
+				1.0,
+				max_radius,
+				&contacts,
+				&mutex,
+			)
+		}
+		for i in 0 ..< n {
+			got := physics.Vec3(view.velocity[view.bodies[i]])
+			testing.expectf(
+				t,
+				got == vel[i],
+				"theta=%v: gravity differs at body %d: %v vs %v",
+				theta,
+				i,
+				got,
+				vel[i],
+			)
+		}
+
+		slice.sort_by(contacts[:], _contact_less)
+		testing.expectf(
+			t,
+			len(contacts) == len(expected),
+			"theta=%v: contact count %d != %d",
+			theta,
+			len(contacts),
+			len(expected),
+		)
+		for i in 0 ..< min(len(contacts), len(expected)) {
+			testing.expectf(
+				t,
+				contacts[i] == expected[i],
+				"theta=%v: contact %d differs: %v vs %v",
+				theta,
+				i,
+				contacts[i],
+				expected[i],
+			)
+		}
+	}
+}
+
+@(private)
+_contact_less :: proc(x, y: physics.Contact) -> bool {
+	if x.a != y.a {return x.a < y.a}
+	return x.b < y.b
 }
 
 @(test)
