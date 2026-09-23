@@ -16,7 +16,5 @@ if not exist "%GLSLC%" (
 
 "%GLSLC%" --target-env=vulkan1.4 "%~dp0vertexShader.vert" -o "%~dp0vert.spv"
 "%GLSLC%" --target-env=vulkan1.4 "%~dp0fragmentShader.frag" -o "%~dp0frag.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0pick.vert" -o "%~dp0pick.vert.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0pick.frag" -o "%~dp0pick.frag.spv"
 
 echo shaders compiled ^(target-env=vulkan1.4^) -^> %~dp0

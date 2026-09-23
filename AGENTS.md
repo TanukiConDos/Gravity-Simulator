@@ -91,14 +91,11 @@ Simulation parameters are read from `config.json` at startup. It can be edited b
     "auto_adjust": false,             // adaptive theta + rebuild interval
     "target_tickrate": 60,            // target physics updates/sec when auto_adjust
     "theta_min": 0.2,                 // adaptive theta lower bound
-    "theta_max": 1.2,                 // adaptive theta upper bound
-    "pick_scale": 2                   // pick target = swapchain extent / this (>=1)
+    "theta_max": 1.2                  // adaptive theta upper bound
 }
 ```
 
 `theta` (Barnes-Hut opening angle, default 0.5) can be added to tune octree approximation vs. accuracy.
-
-`pick_scale` (default 2, clamped to >= 1) sets the resolution of the offscreen pick target: the swapchain extent is divided by it. Larger values make selection cheaper and coarser (a picked pixel covers a `pick_scale × pick_scale` block of the screen).
 
 `tree_rebuild_interval` (sim-seconds, default 50) controls octree reuse. The tree is rebuilt when the accumulated sim time since the last build exceeds it (0 disables reuse = rebuild every tick).
 
@@ -163,14 +160,14 @@ resource). The graphics thread runs the `RENDER` phase, then
 `renderer_draw_frame` is split into the swapchain acquire/present path and
 `_renderer_record_frame`, which records a `Frame_Pass`. A pass is engine
 bookkeeping (pipeline + `Render_Target`s + load/clear), not a `VkRenderPass`, and
-every layout transition goes through `image_barrier`. The pick pass renders
-1-based instance IDs to an offscreen `R32_UINT` target at `swapchain / pick_scale`
-on demand (left mouse press). It is submitted on its own (one query in flight,
-coalesced) and signalled through a timeline semaphore, so the readback is polled
-with `vkGetSemaphoreCounterValue` and never stalls the frame loop. The resolved
-index is handed to the physics thread through the atomic `Selection_State`;
-`physic.select` applies it to `Selected`, and the next snapshot publishes the
-flags.
+every layout transition goes through `image_barrier`. A pass takes a list of
+color attachments, so the main pass writes both the swapchain color and, as a
+second output (MRT), a 1-based instance ID to a per-frame `R32_UINT` target. On a
+left mouse press the renderer records a one-pixel copy of that ID target into the
+same command buffer (no separate draw and no extra submission), so the result is
+read once the frame's fence signals. The resolved index is handed to the physics
+thread through the atomic `Selection_State`; `physic.select` applies it to
+`Selected`, and the next snapshot publishes the flags.
 
 ### Threading
 

@@ -29,7 +29,6 @@ Config :: struct {
 	target_tickrate:       f32,
 	theta_min:             f32,
 	theta_max:             f32,
-	pick_scale:            int,
 }
 
 @(private)
@@ -48,7 +47,6 @@ _config: Config = {
 	target_tickrate       = 60.0,
 	theta_min             = 0.2,
 	theta_max             = 1.2,
-	pick_scale            = 2,
 }
 
 config_get :: proc() -> ^Config {
@@ -111,8 +109,6 @@ _apply_config :: proc(text: string) {
 			_config.theta_min = f32(_parse_number(text, &pos))
 		case "theta_max":
 			_config.theta_max = f32(_parse_number(text, &pos))
-		case "pick_scale":
-			_config.pick_scale = int(_parse_number(text, &pos))
 		case:
 			_skip_value(text, &pos)
 		}

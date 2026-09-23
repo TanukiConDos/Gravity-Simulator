@@ -70,11 +70,13 @@ test_spirv_fragment_reflection :: proc(t: ^testing.T) {
 	defer spirv.reflection_destroy(&reflection)
 
 	testing.expect_value(t, reflection.stage, spirv.Stage.Fragment)
-	testing.expect_value(t, len(reflection.inputs), 1)
-	testing.expect_value(t, len(reflection.outputs), 1)
-	if len(reflection.outputs) == 1 {
+	testing.expect_value(t, len(reflection.inputs), 2)
+	testing.expect_value(t, len(reflection.outputs), 2)
+	if len(reflection.outputs) == 2 {
 		testing.expect_value(t, reflection.outputs[0].location, u32(0))
 		testing.expect_value(t, reflection.outputs[0].format, vulkan.Format.R32G32B32A32_SFLOAT)
+		testing.expect_value(t, reflection.outputs[1].location, u32(1))
+		testing.expect_value(t, reflection.outputs[1].format, vulkan.Format.R32_UINT)
 	}
 }
 

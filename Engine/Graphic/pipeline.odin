@@ -58,12 +58,13 @@ pipeline_registry_add :: proc(
 	self: ^Pipeline_Registry,
 	name: string,
 	cfg: Pipeline_Config,
-	color_format, depth_format: vulkan.Format,
+	color_formats: []vulkan.Format,
+	depth_format: vulkan.Format,
 ) -> (
 	id: Pipeline_ID,
 	ok: bool,
 ) {
-	pipeline := pipeline_init(self.gpu, cfg, color_format, depth_format) or_return
+	pipeline := pipeline_init(self.gpu, cfg, color_formats, depth_format) or_return
 	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
 	return Pipeline_ID(len(self.entries) - 1), true
 }
@@ -88,15 +89,20 @@ pipeline_registry_destroy :: proc(self: ^Pipeline_Registry) {
 pipeline_init :: proc(
 	gpu: ^GPU,
 	cfg: Pipeline_Config,
-	color_format, depth_format: vulkan.Format,
+	color_formats: []vulkan.Format,
+	depth_format: vulkan.Format,
 ) -> (
 	result: Pipeline,
 	ok: bool,
 ) {
 	log.debugf("[VULKAN] Pipeline initialization...")
+	assert(
+		len(color_formats) > 0 && len(color_formats) <= MAX_COLOR_ATTACHMENTS,
+		"pipeline color attachment count out of range",
+	)
 	tmp := Pipeline{
 		gpu          = gpu,
-		color_format = color_format,
+		color_format = color_formats[0],
 		depth_format = depth_format,
 	}
 	tmp.reflections = make([dynamic]spirv.Reflection, 0, len(cfg.shaders))
@@ -210,23 +216,26 @@ pipeline_init :: proc(
 		depthWriteEnable = b32(fixed.depth_write),
 		depthCompareOp   = fixed.depth_compare,
 	}
-	color_blend_attach := vulkan.PipelineColorBlendAttachmentState{
-		colorWriteMask = {.R, .G, .B, .A},
-		blendEnable    = b32(fixed.blend_enable),
-	}
-	if fixed.blend_enable {
-		color_blend_attach.srcColorBlendFactor = .SRC_ALPHA
-		color_blend_attach.dstColorBlendFactor = .ONE_MINUS_SRC_ALPHA
-		color_blend_attach.colorBlendOp        = .ADD
-		color_blend_attach.srcAlphaBlendFactor = .ONE
-		color_blend_attach.dstAlphaBlendFactor = .ZERO
-		color_blend_attach.alphaBlendOp        = .ADD
+	blend_attachments: [MAX_COLOR_ATTACHMENTS]vulkan.PipelineColorBlendAttachmentState
+	for i in 0 ..< len(color_formats) {
+		blend_attachments[i] = vulkan.PipelineColorBlendAttachmentState{
+			colorWriteMask = {.R, .G, .B, .A},
+			blendEnable    = b32(fixed.blend_enable),
+		}
+		if fixed.blend_enable {
+			blend_attachments[i].srcColorBlendFactor = .SRC_ALPHA
+			blend_attachments[i].dstColorBlendFactor = .ONE_MINUS_SRC_ALPHA
+			blend_attachments[i].colorBlendOp        = .ADD
+			blend_attachments[i].srcAlphaBlendFactor = .ONE
+			blend_attachments[i].dstAlphaBlendFactor = .ZERO
+			blend_attachments[i].alphaBlendOp        = .ADD
+		}
 	}
 	color_blending := vulkan.PipelineColorBlendStateCreateInfo{
 		sType           = .PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 		logicOpEnable   = false,
-		attachmentCount = 1,
-		pAttachments    = &color_blend_attach,
+		attachmentCount = u32(len(color_formats)),
+		pAttachments    = &blend_attachments[0],
 	}
 	dynamic_state := vulkan.PipelineDynamicStateCreateInfo{
 		sType             = .PIPELINE_DYNAMIC_STATE_CREATE_INFO,
@@ -236,11 +245,10 @@ pipeline_init :: proc(
 
 	// Dynamic rendering: the pipeline declares its attachment formats instead of
 	// referencing a VkRenderPass, so it no longer depends on the swapchain.
-	color_format_local := color_format
 	rendering_info := vulkan.PipelineRenderingCreateInfo{
 		sType                   = .PIPELINE_RENDERING_CREATE_INFO,
-		colorAttachmentCount    = 1,
-		pColorAttachmentFormats = &color_format_local,
+		colorAttachmentCount    = u32(len(color_formats)),
+		pColorAttachmentFormats = raw_data(color_formats),
 		depthAttachmentFormat   = depth_format,
 	}
 	pipeline_info := vulkan.GraphicsPipelineCreateInfo{

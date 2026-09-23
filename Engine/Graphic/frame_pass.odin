@@ -2,18 +2,25 @@ package graphic
 
 import "vendor:vulkan"
 
+// One color output of a frame pass: the target plus how it is loaded/stored and
+// the value it is cleared to. Keeping these separate from Frame_Pass lets the
+// renderer assemble per-frame targets (e.g. the swapchain image) while the pass
+// itself stays static.
+@(private)
+Color_Attachment :: struct {
+	target: Render_Target,
+	load:   vulkan.AttachmentLoadOp,
+	store:  vulkan.AttachmentStoreOp,
+	clear:  vulkan.ClearValue,
+}
+
 // A named render phase: everything between vkCmdBeginRendering and
-// vkCmdEndRendering, plus the pipeline and attachment state it uses. It is
-// engine bookkeeping, not a VkRenderPass. The frame must not care where its
-// color target came from (swapchain or offscreen); it only receives
-// Render_Targets in frame_pass_begin.
+// vkCmdEndRendering, plus the pipeline and depth state it uses. It is engine
+// bookkeeping, not a VkRenderPass.
 @(private)
 Frame_Pass :: struct {
 	name:        string,
 	pipeline:    Pipeline_ID,
-	color_load:  vulkan.AttachmentLoadOp,
-	color_store: vulkan.AttachmentStoreOp,
-	color_clear: vulkan.ClearValue,
 	depth_load:  vulkan.AttachmentLoadOp,
 	depth_store: vulkan.AttachmentStoreOp,
 	depth_clear: vulkan.ClearValue,
@@ -24,9 +31,6 @@ frame_pass_create :: proc(name: string, pipeline: Pipeline_ID) -> Frame_Pass {
 	return Frame_Pass{
 		name        = name,
 		pipeline    = pipeline,
-		color_load  = .CLEAR,
-		color_store = .STORE,
-		color_clear = {color = {float32 = {0, 0, 0, 1}}},
 		depth_load  = .CLEAR,
 		depth_store = .DONT_CARE,
 		depth_clear = {depthStencil = {depth = 1, stencil = 0}},
@@ -34,42 +38,52 @@ frame_pass_create :: proc(name: string, pipeline: Pipeline_ID) -> Frame_Pass {
 }
 
 // frame_pass_begin transitions the attachments and opens the rendering scope.
-// UNDEFINED is a valid old layout for both targets: the color image is fully
-// overwritten (loadOp CLEAR) and the depth target is per frame in flight and
-// cleared every frame, so neither carries state across frames.
+// UNDEFINED is a valid old layout for every target: color is fully overwritten
+// (loadOp CLEAR) and the depth/ID targets are per frame in flight and cleared
+// every frame, so none carries state across frames.
 @(private)
 frame_pass_begin :: proc(
 	cmd: vulkan.CommandBuffer,
 	pass: ^Frame_Pass,
-	color: Render_Target,
+	colors: []Color_Attachment,
 	depth: ^Render_Target,
 	extent: vulkan.Extent2D,
 ) {
-	render_target_barrier(
-		cmd,
-		color,
-		.UNDEFINED,
-		.ATTACHMENT_OPTIMAL,
-		{.COLOR_ATTACHMENT_OUTPUT},
-		{.COLOR_ATTACHMENT_OUTPUT},
-		{},
-		{.COLOR_ATTACHMENT_WRITE},
+	assert(
+		len(colors) > 0 && len(colors) <= MAX_COLOR_ATTACHMENTS,
+		"frame pass color attachment count out of range",
 	)
 
-	color_attachment := vulkan.RenderingAttachmentInfo{
-		sType       = .RENDERING_ATTACHMENT_INFO,
-		imageView   = color.view,
-		imageLayout = .ATTACHMENT_OPTIMAL,
-		loadOp      = pass.color_load,
-		storeOp     = pass.color_store,
-		clearValue  = pass.color_clear,
+	for color in colors {
+		render_target_barrier(
+			cmd,
+			color.target,
+			.UNDEFINED,
+			.ATTACHMENT_OPTIMAL,
+			{.COLOR_ATTACHMENT_OUTPUT},
+			{.COLOR_ATTACHMENT_OUTPUT},
+			{},
+			{.COLOR_ATTACHMENT_WRITE},
+		)
+	}
+
+	attachments: [MAX_COLOR_ATTACHMENTS]vulkan.RenderingAttachmentInfo
+	for color, i in colors {
+		attachments[i] = vulkan.RenderingAttachmentInfo{
+			sType       = .RENDERING_ATTACHMENT_INFO,
+			imageView   = color.target.view,
+			imageLayout = .ATTACHMENT_OPTIMAL,
+			loadOp      = color.load,
+			storeOp     = color.store,
+			clearValue  = color.clear,
+		}
 	}
 	render_info := vulkan.RenderingInfo{
 		sType                = .RENDERING_INFO,
 		renderArea           = vulkan.Rect2D{offset = {0, 0}, extent = extent},
 		layerCount           = 1,
-		colorAttachmentCount = 1,
-		pColorAttachments    = &color_attachment,
+		colorAttachmentCount = u32(len(colors)),
+		pColorAttachments    = &attachments[0],
 	}
 
 	depth_attachment: vulkan.RenderingAttachmentInfo
