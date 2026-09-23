@@ -5,6 +5,11 @@ import "vendor:vulkan"
 @(private)
 MAX_FRAMES_IN_FLIGHT :: 2
 
+// Upper bound for a frame pass's color attachments (and a pipeline's color
+// output formats). The renderer currently uses two: swapchain color + pick ID.
+@(private)
+MAX_COLOR_ATTACHMENTS :: 4
+
 @(private)
 Vec3 :: [3]f32
 

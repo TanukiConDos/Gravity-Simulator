@@ -103,6 +103,13 @@ push_descriptors_find :: proc(self: ^Push_Descriptors, set, binding: u32) -> ^Pu
 	return nil
 }
 
+@(private)
+push_descriptors_buffer :: proc(self: ^Push_Descriptors, set, binding, frame: u32) -> vulkan.Buffer {
+	entry := push_descriptors_find(self, set, binding)
+	if entry == nil {return 0}
+	return entry.buffers[frame].buffer
+}
+
 // push_descriptors_validate checks the configured bindings against the merged
 // shader interface, copies each binding's stage flags and warns about shader
 // resources that no buffer feeds.

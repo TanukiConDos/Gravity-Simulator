@@ -1,7 +1,7 @@
 package graphic
 
-import phys "../physic"
 import ecs "../ecs"
+import phys "../physic"
 import "base:intrinsics"
 import "vendor:vulkan"
 
@@ -68,22 +68,31 @@ instance_buffer_write_static :: proc(self: ^InstanceBuffer, world: ^ecs.World) {
 }
 
 @(private)
-instance_buffer_update_positions :: proc(self: ^InstanceBuffer, frame: u32, positions: []Vec3) {
+instance_buffer_update_positions :: proc(self: ^InstanceBuffer, frame: u32, positions: []Vec3, selected: []u8) {
 	if len(positions) == 0 {return}
-	// Hoisted to O(1) so the hot loop stays branchless.
 	assert(frame < MAX_FRAMES_IN_FLIGHT, "instance frame index out of range")
 	assert(self.has_data[frame], "instance buffer for this frame has no static data")
 	assert(len(positions) <= self.capacity, "more positions than the instance buffer capacity")
+	assert(len(selected) >= len(positions), "fewer selection flags than positions")
 	buffer := &self.buffers[frame]
 	assert(buffer.mapped != nil, "instance buffer is not mapped")
+	base := uintptr(buffer.mapped)
 	for pos, i in positions {
 		scaled := pos * INSTANCE_SCALE
-		intrinsics.mem_copy(rawptr(uintptr(buffer.mapped) + uintptr(i * size_of(InstanceData))), &scaled, size_of(Vec3))
+		entry := base + uintptr(i * size_of(InstanceData))
+		intrinsics.mem_copy(rawptr(entry), &scaled, size_of(Vec3))
+		flag := selected[i] > 0 ? i32(1) : i32(0)
+		intrinsics.mem_copy(rawptr(entry + offset_of(InstanceData, selected)), &flag, size_of(i32))
 	}
 }
 
 @(private)
-instance_buffer_bind :: proc(self: ^InstanceBuffer, cmd: vulkan.CommandBuffer, frame: u32, binding: u32) {
+instance_buffer_bind :: proc(
+	self: ^InstanceBuffer,
+	cmd: vulkan.CommandBuffer,
+	frame: u32,
+	binding: u32,
+) {
 	assert(frame < MAX_FRAMES_IN_FLIGHT, "instance frame index out of range")
 	// No static data (empty scene) is a legitimate state, not an error.
 	if !self.has_data[frame] || self.buffers[frame].buffer == 0 {return}

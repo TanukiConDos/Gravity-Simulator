@@ -22,6 +22,12 @@ RENDERER_SHADERS := [?]Shader_Spec{
 	{path = "Engine/Graphic/shader/frag.spv"},
 }
 
+// Second color output of the main pass: the instance ID (1-based), so a zero
+// pixel means "nothing hit". It is written by the same draw as the swapchain
+// color, so no separate pick pass is needed; the format is not the swapchain's.
+@(private)
+PICK_COLOR_FORMAT :: vulkan.Format.R32_UINT
+
 @(private)
 RENDERER_VERTEX_BUFFERS := [?]Vertex_Buffer_Spec{
 	{binding = MESH_BINDING, input_rate = .VERTEX, type = Vertex},
@@ -43,21 +49,26 @@ _RENDERER_DYNAMIC_STATES := [?]vulkan.DynamicState{.VIEWPORT, .SCISSOR}
 
 @(private)
 renderer_pipeline_config :: proc() -> Pipeline_Config {
-	return Pipeline_Config{
+	return Pipeline_Config {
 		shaders = RENDERER_SHADERS[:],
 		vertex_buffers = RENDERER_VERTEX_BUFFERS[:],
-		fixed = Fixed_State{
-			topology       = .TRIANGLE_LIST,
-			polygon_mode   = .FILL,
-			cull_mode      = {.BACK},
-			front_face     = .CLOCKWISE,
-			line_width     = 1,
-			samples        = {._1},
-			depth_test     = true,
-			depth_write    = true,
-			depth_compare  = .LESS,
-			blend_enable   = false,
-			dynamic_states = _RENDERER_DYNAMIC_STATES[:],
-		},
+		fixed = _renderer_fixed_state(),
+	}
+}
+
+@(private)
+_renderer_fixed_state :: proc() -> Fixed_State {
+	return Fixed_State {
+		topology       = .TRIANGLE_LIST,
+		polygon_mode   = .FILL,
+		cull_mode      = {.BACK},
+		front_face     = .CLOCKWISE,
+		line_width     = 1,
+		samples        = {._1},
+		depth_test     = true,
+		depth_write    = true,
+		depth_compare  = .LESS,
+		blend_enable   = false,
+		dynamic_states = _RENDERER_DYNAMIC_STATES[:],
 	}
 }

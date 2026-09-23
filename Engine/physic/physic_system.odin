@@ -20,8 +20,18 @@ ADAPTIVE_STALE_FACTOR :: 0.5
 ADAPTIVE_MIN_REBUILD_UPDATES :: 2
 
 RenderSnapshot :: struct {
-	mutex: sync.Mutex,
-	data:  [dynamic]Vec3,
+	mutex:    sync.Mutex,
+	data:     [dynamic]Vec3,
+	selected: [dynamic]u8,
+}
+
+// Set by the graphics thread after a pick readback and consumed by the physics
+// thread, which is the only side allowed to touch the pools. A value of
+// SELECTION_NONE means "no pending request".
+SELECTION_NONE :: i32(-1)
+
+Selection_State :: struct {
+	picked: i32,
 }
 
 // Solver/adaptive state lives as a world resource; the physics systems fetch it
@@ -67,6 +77,7 @@ _state_destroy :: proc(ptr: rawptr) {
 _snapshot_destroy :: proc(ptr: rawptr) {
 	s := cast(^RenderSnapshot)ptr
 	delete(s.data)
+	delete(s.selected)
 	free(ptr)
 }
 
@@ -78,10 +89,16 @@ physic_snapshot :: proc(w: ^ecs.World) -> ^RenderSnapshot {
 	return ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
 }
 
+selection_state :: proc(w: ^ecs.World) -> ^Selection_State {
+	return ecs.world_resource(w, Selection_State)
+}
+
 physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	// Create every pool and resource up front so the physics and graphics
 	// threads only ever read the registries concurrently.
 	_ = ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	sel := ecs.world_resource(w, Selection_State)
+	sel.picked = SELECTION_NONE
 	s := ecs.world_resource(w, Physic_State, _state_destroy)
 	s.algorithm = config.algorithm
 	s.theta = config.theta
@@ -116,6 +133,7 @@ physic_register_systems :: proc(s: ^ecs.Scheduler) {
 	ecs.scheduler_add(s, "physic.gravity", .PHYSICS, physic_system_gravity)
 	ecs.scheduler_add(s, "physic.collision", .PHYSICS, physic_system_collision)
 	ecs.scheduler_add(s, "physic.integrate", .PHYSICS, physic_system_integrate)
+	ecs.scheduler_add(s, "physic.select", .PHYSICS, physic_system_select)
 	ecs.scheduler_add(s, "physic.publish", .PHYSICS, physic_system_publish)
 	ecs.scheduler_add(s, "physic.adapt", .PHYSICS, physic_system_adapt)
 }
@@ -189,6 +207,22 @@ physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) {
 			disp_sq := drift.x * drift.x + drift.y * drift.y + drift.z * drift.z
 			if disp_sq > state.max_disp_sq {state.max_disp_sq = disp_sq}
 		}
+	}
+}
+
+// Applies a pick result handed over by the graphics thread. Runs on the physics
+// thread, which owns the Selected pool; an out-of-range index is treated as a
+// miss and simply clears the selection.
+physic_system_select :: proc(w: ^ecs.World, _: f32) {
+	sel := selection_state(w)
+	picked := sync.atomic_load(&sel.picked)
+	if picked == SELECTION_NONE {return}
+	sync.atomic_store(&sel.picked, SELECTION_NONE)
+
+	view := body_view(w)
+	for idx in view.bodies {view.selected[idx] = Selected(false)}
+	if picked >= 0 && int(picked) < len(view.bodies) {
+		view.selected[view.bodies[int(picked)]] = Selected(true)
 	}
 }
 
@@ -354,17 +388,28 @@ physic_snapshot_publish :: proc(w: ^ecs.World) {
 	count := len(view.bodies)
 	sync.mutex_lock(&snapshot.mutex)
 	resize(&snapshot.data, count)
+	resize(&snapshot.selected, count)
 	for i in 0 ..< count {
-		snapshot.data[i] = Vec3(view.position[view.bodies[i]])
+		entity := view.bodies[i]
+		snapshot.data[i] = Vec3(view.position[entity])
+		snapshot.selected[i] = bool(view.selected[entity]) ? 1 : 0
 	}
 	sync.mutex_unlock(&snapshot.mutex)
 }
 
-physic_snapshot_read :: proc(snapshot: ^RenderSnapshot, dest: rawptr, max_count: int) -> int {
+physic_snapshot_read :: proc(
+	snapshot: ^RenderSnapshot,
+	dest: rawptr,
+	dest_selected: rawptr,
+	max_count: int,
+) -> int {
 	sync.mutex_lock(&snapshot.mutex)
 	n := min(max_count, len(snapshot.data))
 	if n > 0 && dest != nil {
 		mem.copy(dest, raw_data(snapshot.data), n * size_of(Vec3))
+	}
+	if n > 0 && dest_selected != nil {
+		mem.copy(dest_selected, raw_data(snapshot.selected), n)
 	}
 	sync.mutex_unlock(&snapshot.mutex)
 	return n

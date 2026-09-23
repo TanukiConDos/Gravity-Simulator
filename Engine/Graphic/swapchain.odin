@@ -16,9 +16,11 @@ SwapChain :: struct {
 	extent:                vulkan.Extent2D,
 	images:                [dynamic]vulkan.Image,
 	image_views:           [dynamic]vulkan.ImageView,
-	depth_image:           vulkan.Image,
-	depth_mem:             MemAlloc,
-	depth_image_view:      vulkan.ImageView,
+	// One depth target per frame in flight. Sharing a single depth image across
+	// two in-flight frames would let both write it concurrently; keeping one per
+	// frame removes the hazard and matches the transient model a frame graph will
+	// assume later.
+	depth_targets:         [MAX_FRAMES_IN_FLIGHT]Render_Target,
 	// One acquire semaphore + fence per frame in flight.
 	image_available_semas: [dynamic]vulkan.Semaphore,
 	in_flight_fences:      [dynamic]vulkan.Fence,
@@ -107,92 +109,23 @@ swapchain_prepare_frame :: proc(self: ^SwapChain, frame, image_index: u32) {
 	vk_assert(vulkan.ResetFences(self.gpu.device, 1, &self.in_flight_fences[frame]), "vkResetFences")
 }
 
+// swapchain_color_target borrows the acquired image for this frame. The returned
+// target must not be destroyed.
 @(private)
-swapchain_begin_rendering :: proc(self: ^SwapChain, cmd: vulkan.CommandBuffer, image_index: u32) {
-	// UNDEFINED old layouts are valid here: the swapchain image is fully
-	// overwritten (color clear) and the depth image is cleared every frame.
-	pre := [2]vulkan.ImageMemoryBarrier2{
-		{
-			sType = .IMAGE_MEMORY_BARRIER_2,
-			srcStageMask = {.COLOR_ATTACHMENT_OUTPUT},
-			dstStageMask = {.COLOR_ATTACHMENT_OUTPUT},
-			dstAccessMask = {.COLOR_ATTACHMENT_WRITE},
-			oldLayout = .UNDEFINED,
-			newLayout = .ATTACHMENT_OPTIMAL,
-			srcQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-			dstQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-			image = self.images[image_index],
-			subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.COLOR}, levelCount = 1, layerCount = 1},
-		},
-		{
-			sType = .IMAGE_MEMORY_BARRIER_2,
-			srcStageMask = {.TOP_OF_PIPE},
-			dstStageMask = {.EARLY_FRAGMENT_TESTS, .LATE_FRAGMENT_TESTS},
-			dstAccessMask = {.DEPTH_STENCIL_ATTACHMENT_WRITE},
-			oldLayout = .UNDEFINED,
-			newLayout = .DEPTH_ATTACHMENT_OPTIMAL,
-			srcQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-			dstQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-			image = self.depth_image,
-			subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.DEPTH}, levelCount = 1, layerCount = 1},
-		},
-	}
-	dependency := vulkan.DependencyInfo{sType = .DEPENDENCY_INFO, imageMemoryBarrierCount = u32(len(pre)), pImageMemoryBarriers = &pre[0]}
-	vulkan.CmdPipelineBarrier2(cmd, &dependency)
-
-	clear_color := vulkan.ClearValue{color = vulkan.ClearColorValue{float32 = {0, 0, 0, 1}}}
-	clear_depth := vulkan.ClearValue{depthStencil = vulkan.ClearDepthStencilValue{depth = 1, stencil = 0}}
-	color_attachment := vulkan.RenderingAttachmentInfo{
-		sType = .RENDERING_ATTACHMENT_INFO,
-		imageView = self.image_views[image_index],
-		imageLayout = .ATTACHMENT_OPTIMAL,
-		loadOp = .CLEAR,
-		storeOp = .STORE,
-		clearValue = clear_color,
-	}
-	depth_attachment := vulkan.RenderingAttachmentInfo{
-		sType = .RENDERING_ATTACHMENT_INFO,
-		imageView = self.depth_image_view,
-		imageLayout = .DEPTH_ATTACHMENT_OPTIMAL,
-		loadOp = .CLEAR,
-		storeOp = .DONT_CARE,
-		clearValue = clear_depth,
-	}
-	render_info := vulkan.RenderingInfo{
-		sType = .RENDERING_INFO,
-		renderArea = vulkan.Rect2D{offset = {0, 0}, extent = self.extent},
-		layerCount = 1,
-		colorAttachmentCount = 1,
-		pColorAttachments = &color_attachment,
-		pDepthAttachment = &depth_attachment,
-	}
-	vulkan.CmdBeginRendering(cmd, &render_info)
-
-	// Negative viewport height flips Y in the viewport transform, replacing the
-	// "proj[1][1] *= -1" CPU hack. Core since Vulkan 1.1 (maintenance1).
-	viewport := vulkan.Viewport{x = 0, y = f32(self.extent.height), width = f32(self.extent.width), height = -f32(self.extent.height), minDepth = 0, maxDepth = 1}
-	vulkan.CmdSetViewport(cmd, 0, 1, &viewport)
-	scissor := vulkan.Rect2D{extent = self.extent}
-	vulkan.CmdSetScissor(cmd, 0, 1, &scissor)
+swapchain_color_target :: proc(self: ^SwapChain, image_index: u32) -> Render_Target {
+	return render_target_borrow(
+		self.gpu,
+		self.images[image_index],
+		self.image_views[image_index],
+		self.image_format,
+		self.extent,
+	)
 }
 
+// The depth target is per frame in flight, so a frame only ever touches its own.
 @(private)
-swapchain_end_rendering :: proc(self: ^SwapChain, cmd: vulkan.CommandBuffer, image_index: u32) {
-	vulkan.CmdEndRendering(cmd)
-	barrier := vulkan.ImageMemoryBarrier2{
-		sType = .IMAGE_MEMORY_BARRIER_2,
-		srcStageMask = {.COLOR_ATTACHMENT_OUTPUT},
-		srcAccessMask = {.COLOR_ATTACHMENT_WRITE},
-		dstStageMask = {.BOTTOM_OF_PIPE},
-		oldLayout = .ATTACHMENT_OPTIMAL,
-		newLayout = .PRESENT_SRC_KHR,
-		srcQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-		dstQueueFamilyIndex = vulkan.QUEUE_FAMILY_IGNORED,
-		image = self.images[image_index],
-		subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.COLOR}, levelCount = 1, layerCount = 1},
-	}
-	dependency := vulkan.DependencyInfo{sType = .DEPENDENCY_INFO, imageMemoryBarrierCount = 1, pImageMemoryBarriers = &barrier}
-	vulkan.CmdPipelineBarrier2(cmd, &dependency)
+swapchain_depth_target :: proc(self: ^SwapChain, frame: u32) -> ^Render_Target {
+	return &self.depth_targets[frame]
 }
 
 @(private)
@@ -307,41 +240,19 @@ _swapchain_create_depth_resources :: proc(self: ^SwapChain) {
 	depth_format := self.depth_format
 	if depth_format == {} {depth_format = _find_depth_format(self.gpu); self.depth_format = depth_format}
 
-	image_info := vulkan.ImageCreateInfo{
-		sType         = .IMAGE_CREATE_INFO,
-		imageType     = .D2,
-		format        = depth_format,
-		extent        = vulkan.Extent3D{width = self.extent.width, height = self.extent.height, depth = 1},
-		mipLevels     = 1,
-		arrayLayers   = 1,
-		samples       = {._1},
-		tiling        = .OPTIMAL,
-		usage         = {.DEPTH_STENCIL_ATTACHMENT},
-		sharingMode   = .EXCLUSIVE,
-		initialLayout = .UNDEFINED,
+	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+		target, created := render_target_init(self.gpu, Render_Target_Desc{
+			format = depth_format,
+			extent = self.extent,
+			usage  = {.DEPTH_STENCIL_ATTACHMENT},
+			aspect = {.DEPTH},
+		})
+		if !created {
+			log.errorf("[VULKAN] Failed to create depth target (frame %d)", i)
+			return
+		}
+		self.depth_targets[i] = target
 	}
-	if !vk_check(vulkan.CreateImage(self.gpu.device, &image_info, nil, &self.depth_image), "vkCreateImage (depth)") {
-		return
-	}
-
-	mem_reqs: vulkan.MemoryRequirements
-	vulkan.GetImageMemoryRequirements(self.gpu.device, self.depth_image, &mem_reqs)
-	mem, allocated := allocator_alloc_dedicated(&self.gpu.allocator, mem_reqs, .DeviceLocal, image = self.depth_image)
-	if !allocated {
-		log.errorf("[VULKAN] Failed to allocate depth image memory!")
-		return
-	}
-	self.depth_mem = mem
-	vk_assert(vulkan.BindImageMemory(self.gpu.device, self.depth_image, mem_alloc_memory(mem), mem_alloc_offset(mem)), "vkBindImageMemory")
-
-	view_info := vulkan.ImageViewCreateInfo{
-		sType = .IMAGE_VIEW_CREATE_INFO,
-		image = self.depth_image,
-		viewType = .D2,
-		format = depth_format,
-		subresourceRange = vulkan.ImageSubresourceRange{aspectMask = {.DEPTH}, levelCount = 1, layerCount = 1},
-	}
-	vk_assert(vulkan.CreateImageView(self.gpu.device, &view_info, nil, &self.depth_image_view), "vkCreateImageView")
 }
 
 @(private)
@@ -353,9 +264,7 @@ _swapchain_destroy_resources :: proc(self: ^SwapChain) {
 	// NOTE: images_in_flight only aliases entries of in_flight_fences (bookkeeping
 	// of which frame fence owns each image), so its entries must NOT be destroyed.
 	for &image_view in self.image_views {vulkan.DestroyImageView(device, image_view, nil)}
-	if self.depth_image_view != 0 {vulkan.DestroyImageView(device, self.depth_image_view, nil); self.depth_image_view = 0}
-	if self.depth_image != 0 {vulkan.DestroyImage(device, self.depth_image, nil); self.depth_image = 0}
-	if self.depth_mem.block != nil {allocator_free(&self.gpu.allocator, self.depth_mem); self.depth_mem = {}}
+	for &target in self.depth_targets {render_target_destroy(&target)}
 	delete(self.images); self.images = nil
 	delete(self.image_views); self.image_views = nil
 	delete(self.image_available_semas); self.image_available_semas = nil

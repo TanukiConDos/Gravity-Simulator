@@ -145,8 +145,9 @@ the entities the simulation iterates, and its `dense` list is the canonical body
 list. `Physic_State` is a world resource holding the solver and adaptive-tuning
 state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
 `begin` (reset acceleration, ensure tree), `gravity`, `collision`, `integrate`,
-`publish` (copy positions into `RenderSnapshot`), `adapt` (adaptive controller).
-`physic_register_systems` wires them up.
+`select` (apply a picked instance from the graphics thread to `Selected`),
+`publish` (copy positions and selection into `RenderSnapshot`), `adapt`
+(adaptive controller). `physic_register_systems` wires them up.
 
 ### Graphics as ECS
 
@@ -155,6 +156,23 @@ resource and `graphic_register_systems` adds the `RENDER`-phase input system tha
 mutates it from the keyboard (the window is reached through a `Window_Ref`
 resource). The graphics thread runs the `RENDER` phase, then
 `renderer_draw_frame`, which reads the camera resource and the render snapshot.
+
+The frame itself is data-driven. `Engine/Graphic/frame_graph.json` declares the
+resources (imported or transient) and the passes (`inputs`/`outputs`, `bindings`,
+`optional`). `frame_graph.odin` loads it, resolves pipelines, builds the
+dependency edges and, every frame, culls disabled/unused passes, topologically
+sorts the rest and executes it: it emits the layout barriers derived from each
+resource's usage and opens the rendering scope around the pass's record callback.
+Passes are bound to code by name in the renderer (`_renderer_record_pass`), so the
+JSON owns the structure and the code owns the draw calls.
+
+The main pass writes both the swapchain color and, as a second output (MRT), a
+1-based instance ID to a transient `R32_UINT` target owned by the graph. On a left
+mouse press the optional `pick_copy` pass records a one-pixel copy of that ID into
+the frame command buffer (no separate draw and no extra submission), so the result
+is read once the frame's fence signals. The resolved index is handed to the
+physics thread through the atomic `Selection_State`; `physic.select` applies it to
+`Selected`, and the next snapshot publishes the flags.
 
 ### Threading
 
@@ -272,7 +290,7 @@ The octree gravity solver is split across `worker_threads` via `foundation.paral
 
 Hot-path traversal stacks (`_calc_force`, `_calc_force_collect`) skip zero-initialization; every slot is written before it is read. Zero-initializing them cost ~5–12% of the tick at 100k bodies with `theta >= 0.75` (measured with the fold enabled; without it the effect was larger).
 
-Each tick publishes body positions into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
+Each tick publishes body positions and selection flags into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
 
 ## Benchmark
 
