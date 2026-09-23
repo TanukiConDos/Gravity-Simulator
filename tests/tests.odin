@@ -88,8 +88,7 @@ test_brute_force :: proc(t: ^testing.T) {
 	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
 
 	config := foundation.Config {
-		solver_algorithm    = .BRUTE_FORCE,
-		collision_algorithm = .BRUTE_FORCE,
+		algorithm = .BRUTE_FORCE,
 	}
 	physics.physic_init(w, config)
 	s := ecs.scheduler_create()
@@ -114,9 +113,8 @@ test_octree_collision :: proc(t: ^testing.T) {
 	b := physics.body_spawn(w, {12, 0, 0}, {0, 0, 0}, 100, 5)
 
 	config := foundation.Config {
-		solver_algorithm    = .OCTREE,
-		collision_algorithm = .OCTREE,
-		theta               = 0.5,
+		algorithm = .OCTREE,
+		theta     = 0.5,
 	}
 	physics.physic_init(w, config)
 	s := ecs.scheduler_create()

@@ -27,8 +27,7 @@ RenderSnapshot :: struct {
 // Solver/adaptive state lives as a world resource; the physics systems fetch it
 // at the start of a tick and keep the pointer for their duration.
 Physic_State :: struct {
-	solver_algo:         found.Algorithm,
-	collision_algo:      found.Algorithm,
+	algorithm:           found.Algorithm,
 	theta:               f32,
 	rebuild_interval:    f32,
 	max_depth:           int,
@@ -39,7 +38,6 @@ Physic_State :: struct {
 	tree_revision:       u64,
 	collision_contacts:  [dynamic]Contact,
 	collision_mutex:     sync.Mutex,
-	contacts_from_gravity: bool,
 	auto_adjust:         bool,
 	target_cost_ms:      f32,
 	theta_min:           f32,
@@ -85,8 +83,7 @@ physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	// threads only ever read the registries concurrently.
 	_ = ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
 	s := ecs.world_resource(w, Physic_State, _state_destroy)
-	s.solver_algo = config.solver_algorithm
-	s.collision_algo = config.collision_algorithm
+	s.algorithm = config.algorithm
 	s.theta = config.theta
 	s.rebuild_interval = config.tree_rebuild_interval
 	s.max_depth =
@@ -132,7 +129,7 @@ physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) {
 	acc := ecs.world_pool(w, Acceleration).data
 	for idx in bodies {acc[idx] = Acceleration(Vec3{0, 0, 0})}
 
-	if state.solver_algo == .OCTREE || state.collision_algo == .OCTREE {
+	if state.algorithm == .OCTREE {
 		_ensure_tree(state, w, delta_time)
 	}
 }
@@ -143,28 +140,23 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) {
 	if len(bodies) == 0 {return}
 	seconds := f64(delta_time)
 
-	switch state.solver_algo {
+	switch state.algorithm {
 	case .BRUTE_FORCE:
 		_brute_force_solve(w, bodies, seconds)
 	case .OCTREE:
 		if state.tree != nil {
 			state.tree.theta = state.theta
-			// When collision also uses the tree, the gravity traversal doubles as
-			// the collision broad phase: positions do not change between the two
-			// phases, so the contacts it collects are exactly what the collision
-			// phase would have found.
-			collect := state.collision_algo == .OCTREE
+			// The gravity traversal doubles as the collision broad phase:
+			// positions do not change between the two phases, so the contacts
+			// it collects are exactly what a separate pass would have found.
+			clear(&state.collision_contacts)
 			max_radius: f32
-			if collect {
-				clear(&state.collision_contacts)
-				radius := ecs.world_pool(w, Radius).data
-				for idx in bodies {
-					r := f32(radius[idx])
-					if r > max_radius {max_radius = r}
-				}
+			radius := ecs.world_pool(w, Radius).data
+			for idx in bodies {
+				r := f32(radius[idx])
+				if r > max_radius {max_radius = r}
 			}
-			state.contacts_from_gravity = collect
-			_octree_solve(state, bodies, seconds, collect, max_radius)
+			_octree_solve(state, bodies, seconds, max_radius)
 		}
 	}
 }
@@ -174,18 +166,11 @@ physic_system_collision :: proc(w: ^ecs.World, _: f32) {
 	bodies := ecs.world_pool(w, Body).dense[:]
 	if len(bodies) < 2 {return}
 
-	switch state.collision_algo {
+	switch state.algorithm {
 	case .BRUTE_FORCE:
 		_brute_force_collision(w, bodies)
 	case .OCTREE:
-		if state.tree != nil {
-			if state.contacts_from_gravity {
-				state.contacts_from_gravity = false
-				_collision_resolve(state, w)
-			} else {
-				_octree_collision(state, w, bodies)
-			}
-		}
+		if state.tree != nil {_collision_resolve(state, w)}
 	}
 }
 
@@ -285,7 +270,7 @@ adaptive_tree_stale :: proc(max_disp_sq, leaf_half: f32, updates_since_build: in
 
 _adaptive_controller :: proc(state: ^Physic_State, cost_ms: f32) {
 	if !state.auto_adjust {return}
-	if state.solver_algo != .OCTREE && state.collision_algo != .OCTREE {return}
+	if state.algorithm != .OCTREE {return}
 
 	if state.warmup_left > 0 {
 		state.warmup_left -= 1
@@ -316,16 +301,12 @@ _adaptive_controller :: proc(state: ^Physic_State, cost_ms: f32) {
 	}
 	if state.above_count < ADAPTIVE_CONFIRM && state.below_count < ADAPTIVE_CONFIRM {return}
 
-	use_theta := state.solver_algo == .OCTREE
-	theta_min := use_theta ? state.theta_min : state.theta
-	theta_max := use_theta ? state.theta_max : state.theta
-
 	new_theta, adapted := adaptive_decide(
 		state.ema_cost_ms,
 		state.target_cost_ms,
 		state.theta,
-		theta_min,
-		theta_max,
+		state.theta_min,
+		state.theta_max,
 	)
 	if !adapted {return}
 
@@ -437,25 +418,17 @@ _brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
 	}
 }
 
-_octree_solve :: proc(
-	state: ^Physic_State,
-	bodies: []u32,
-	seconds: f64,
-	collect_contacts: bool,
-	max_radius: f32,
-) {
+_octree_solve :: proc(state: ^Physic_State, bodies: []u32, seconds: f64, max_radius: f32) {
 	tree := state.tree
 	if tree == nil {return}
 	found.profile_scope("octree.solve")
 	data := _OctreeSolveData {
-		tree    = tree,
-		indices = bodies,
-		dt      = f32(seconds),
-	}
-	if collect_contacts {
-		data.max_radius = max_radius
-		data.contacts = &state.collision_contacts
-		data.mutex = &state.collision_mutex
+		tree       = tree,
+		indices    = bodies,
+		dt         = f32(seconds),
+		max_radius = max_radius,
+		contacts   = &state.collision_contacts,
+		mutex      = &state.collision_mutex,
 	}
 	found.parallel_for(_octree_solve_worker, &data, len(bodies))
 }
@@ -471,83 +444,20 @@ _OctreeSolveData :: struct {
 
 _octree_solve_worker :: proc(index: int, data: rawptr) {
 	ctx := cast(^_OctreeSolveData)data
-	if ctx.contacts != nil {
-		octtree_calc_force_and_collect(
-			ctx.tree,
-			ctx.indices[index],
-			ctx.dt,
-			ctx.max_radius,
-			ctx.contacts,
-			ctx.mutex,
-		)
-	} else {
-		octtree_calc_force(ctx.tree, ctx.indices[index], ctx.dt)
-	}
+	octtree_calc_force_and_collect(
+		ctx.tree,
+		ctx.indices[index],
+		ctx.dt,
+		ctx.max_radius,
+		ctx.contacts,
+		ctx.mutex,
+	)
 }
 
-// Collision is split into a parallel broad phase (read-only tree queries that
-// collect overlapping pairs) and a serial narrow phase that displaces the two
-// bodies. Resolution is order-dependent, so it must stay serial.
+// Overlapping pair collected during the gravity traversal.
 Contact :: struct {
 	a: u32,
 	b: u32,
-}
-
-@(private)
-_collision_scratch: [dynamic]u32
-
-// Jobs up to this many bodies use a stack buffer, so the common case (tests,
-// small scenes) never allocates. Larger jobs cache a per-thread heap buffer
-// that lives for the thread's lifetime.
-COLLISION_STACK_SCRATCH :: 1024
-
-@(private)
-_CollisionBroadData :: struct {
-	tree:       ^OctTree,
-	bodies:     []u32,
-	pos:        []Position,
-	radius:     []Radius,
-	max_radius: f32,
-	contacts:   ^[dynamic]Contact,
-	mutex:      ^sync.Mutex,
-}
-
-@(private)
-_collision_broad_worker :: proc(index: int, data: rawptr) {
-	ctx := cast(^_CollisionBroadData)data
-	a := ctx.bodies[index]
-
-	stack_scratch: [COLLISION_STACK_SCRATCH]u32 = ---
-	scratch: []u32
-	if len(ctx.bodies) <= COLLISION_STACK_SCRATCH {
-		scratch = stack_scratch[:]
-	} else {
-		if cap(_collision_scratch) < len(ctx.bodies) {
-			resize(&_collision_scratch, len(ctx.bodies))
-		}
-		scratch = _collision_scratch[:]
-	}
-
-	count := 0
-	octtree_collect_nearby(
-		ctx.tree,
-		Vec3(ctx.pos[a]),
-		f32(ctx.radius[a]) + ctx.max_radius,
-		scratch,
-		&count,
-	)
-
-	for j in 0 ..< count {
-		b := scratch[j]
-		if b <= a {continue}
-		dir := Vec3(ctx.pos[b]) - Vec3(ctx.pos[a])
-		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
-		radius_sum := f32(ctx.radius[a]) + f32(ctx.radius[b])
-		if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {continue}
-		sync.mutex_lock(ctx.mutex)
-		append(ctx.contacts, Contact{a = a, b = b})
-		sync.mutex_unlock(ctx.mutex)
-	}
 }
 
 @(private)
@@ -556,37 +466,8 @@ _contact_less :: proc(x, y: Contact) -> bool {
 	return x.b < y.b
 }
 
-_octree_collision :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
-	tree := state.tree
-	if tree == nil || len(bodies) < 2 {return}
-
-	pos := ecs.world_pool(w, Position).data
-	radius := ecs.world_pool(w, Radius).data
-
-	max_radius: f32
-	for idx in bodies {
-		r := f32(radius[idx])
-		if r > max_radius {max_radius = r}
-	}
-
-	clear(&state.collision_contacts)
-	broad := _CollisionBroadData {
-		tree       = tree,
-		bodies     = bodies,
-		pos        = pos[:],
-		radius     = radius[:],
-		max_radius = max_radius,
-		contacts   = &state.collision_contacts,
-		mutex      = &state.collision_mutex,
-	}
-	found.parallel_for(_collision_broad_worker, &broad, len(bodies))
-
-	_collision_resolve(state, w)
-}
-
-// Serial narrow phase: displace each overlapping pair. Sorted first so the
-// (order-dependent) resolution is deterministic regardless of which worker
-// collected a pair.
+// Displaces each overlapping pair collected by the gravity traversal. Sorted
+// first so the (order-dependent) resolution is deterministic.
 @(private)
 _collision_resolve :: proc(state: ^Physic_State, w: ^ecs.World) {
 	pos := ecs.world_pool(w, Position).data

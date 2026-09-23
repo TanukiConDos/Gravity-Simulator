@@ -115,8 +115,7 @@ make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 	w := ecs.world_create()
 	spawn_bodies(w, p.n)
 	config := foundation.Config {
-		solver_algorithm      = .OCTREE,
-		collision_algorithm   = .OCTREE,
+		algorithm             = .OCTREE,
 		theta                 = p.theta,
 		tree_rebuild_interval = p.interval,
 		max_depth             = p.max_depth,
