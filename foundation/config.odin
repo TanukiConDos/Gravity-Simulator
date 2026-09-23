@@ -23,6 +23,8 @@ Config :: struct {
 	solver_algorithm:      Algorithm,
 	theta:                 f32,
 	tree_rebuild_interval: f32,
+	max_depth:             int,
+	min_half_size:         f32,
 	worker_threads:        int,
 	auto_adjust:           bool,
 	target_tickrate:       f32,
@@ -40,6 +42,8 @@ _config: Config = {
 	solver_algorithm      = .BRUTE_FORCE,
 	theta                 = 0.5,
 	tree_rebuild_interval = 50.0,
+	max_depth             = 48,
+	min_half_size         = 1e-4,
 	worker_threads        = 8,
 	auto_adjust           = false,
 	target_tickrate       = 60.0,
@@ -96,6 +100,10 @@ _apply_config :: proc(text: string) {
 			_config.theta = f32(_parse_number(text, &pos))
 		case "tree_rebuild_interval":
 			_config.tree_rebuild_interval = f32(_parse_number(text, &pos))
+		case "max_depth":
+			_config.max_depth = int(_parse_number(text, &pos))
+		case "min_half_size":
+			_config.min_half_size = f32(_parse_number(text, &pos))
 		case "worker_threads":
 			_config.worker_threads = int(_parse_number(text, &pos))
 		case "auto_adjust":
