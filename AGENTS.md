@@ -29,13 +29,9 @@ generic binary that runs anywhere (a `native` binary faults on older CPUs).
 
 ### Shaders
 
-GLSL sources live in `Engine/Graphic/shader/` and compile to SPIR-V 1.6
-(`--target-env=vulkan1.4`). Re-run after editing them:
-
-```
-Engine/Graphic/shader/build.sh        # Linux
-Engine/Graphic/shader/compilar.bat    # Windows (requires VULKAN_SDK)
-```
+GLSL sources live in `Engine/Graphic/shader/` and compile to SPIR-V 1.6. Re-run
+`Engine/Graphic/shader/build.sh` (Linux; `compilar.bat` on Windows) after editing
+them. The `shader-pipeline` skill covers the full edit/rebuild workflow.
 
 ## Validation
 
@@ -111,18 +107,14 @@ missing/invalid fields fall back to defaults).
 - `docs/renderer.md` — reflection, ownership/error handling, visibility, Vulkan usage.
 - `docs/benchmark.md` — bench harness, spall profiling, measured results.
 
+## Skills
+
+Project skills under `.opencode/skills/` load on demand (only their description
+is always in context): `shader-pipeline`, `physics-bench`, `verify-engine`,
+`octree-tuning`.
+
 ## Tests
 
-21 tests, split across the ECS core, physics and SPIR-V reflection:
-- ECS: `test_ecs_spawn_despawn`, `test_ecs_components`, `test_ecs_pool_alignment`,
-  `test_ecs_pool_remove_swap`, `test_ecs_flush_clears_all_pools`,
-  `test_ecs_resource`, `test_ecs_scheduler_phase_order`.
-- Physics: `test_octtree_create`, `test_octtree_depth_cap`, `test_octtree_force`,
-  `test_octree_collision`, `test_octree_force_collect_equivalence`,
-  `test_physic_init_defaults`, `test_brute_force`, `test_body_components`,
-  `test_adaptive_decide`, `test_adaptive_tree_stale`.
-- Reflection: `test_spirv_vertex_reflection`, `test_spirv_fragment_reflection`,
-  `test_spirv_descriptors_and_push_constants`, `test_spirv_rejects_invalid_modules`.
-
-Shader reflection tests read the engine's compiled shaders plus the committed
-fixture in `tests/fixtures/` (rebuild it with `tests/fixtures/build.sh`).
+Run `odin test tests -debug`. The `verify-engine` skill lists the pre-commit
+checks; `octree-tuning` and `shader-pipeline` name the tests that pin each
+subsystem.
