@@ -128,23 +128,6 @@ swapchain_depth_target :: proc(self: ^SwapChain, frame: u32) -> ^Render_Target {
 	return &self.depth_targets[frame]
 }
 
-// Transitions the presented image to PRESENT_SRC_KHR after the frame pass closes.
-// This is swapchain-specific, so it stays out of Frame_Pass.
-@(private)
-swapchain_prepare_present :: proc(self: ^SwapChain, cmd: vulkan.CommandBuffer, image_index: u32) {
-	image_barrier(
-		cmd,
-		self.images[image_index],
-		{.COLOR},
-		.ATTACHMENT_OPTIMAL,
-		.PRESENT_SRC_KHR,
-		{.COLOR_ATTACHMENT_OUTPUT},
-		{.BOTTOM_OF_PIPE},
-		{.COLOR_ATTACHMENT_WRITE},
-		{},
-	)
-}
-
 @(private)
 swapchain_submit :: proc(self: ^SwapChain, cmd: vulkan.CommandBuffer, frame, image_index: u32) -> vulkan.Result {
 	wait_info := vulkan.SemaphoreSubmitInfo{

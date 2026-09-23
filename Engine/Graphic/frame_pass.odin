@@ -37,10 +37,9 @@ frame_pass_create :: proc(name: string, pipeline: Pipeline_ID) -> Frame_Pass {
 	}
 }
 
-// frame_pass_begin transitions the attachments and opens the rendering scope.
-// UNDEFINED is a valid old layout for every target: color is fully overwritten
-// (loadOp CLEAR) and the depth/ID targets are per frame in flight and cleared
-// every frame, so none carries state across frames.
+// frame_pass_begin opens the rendering scope. Layout transitions are emitted by
+// the frame graph beforehand; this only builds the attachments and sets the
+// dynamic viewport/scissor.
 @(private)
 frame_pass_begin :: proc(
 	cmd: vulkan.CommandBuffer,
@@ -53,19 +52,6 @@ frame_pass_begin :: proc(
 		len(colors) > 0 && len(colors) <= MAX_COLOR_ATTACHMENTS,
 		"frame pass color attachment count out of range",
 	)
-
-	for color in colors {
-		render_target_barrier(
-			cmd,
-			color.target,
-			.UNDEFINED,
-			.ATTACHMENT_OPTIMAL,
-			{.COLOR_ATTACHMENT_OUTPUT},
-			{.COLOR_ATTACHMENT_OUTPUT},
-			{},
-			{.COLOR_ATTACHMENT_WRITE},
-		)
-	}
 
 	attachments: [MAX_COLOR_ATTACHMENTS]vulkan.RenderingAttachmentInfo
 	for color, i in colors {
@@ -88,16 +74,6 @@ frame_pass_begin :: proc(
 
 	depth_attachment: vulkan.RenderingAttachmentInfo
 	if depth != nil {
-		render_target_barrier(
-			cmd,
-			depth^,
-			.UNDEFINED,
-			.DEPTH_ATTACHMENT_OPTIMAL,
-			{.TOP_OF_PIPE},
-			{.EARLY_FRAGMENT_TESTS, .LATE_FRAGMENT_TESTS},
-			{},
-			{.DEPTH_STENCIL_ATTACHMENT_WRITE},
-		)
 		depth_attachment = vulkan.RenderingAttachmentInfo{
 			sType       = .RENDERING_ATTACHMENT_INFO,
 			imageView   = depth.view,

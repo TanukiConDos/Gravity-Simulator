@@ -157,16 +157,21 @@ mutates it from the keyboard (the window is reached through a `Window_Ref`
 resource). The graphics thread runs the `RENDER` phase, then
 `renderer_draw_frame`, which reads the camera resource and the render snapshot.
 
-`renderer_draw_frame` is split into the swapchain acquire/present path and
-`_renderer_record_frame`, which records a `Frame_Pass`. A pass is engine
-bookkeeping (pipeline + `Render_Target`s + load/clear), not a `VkRenderPass`, and
-every layout transition goes through `image_barrier`. A pass takes a list of
-color attachments, so the main pass writes both the swapchain color and, as a
-second output (MRT), a 1-based instance ID to a per-frame `R32_UINT` target. On a
-left mouse press the renderer records a one-pixel copy of that ID target into the
-same command buffer (no separate draw and no extra submission), so the result is
-read once the frame's fence signals. The resolved index is handed to the physics
-thread through the atomic `Selection_State`; `physic.select` applies it to
+The frame itself is data-driven. `Engine/Graphic/frame_graph.json` declares the
+resources (imported or transient) and the passes (`inputs`/`outputs`, `bindings`,
+`optional`). `frame_graph.odin` loads it, resolves pipelines, builds the
+dependency edges and, every frame, culls disabled/unused passes, topologically
+sorts the rest and executes it: it emits the layout barriers derived from each
+resource's usage and opens the rendering scope around the pass's record callback.
+Passes are bound to code by name in the renderer (`_renderer_record_pass`), so the
+JSON owns the structure and the code owns the draw calls.
+
+The main pass writes both the swapchain color and, as a second output (MRT), a
+1-based instance ID to a transient `R32_UINT` target owned by the graph. On a left
+mouse press the optional `pick_copy` pass records a one-pixel copy of that ID into
+the frame command buffer (no separate draw and no extra submission), so the result
+is read once the frame's fence signals. The resolved index is handed to the
+physics thread through the atomic `Selection_State`; `physic.select` applies it to
 `Selected`, and the next snapshot publishes the flags.
 
 ### Threading

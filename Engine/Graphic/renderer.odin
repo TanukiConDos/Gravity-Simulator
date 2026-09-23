@@ -15,7 +15,7 @@ Renderer :: struct {
 	config:          Pipeline_Config,
 	pipelines:       Pipeline_Registry,
 	main_pipeline:   Pipeline_ID,
-	main_pass:       Frame_Pass,
+	frame_graph:     Frame_Graph,
 	push:            Push_Descriptors,
 	model:           Model,
 	camera:          ^Camera,
@@ -24,11 +24,9 @@ Renderer :: struct {
 	instances:       InstanceBuffer,
 	positions:       [dynamic]Vec3,
 	selected:        [dynamic]u8,
-	// The main pass writes the pick ID as a second color output, so no separate
-	// pick pass is needed. One target and readback buffer per frame in flight; a
-	// click records a one-pixel copy into that frame's command buffer and the
-	// result is read once the frame fence signals.
-	pick_ids:        [MAX_FRAMES_IN_FLIGHT]Render_Target,
+	// The pick ID is a transient owned by the frame graph; the renderer only owns
+	// the readback buffers and the state used to resolve them.
+	frame_color:     Render_Target,
 	pick_readback:   [MAX_FRAMES_IN_FLIGHT]Buffer,
 	pick_pending:    [MAX_FRAMES_IN_FLIGHT]bool,
 	current_frame:   u32,
@@ -48,7 +46,6 @@ renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer,
 	renderer.pipelines = pipeline_registry_init(&renderer.gpu)
 	color_formats := [2]vulkan.Format{renderer.swapchain.image_format, PICK_COLOR_FORMAT}
 	renderer.main_pipeline = pipeline_registry_add(&renderer.pipelines, "main", renderer.config, color_formats[:], renderer.swapchain.depth_format) or_return
-	renderer.main_pass = frame_pass_create("main", renderer.main_pipeline)
 	_renderer_create_pick_resources(renderer) or_return
 	renderer.model = model_init(&renderer.gpu, &renderer.command_pool, 30, 30) or_return
 	renderer.camera = ecs.world_resource(world, Camera)
@@ -59,6 +56,11 @@ renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer,
 	if !push_descriptors_validate(&renderer.push, pipeline_registry_get(&renderer.pipelines, renderer.main_pipeline)) {return nil, false}
 	renderer.instances = instance_buffer_init(&renderer.gpu)
 	renderer.snapshot = phys.physic_snapshot(world)
+	renderer.frame_graph = frame_graph_load(&renderer.gpu, FRAME_GRAPH_PATH, &renderer.pipelines) or_return
+	renderer.frame_graph.resolve = _renderer_resolve_import
+	renderer.frame_graph.resolve_user = renderer
+	renderer.frame_graph.record = _renderer_record_pass
+	renderer.frame_graph.record_user = renderer
 	obj_count := phys.body_count(world)
 	if obj_count > 0 {
 		renderer.positions = make([dynamic]Vec3, obj_count)
@@ -85,6 +87,7 @@ renderer_destroy :: proc(self: ^Renderer) {
 	instance_buffer_destroy(&self.instances)
 	delete(self.positions); delete(self.selected)
 	_renderer_destroy_pick_resources(self)
+	frame_graph_destroy(&self.frame_graph)
 	pipeline_registry_destroy(&self.pipelines); swapchain_destroy(&self.swapchain); command_pool_destroy(&self.command_pool); gpu_destroy(&self.gpu)
 	free(self)
 	log.infof("[VULKAN] Renderer shutdown complete")
@@ -97,18 +100,11 @@ renderer_update_instances :: proc(self: ^Renderer) {
 	}
 }
 
-// One ID target and readback buffer per frame in flight. The ID attachment is
-// cleared to zero every frame and written by the main pass, so a zero read back
-// means "no hit".
+// One readback buffer per frame in flight. The pick ID itself is a transient
+// owned by the frame graph; a zero value read back means "no hit".
 @(private)
 _renderer_create_pick_resources :: proc(self: ^Renderer) -> bool {
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-		self.pick_ids[i] = render_target_init(&self.gpu, Render_Target_Desc{
-			format = PICK_COLOR_FORMAT,
-			extent = self.swapchain.extent,
-			usage  = {.COLOR_ATTACHMENT, .TRANSFER_SRC},
-			aspect = {.COLOR},
-		}) or_return
 		self.pick_readback[i] = buffer_init(&self.gpu, size_of(u32), {.TRANSFER_DST}, .HostVisible) or_return
 	}
 	return true
@@ -117,7 +113,6 @@ _renderer_create_pick_resources :: proc(self: ^Renderer) -> bool {
 @(private)
 _renderer_destroy_pick_resources :: proc(self: ^Renderer) {
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-		render_target_destroy(&self.pick_ids[i])
 		buffer_destroy(&self.pick_readback[i])
 		self.pick_pending[i] = false
 	}
@@ -155,31 +150,46 @@ _renderer_recreate_if_possible :: proc(self: ^Renderer) -> bool {
 	return _renderer_recreate_swapchain(self)
 }
 
-// Records the frame's render work into the command buffer. The swapchain
-// acquire/present stay in renderer_draw_frame; this proc only knows about
-// Render_Targets, pipelines and the render pass list.
+// Import resolver: maps the graph's external resource names to the targets and
+// buffers that exist for the current frame.
 @(private)
-_renderer_record_frame :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame, image_index: u32) {
-	pipeline := pipeline_registry_get(&self.pipelines, self.main_pipeline)
-	color := swapchain_color_target(&self.swapchain, image_index)
-	depth := swapchain_depth_target(&self.swapchain, frame)
-	colors := [2]Color_Attachment {
-		{
-			target = color,
-			load = .CLEAR,
-			store = .STORE,
-			clear = vulkan.ClearValue{color = vulkan.ClearColorValue{float32 = {0, 0, 0, 1}}},
-		},
-		{
-			target = self.pick_ids[frame],
-			load = .CLEAR,
-			store = .STORE,
-			clear = vulkan.ClearValue{color = vulkan.ClearColorValue{uint32 = {0, 0, 0, 0}}},
-		},
+_renderer_resolve_import :: proc(user: rawptr, name: string, frame: u32, out: ^Fg_Resolved) -> bool {
+	self := cast(^Renderer)user
+	switch name {
+	case "swapchain":
+		out.target = self.frame_color
+	case "depth":
+		out.target = swapchain_depth_target(&self.swapchain, frame)^
+	case "pick_readback":
+		out.is_buffer = true
+		out.buffer = self.pick_readback[frame].buffer
+	case "camera":
+		out.is_buffer = true
+		out.buffer = push_descriptors_buffer(&self.push, CAMERA_SET, CAMERA_BINDING, frame)
+	case:
+		log.errorf("[FG] Unknown import %q", name)
+		return false
 	}
+	return true
+}
 
-	frame_pass_begin(cmd, &self.main_pass, colors[:], depth, self.swapchain.extent)
-	pipeline_bind(pipeline, cmd)
+// Dispatch by pass name: the JSON owns the structure, this owns the draw calls.
+@(private)
+_renderer_record_pass :: proc(user: rawptr, fg: ^Frame_Graph, pass: ^Fg_Pass, cmd: vulkan.CommandBuffer, frame: u32) {
+	self := cast(^Renderer)user
+	switch pass.name {
+	case "main":
+		_renderer_draw_main(self, cmd, frame, pass)
+	case "pick_copy":
+		_renderer_copy_pick(self, fg, cmd, frame)
+	case:
+		log.errorf("[FG] No recording proc for pass %q", pass.name)
+	}
+}
+
+@(private)
+_renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u32, pass: ^Fg_Pass) {
+	pipeline := pipeline_registry_get(&self.pipelines, pass.pipeline)
 
 	ubo: UniformBufferObject
 	camera_transform(self.camera, &ubo)
@@ -201,36 +211,22 @@ _renderer_record_frame :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame
 	if len(self.positions) > 0 {
 		vulkan.CmdDrawIndexed(cmd, self.model.index_count, u32(len(self.positions)), 0, 0, 0)
 	}
-
-	frame_pass_end(cmd, &self.main_pass)
-	_renderer_record_pick(self, cmd, frame)
-	swapchain_prepare_present(&self.swapchain, cmd, image_index)
 }
 
-// If a pick was requested this frame, copies the one ID pixel under the cursor
-// out of the frame's ID target. The copy rides in the frame command buffer, so
-// it is covered by the frame fence and needs no submission of its own.
+// Copies the one ID pixel under the cursor. The frame graph has already put the
+// pick_id target in TRANSFER_SRC; the copy rides in the frame command buffer.
 @(private)
-_renderer_record_pick :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u32) {
+_renderer_copy_pick :: proc(self: ^Renderer, fg: ^Frame_Graph, cmd: vulkan.CommandBuffer, frame: u32) {
 	if self.world == nil || self.pick_pending[frame] {return}
 	req := ecs.world_resource(self.world, Pick_Request)
 	if !req.requested {return}
 	req.requested = false
 
-	extent := self.pick_ids[frame].extent
-	x := u32(clamp(req.u, 0, 1) * f32(extent.width - 1) + 0.5)
-	y := u32(clamp(req.v, 0, 1) * f32(extent.height - 1) + 0.5)
+	target := fg_texture(fg, "pick_id")
+	if target == nil || target.image == 0 {return}
+	x := u32(clamp(req.u, 0, 1) * f32(target.extent.width - 1) + 0.5)
+	y := u32(clamp(req.v, 0, 1) * f32(target.extent.height - 1) + 0.5)
 
-	render_target_barrier(
-		cmd,
-		self.pick_ids[frame],
-		.ATTACHMENT_OPTIMAL,
-		.TRANSFER_SRC_OPTIMAL,
-		{.COLOR_ATTACHMENT_OUTPUT},
-		{.TRANSFER},
-		{.COLOR_ATTACHMENT_WRITE},
-		{.TRANSFER_READ},
-	)
 	region := vulkan.BufferImageCopy{
 		bufferOffset     = 0,
 		bufferRowLength   = 0,
@@ -244,7 +240,7 @@ _renderer_record_pick :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame:
 		imageOffset = vulkan.Offset3D{x = i32(x), y = i32(y), z = 0},
 		imageExtent = vulkan.Extent3D{width = 1, height = 1, depth = 1},
 	}
-	vulkan.CmdCopyImageToBuffer(cmd, self.pick_ids[frame].image, .TRANSFER_SRC_OPTIMAL, self.pick_readback[frame].buffer, 1, &region)
+	vulkan.CmdCopyImageToBuffer(cmd, target.image, .TRANSFER_SRC_OPTIMAL, fg_buffer(fg, "pick_readback"), 1, &region)
 	self.pick_pending[frame] = true
 	log.debugf("[PICK] copy (%d, %d) slot=%d", x, y, frame)
 }
@@ -305,7 +301,15 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	swapchain_prepare_frame(&self.swapchain, frame, image_idx)
 	command_pool_reset(&self.command_pool, frame)
 	command_buffer := command_pool_begin(&self.command_pool, frame)
-	_renderer_record_frame(self, command_buffer, frame, image_idx)
+	self.frame_color = swapchain_color_target(&self.swapchain, image_idx)
+	if self.world != nil {
+		req := ecs.world_resource(self.world, Pick_Request)
+		fg_set_pass_enabled(&self.frame_graph, "pick_copy", req.requested)
+	}
+	if !frame_graph_execute(&self.frame_graph, command_buffer, frame, self.swapchain.extent) {
+		log.errorf("[FG] Frame graph execution failed")
+		return false
+	}
 	command_pool_end(&self.command_pool, command_buffer)
 
 	if res := swapchain_submit(&self.swapchain, command_buffer, frame, image_idx); res != .SUCCESS {

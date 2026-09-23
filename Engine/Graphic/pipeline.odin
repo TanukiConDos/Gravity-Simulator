@@ -76,6 +76,14 @@ pipeline_registry_get :: proc(self: ^Pipeline_Registry, id: Pipeline_ID) -> ^Pip
 }
 
 @(private)
+pipeline_registry_find :: proc(self: ^Pipeline_Registry, name: string) -> (Pipeline_ID, bool) {
+	for &entry, i in self.entries {
+		if entry.name == name {return Pipeline_ID(i), true}
+	}
+	return 0, false
+}
+
+@(private)
 pipeline_registry_destroy :: proc(self: ^Pipeline_Registry) {
 	for &entry in self.entries {pipeline_destroy(&entry.pipeline)}
 	delete(self.entries)

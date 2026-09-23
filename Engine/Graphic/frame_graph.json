@@ -1,0 +1,36 @@
+{
+    "resources": {
+        "swapchain":     { "type": "texture", "external": "swapchain", "usage": ["color", "transfer_src"], "final": "present_src" },
+        "depth":         { "type": "texture", "external": "depth", "usage": ["depth"] },
+
+        "pick_id":       { "type": "texture", "format": "R32_UINT", "scale": 1.0,
+                           "usage": ["color", "transfer_src"] },
+
+        "pick_readback": { "type": "buffer", "external": "pick_readback", "size": 4,
+                           "usage": ["transfer_dst"] },
+        "camera":        { "type": "buffer", "external": "camera", "size": 128,
+                           "usage": ["uniform"] }
+    },
+
+    "passes": [
+        {
+            "name": "main",
+            "pipeline": "main",
+            "outputs": [
+                { "resource": "swapchain", "as": "color",  "load": "clear", "store": "store",     "clear": [0, 0, 0, 1] },
+                { "resource": "pick_id",   "as": "color",  "load": "clear", "store": "store",     "clear": [0, 0, 0, 0] },
+                { "resource": "depth",     "as": "depth",  "load": "clear", "store": "dont_care" }
+            ],
+            "bindings": [
+                { "set": 0, "binding": 0, "resource": "camera", "type": "uniform" }
+            ]
+        },
+        {
+            "name": "pick_copy",
+            "type": "transfer",
+            "optional": true,
+            "inputs":  [ { "resource": "pick_id",       "access": "transfer_read" } ],
+            "outputs": [ { "resource": "pick_readback", "access": "transfer_write" } ]
+        }
+    ]
+}
