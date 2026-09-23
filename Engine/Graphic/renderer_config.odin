@@ -22,6 +22,17 @@ RENDERER_SHADERS := [?]Shader_Spec{
 	{path = "Engine/Graphic/shader/frag.spv"},
 }
 
+// The pick pass renders instance IDs (1-based) instead of color, so a zero pixel
+// means "nothing hit". Its output format is not the swapchain format.
+@(private)
+PICK_COLOR_FORMAT :: vulkan.Format.R32_UINT
+
+@(private)
+RENDERER_PICK_SHADERS := [?]Shader_Spec{
+	{path = "Engine/Graphic/shader/pick.vert.spv"},
+	{path = "Engine/Graphic/shader/pick.frag.spv"},
+}
+
 @(private)
 RENDERER_VERTEX_BUFFERS := [?]Vertex_Buffer_Spec{
 	{binding = MESH_BINDING, input_rate = .VERTEX, type = Vertex},
@@ -43,21 +54,37 @@ _RENDERER_DYNAMIC_STATES := [?]vulkan.DynamicState{.VIEWPORT, .SCISSOR}
 
 @(private)
 renderer_pipeline_config :: proc() -> Pipeline_Config {
-	return Pipeline_Config{
+	return Pipeline_Config {
 		shaders = RENDERER_SHADERS[:],
 		vertex_buffers = RENDERER_VERTEX_BUFFERS[:],
-		fixed = Fixed_State{
-			topology       = .TRIANGLE_LIST,
-			polygon_mode   = .FILL,
-			cull_mode      = {.BACK},
-			front_face     = .CLOCKWISE,
-			line_width     = 1,
-			samples        = {._1},
-			depth_test     = true,
-			depth_write    = true,
-			depth_compare  = .LESS,
-			blend_enable   = false,
-			dynamic_states = _RENDERER_DYNAMIC_STATES[:],
-		},
+		fixed = _renderer_fixed_state(),
+	}
+}
+
+// Same geometry and depth state as the main pass; only the fragment output
+// differs (an instance ID instead of a color).
+@(private)
+renderer_pick_pipeline_config :: proc() -> Pipeline_Config {
+	return Pipeline_Config {
+		shaders = RENDERER_PICK_SHADERS[:],
+		vertex_buffers = RENDERER_VERTEX_BUFFERS[:],
+		fixed = _renderer_fixed_state(),
+	}
+}
+
+@(private)
+_renderer_fixed_state :: proc() -> Fixed_State {
+	return Fixed_State {
+		topology       = .TRIANGLE_LIST,
+		polygon_mode   = .FILL,
+		cull_mode      = {.BACK},
+		front_face     = .CLOCKWISE,
+		line_width     = 1,
+		samples        = {._1},
+		depth_test     = true,
+		depth_write    = true,
+		depth_compare  = .LESS,
+		blend_enable   = false,
+		dynamic_states = _RENDERER_DYNAMIC_STATES[:],
 	}
 }

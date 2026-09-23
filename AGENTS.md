@@ -145,8 +145,9 @@ the entities the simulation iterates, and its `dense` list is the canonical body
 list. `Physic_State` is a world resource holding the solver and adaptive-tuning
 state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
 `begin` (reset acceleration, ensure tree), `gravity`, `collision`, `integrate`,
-`publish` (copy positions into `RenderSnapshot`), `adapt` (adaptive controller).
-`physic_register_systems` wires them up.
+`select` (apply a picked instance from the graphics thread to `Selected`),
+`publish` (copy positions and selection into `RenderSnapshot`), `adapt`
+(adaptive controller). `physic_register_systems` wires them up.
 
 ### Graphics as ECS
 
@@ -155,6 +156,15 @@ resource and `graphic_register_systems` adds the `RENDER`-phase input system tha
 mutates it from the keyboard (the window is reached through a `Window_Ref`
 resource). The graphics thread runs the `RENDER` phase, then
 `renderer_draw_frame`, which reads the camera resource and the render snapshot.
+
+`renderer_draw_frame` is split into the swapchain acquire/present path and
+`_renderer_record_frame`, which records a `Frame_Pass`. A pass is engine
+bookkeeping (pipeline + `Render_Target`s + load/clear), not a `VkRenderPass`, and
+every layout transition goes through `image_barrier`. The pick pass renders
+1-based instance IDs to an offscreen `R32_UINT` target on demand (left mouse
+press), reads one pixel back and hands the instance index to the physics thread
+through the atomic `Selection_State`; `physic.select` applies it to `Selected`
+and the next snapshot publishes the flags.
 
 ### Threading
 
@@ -272,7 +282,7 @@ The octree gravity solver is split across `worker_threads` via `foundation.paral
 
 Hot-path traversal stacks (`_calc_force`, `_calc_force_collect`) skip zero-initialization; every slot is written before it is read. Zero-initializing them cost ~5–12% of the tick at 100k bodies with `theta >= 0.75` (measured with the fold enabled; without it the effect was larger).
 
-Each tick publishes body positions into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
+Each tick publishes body positions and selection flags into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
 
 ## Benchmark
 

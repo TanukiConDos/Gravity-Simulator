@@ -12,5 +12,7 @@ fi
 
 glslc --target-env="$target" "$dir/vertexShader.vert" -o "$dir/vert.spv"
 glslc --target-env="$target" "$dir/fragmentShader.frag" -o "$dir/frag.spv"
+glslc --target-env="$target" "$dir/pick.vert" -o "$dir/pick.vert.spv"
+glslc --target-env="$target" "$dir/pick.frag" -o "$dir/pick.frag.spv"
 
 echo "shaders compiled (target-env=$target) -> $dir"
