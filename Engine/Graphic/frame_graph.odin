@@ -618,7 +618,10 @@ _fg_ensure_transient :: proc(fg: ^Frame_Graph, resource: Fg_Resource_Id, frame: 
 		width  = max(u32(f32(extent.width) * fg.resources[i].scale), 1),
 		height = max(u32(f32(extent.height) * fg.resources[i].scale), 1),
 	}
-	if fg.transients[i].created[frame] && fg.resolved[i].target.extent == scaled {
+	// Compare against the target owned by this frame, not fg.resolved: that is
+	// shared across frames in flight, so after the first frame resized its
+	// transient the others would see the new extent and keep their stale one.
+	if fg.transients[i].created[frame] && fg.transients[i].targets[frame].extent == scaled {
 		return true
 	}
 	if fg.transients[i].created[frame] {render_target_destroy(&fg.transients[i].targets[frame])}

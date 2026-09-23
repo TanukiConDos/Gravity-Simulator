@@ -26,7 +26,10 @@ window_init :: proc(w, h: i32) -> (result: ^Window, ok: bool) {
 	if !glfw.Init() {log.errorf("[VULKAN]   FAILED: glfw.Init()"); return}
 	window.glfw_initialized = true
 	log.debugf("[VULKAN]   GLFW initialized")
-	glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API); glfw.WindowHint(glfw.RESIZABLE, glfw.FALSE)
+	// The window must stay resizable: on Wayland GLFW advertises min == max size
+	// for a non-resizable one, and tiling compositors (Hyprland) float and refuse
+	// to resize any window with a fixed size.
+	glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API); glfw.WindowHint(glfw.RESIZABLE, glfw.TRUE)
 	window.handle = glfw.CreateWindow(w, h, "Gravity Simulation", nil, nil)
 	if window.handle == nil {log.errorf("[VULKAN]   FAILED: glfw.CreateWindow()"); return}
 	window.width = w; window.height = h
