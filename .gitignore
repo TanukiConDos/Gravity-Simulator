@@ -4,6 +4,7 @@ x64
 !packages/**
 TFG
 Gravity-Simulator
+*.bin
 bench/results/
 perf.data*
 *.spall

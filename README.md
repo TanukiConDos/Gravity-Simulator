@@ -21,8 +21,10 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 - **num_objects**: Número de cuerpos generados cuando el modo de creación es `"RANDOM"`.
 - **time**: Multiplicador de tiempo. Relación entre el tiempo de la simulación y el tiempo real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.
 - **filename**: Nombre del fichero JSON a cargar (en la carpeta scenes) cuando el modo de creación es `"FILE"`.
-- **collision_algorithm**: Algoritmo que resuelve la colisión entre 2 cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
-- **solver_algorithm**: Algoritmo que calcula la fuerza gravitatoria entre los cuerpos. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **algorithm**: Algoritmo usado tanto para calcular la gravedad (solver) como para detectar y resolver las colisiones. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **tree_rebuild_interval**: Intervalo (en segundos de simulación) entre reconstrucciones del octree. Un valor de `0` reconstruye el árbol en cada tick.
+- **max_depth**: Límite de profundidad del octree (por defecto 48). El árbol natural para N cuerpos suele quedarse cerca de `log8(N)`, por lo que valores de 8–16 ya acotan el caso patológico sin coste apreciable.
+- **min_half_size**: Tamaño mínimo de celda hoja del octree (por defecto `0.0001`).
 - **worker_threads**: Número de hilos usados para paralelizar el solver de gravedad (octree).
 - **auto_adjust**: Si es `true`, `theta` y el intervalo de reconstrucción del octree se ajustan automáticamente para mantener la velocidad objetivo de simulación.
 - **target_tickrate**: Actualizaciones de física por segundo objetivo (por defecto 60) cuando `auto_adjust` está activo.
@@ -55,3 +57,20 @@ Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra l
 4. **Ejecución de los tests:**
 
    Ejecuta `odin test tests -debug` desde la raíz del proyecto para compilar y lanzar la suite de tests.
+
+5. **Benchmark del octree:**
+
+   El directorio `bench/` barre los parámetros del octree (profundidad máxima, `theta`, intervalo de reconstrucción y número de hilos) midiendo tiempo por tick y error de precisión frente a una referencia exacta. Los resultados se escriben en `bench/results/`:
+
+   ```
+   odin run bench -o:speed -disable-assert -microarch:native            # todas las etapas
+   odin run bench -o:speed -disable-assert -microarch:native -- 10k     # sólo una etapa (1k | 10k | 100k)
+   ```
+
+   Para generar una traza de perfilado con [`spall`](https://gravitymoth.com/spall/) (`core:prof`), compila con `-define:PROFILE=true` y usa la etapa `profile`:
+
+   ```
+   odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile 100000 16 0.5 50 16
+   ```
+
+   Escribe `bench/results/trace_*.spall`, que puede abrirse en el visor de spall o en Perfetto. No uses `-define:PROFILE=true` para medir tiempos: deja las llamadas de instrumentación en el binario y altera los resultados.
