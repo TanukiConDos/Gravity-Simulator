@@ -1,6 +1,7 @@
 package graphic
 
 import phys "../physic"
+import ecs "../ecs"
 import "core:log"
 import "core:sync"
 import "core:time"
@@ -15,21 +16,20 @@ Renderer :: struct {
 	pipeline:        Pipeline,
 	push:            Push_Descriptors,
 	model:           Model,
-	camera:          Camera,
-	objects:         ^[dynamic]phys.PhysicObject,
-	physic_system:   ^phys.PhysicSystem,
+	camera:          ^Camera,
+	world:           ^ecs.World,
+	snapshot:        ^phys.RenderSnapshot,
 	instances:       InstanceBuffer,
 	positions:       [dynamic]Vec3,
-	delta_time:      ^f32,
 	current_frame:   u32,
 }
 
-renderer_init :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, physic_system: ^phys.PhysicSystem, delta_time: ^f32) -> (result: ^Renderer, ok: bool) {
+renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer, ok: bool) {
 	renderer := new(Renderer)
 	committed := false
 	defer if !committed {renderer_destroy(renderer)}
 
-	renderer.window = window; renderer.objects = objects; renderer.physic_system = physic_system; renderer.delta_time = delta_time
+	renderer.window = window; renderer.world = world
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION START"); log.infof("========================================")
 	renderer.gpu = gpu_init(window) or_return
 	renderer.command_pool = command_pool_init(&renderer.gpu) or_return
@@ -37,19 +37,28 @@ renderer_init :: proc(window: ^Window, objects: ^[dynamic]phys.PhysicObject, phy
 	renderer.config = renderer_pipeline_config()
 	renderer.pipeline = pipeline_init(&renderer.gpu, renderer.config, renderer.swapchain.image_format, renderer.swapchain.depth_format) or_return
 	renderer.model = model_init(&renderer.gpu, &renderer.command_pool, 30, 30) or_return
-	renderer.camera = camera_create(&renderer.swapchain)
+	renderer.camera = ecs.world_resource(world, Camera)
+	renderer.camera^ = camera_create(&renderer.swapchain)
+	ecs.world_resource(world, Window_Ref).window = window
 	renderer.push = push_descriptors_init(&renderer.gpu, RENDERER_PUSH_BINDINGS[:]) or_return
 	if !push_descriptors_validate(&renderer.push, &renderer.pipeline) {return nil, false}
 	renderer.instances = instance_buffer_init(&renderer.gpu)
-	if objects != nil && len(objects) > 0 {
-		renderer.positions = make([dynamic]Vec3, len(objects))
+	renderer.snapshot = phys.physic_snapshot(world)
+	obj_count := phys.body_count(world)
+	if obj_count > 0 {
+		renderer.positions = make([dynamic]Vec3, obj_count)
 		renderer_update_instances(renderer)
 	}
-	obj_count := 0; if objects != nil {obj_count = len(objects)}
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION COMPLETE (%d objects)", obj_count); log.infof("========================================")
 	committed = true
 	result = renderer
 	return result, true
+}
+
+// Registers the graphics systems. Input mutates the Camera resource, so it runs
+// before the renderer reads it for the frame.
+graphic_register_systems :: proc(s: ^ecs.Scheduler) {
+	ecs.scheduler_add(s, "graphic.input", .RENDER, input_system)
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
@@ -66,8 +75,8 @@ renderer_destroy :: proc(self: ^Renderer) {
 
 @(private)
 renderer_update_instances :: proc(self: ^Renderer) {
-	if self.objects != nil {
-		instance_buffer_write_static(&self.instances, self.objects[:])
+	if self.world != nil {
+		instance_buffer_write_static(&self.instances, self.world)
 	}
 }
 
@@ -82,7 +91,7 @@ _renderer_recreate_swapchain :: proc(self: ^Renderer) -> bool {
 		pipeline_destroy(&self.pipeline)
 		self.pipeline = pipeline_init(&self.gpu, self.config, self.swapchain.image_format, self.swapchain.depth_format) or_return
 	}
-	self.camera = camera_create(&self.swapchain)
+	self.camera^ = camera_create(&self.swapchain)
 	return true
 }
 
@@ -126,22 +135,24 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	swapchain_begin_rendering(&self.swapchain, command_buffer, image_idx)
 	pipeline_bind(&self.pipeline, command_buffer)
 
-	input_poll(self.window, &self.camera, sync.atomic_load(self.delta_time))
-
 	ubo: UniformBufferObject
-	camera_transform(&self.camera, &ubo)
+	camera_transform(self.camera, &ubo)
 	push_descriptors_write(&self.push, CAMERA_SET, CAMERA_BINDING, frame, &ubo, size_of(UniformBufferObject))
 
-	if self.physic_system != nil && self.objects != nil && len(self.positions) >= len(self.objects) {
-		phys.physic_snapshot_read(self.physic_system, raw_data(self.positions), len(self.positions))
-		instance_buffer_update_positions(&self.instances, frame, self.positions[:])
+	if self.world != nil && len(self.positions) > 0 {
+		n := phys.physic_snapshot_read(
+			self.snapshot,
+			raw_data(self.positions),
+			len(self.positions),
+		)
+		if n > 0 {instance_buffer_update_positions(&self.instances, frame, self.positions[:n])}
 	}
 
 	push_descriptors_flush(&self.push, command_buffer, self.pipeline.layout, frame)
 	model_bind(&self.model, command_buffer, MESH_BINDING)
 	instance_buffer_bind(&self.instances, command_buffer, frame, INSTANCE_BINDING)
-	if len(self.objects) > 0 {
-		vulkan.CmdDrawIndexed(command_buffer, self.model.index_count, u32(len(self.objects)), 0, 0, 0)
+	if len(self.positions) > 0 {
+		vulkan.CmdDrawIndexed(command_buffer, self.model.index_count, u32(len(self.positions)), 0, 0, 0)
 	}
 
 	swapchain_end_rendering(&self.swapchain, command_buffer, image_idx)

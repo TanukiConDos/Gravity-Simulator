@@ -1,6 +1,7 @@
 package graphic
 
 import phys "../physic"
+import ecs "../ecs"
 import "base:intrinsics"
 import "vendor:vulkan"
 
@@ -41,17 +42,25 @@ instance_buffer_ensure :: proc(self: ^InstanceBuffer, count: int) {
 }
 
 @(private)
-instance_buffer_write_static :: proc(self: ^InstanceBuffer, objects: []phys.PhysicObject) {
-	if len(objects) == 0 {return}
-	instance_buffer_ensure(self, len(objects))
+instance_buffer_write_static :: proc(self: ^InstanceBuffer, world: ^ecs.World) {
+	view := phys.body_view(world)
+	count := len(view.bodies)
+	if count == 0 {return}
+	instance_buffer_ensure(self, count)
 	for &buffer in self.buffers {
 		if buffer.mapped == nil {continue}
-		for obj, i in objects {
-			data := InstanceData{
-				radius   = obj.radius * INSTANCE_SCALE,
-				selected = i32(obj.selected),
+		for idx, i in view.bodies {
+			selected := i32(0)
+			if bool(view.selected[idx]) {selected = 1}
+			data := InstanceData {
+				radius   = f32(view.radius[idx]) * INSTANCE_SCALE,
+				selected = selected,
 			}
-			intrinsics.mem_copy(rawptr(uintptr(buffer.mapped) + uintptr(i * size_of(InstanceData))), &data, size_of(InstanceData))
+			intrinsics.mem_copy(
+				rawptr(uintptr(buffer.mapped) + uintptr(i * size_of(InstanceData))),
+				&data,
+				size_of(InstanceData),
+			)
 		}
 	}
 	self.has_data = {}

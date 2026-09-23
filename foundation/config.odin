@@ -19,10 +19,11 @@ Config :: struct {
 	num_objects:           int,
 	time:                  f32,
 	filename:              string,
-	collision_algorithm:   Algorithm,
-	solver_algorithm:      Algorithm,
+	algorithm:             Algorithm,
 	theta:                 f32,
 	tree_rebuild_interval: f32,
+	max_depth:             int,
+	min_half_size:         f32,
 	worker_threads:        int,
 	auto_adjust:           bool,
 	target_tickrate:       f32,
@@ -36,10 +37,11 @@ _config: Config = {
 	num_objects           = 998,
 	time                  = 1000,
 	filename              = "tierra.json",
-	collision_algorithm   = .BRUTE_FORCE,
-	solver_algorithm      = .BRUTE_FORCE,
+	algorithm             = .BRUTE_FORCE,
 	theta                 = 0.5,
 	tree_rebuild_interval = 50.0,
+	max_depth             = 48,
+	min_half_size         = 1e-4,
 	worker_threads        = 8,
 	auto_adjust           = false,
 	target_tickrate       = 60.0,
@@ -86,16 +88,17 @@ _apply_config :: proc(text: string) {
 			_config.time = f32(_parse_number(text, &pos))
 		case "filename":
 			_config.filename = strings.clone(_parse_string(text, &pos))
-		case "collision_algorithm":
+		case "algorithm":
 			algo := _parse_string(text, &pos)
-			if algo == "OCTREE" {_config.collision_algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.collision_algorithm = .BRUTE_FORCE}
-		case "solver_algorithm":
-			algo := _parse_string(text, &pos)
-			if algo == "OCTREE" {_config.solver_algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.solver_algorithm = .BRUTE_FORCE}
+			if algo == "OCTREE" {_config.algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.algorithm = .BRUTE_FORCE}
 		case "theta":
 			_config.theta = f32(_parse_number(text, &pos))
 		case "tree_rebuild_interval":
 			_config.tree_rebuild_interval = f32(_parse_number(text, &pos))
+		case "max_depth":
+			_config.max_depth = int(_parse_number(text, &pos))
+		case "min_half_size":
+			_config.min_half_size = f32(_parse_number(text, &pos))
 		case "worker_threads":
 			_config.worker_threads = int(_parse_number(text, &pos))
 		case "auto_adjust":

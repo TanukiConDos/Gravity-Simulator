@@ -2,6 +2,7 @@ package main
 
 import graphic "./Engine/Graphic"
 import physic "./Engine/physic"
+import ecs "./Engine/ecs"
 import foundation "./foundation"
 import "core:log"
 import "core:math/rand"
@@ -12,34 +13,53 @@ import "core:sync"
 import "core:time"
 
 @(private)
-g_physic_system: physic.PhysicSystem
+g_world: ^ecs.World
 @(private)
-g_objects: ^[dynamic]physic.PhysicObject
+g_scheduler: ^ecs.Scheduler
+
+// Main-loop event wait. The loop has nothing to do between events, so it blocks
+// instead of polling; the timeout keeps input latency bounded if the window
+// stays idle. The physics thread paces itself and the graphics thread is
+// independent, so this only affects event handling.
+MAIN_LOOP_TIMEOUT_SEC :: 1.0 / 60.0
+
+// Built with `-define:PROFILE=true`, the whole app (physics, graphics and main
+// threads) is traced to this file. Without the flag it is never touched.
+PROFILE_TRACE_PATH :: "trace_app.spall"
+
+// Initial conditions read from a scene file, before they become ECS bodies.
+@(private)
+_Scene_Body :: struct {
+	position: [3]f32,
+	velocity: [3]f32,
+	mass:     f64,
+	radius:   f32,
+}
 
 @(private)
 _read_json_scene :: proc(
 	filename: string,
 ) -> (
-	objects: ^[dynamic]physic.PhysicObject,
+	bodies: ^[dynamic]_Scene_Body,
 	success: bool,
 ) {
 	data, err := os.read_entire_file(
 		filename,
 		context.temp_allocator,
 	); if err != nil {return nil, false}
-	text := string(data); objects = new([dynamic]physic.PhysicObject)
+	text := string(data); bodies = new([dynamic]_Scene_Body)
 	pos := 0; _skip_whitespace(text, &pos)
-	if pos >= len(text) || text[pos] != '[' {return objects, true}
+	if pos >= len(text) || text[pos] != '[' {return bodies, true}
 	pos += 1
 	for {
 		_skip_whitespace(text, &pos)
 		if pos >= len(text) {break}
 		if text[pos] == ']' {break}
-		if text[pos] == '{' {obj := _parse_object(text, &pos); append(objects, obj)} else {break}
+		if text[pos] == '{' {obj := _parse_object(text, &pos); append(bodies, obj)} else {break}
 		_skip_whitespace(text, &pos)
 		if pos < len(text) && text[pos] == ',' {pos += 1}
 	}
-	return objects, true
+	return bodies, true
 }
 
 @(private)
@@ -49,8 +69,8 @@ _skip_whitespace :: proc(text: string, pos: ^int) {for pos^ < len(text) {switch
 			return}}}
 
 @(private)
-_parse_object :: proc(text: string, pos: ^int) -> physic.PhysicObject {
-	obj: physic.PhysicObject; pos^ += 1
+_parse_object :: proc(text: string, pos: ^int) -> _Scene_Body {
+	obj: _Scene_Body; pos^ += 1
 	for {
 		_skip_whitespace(text, pos); if pos^ >= len(text) {break}
 		if text[pos^] == '}' {pos^ += 1; break}
@@ -129,45 +149,57 @@ _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text, pos); if po
 @(private)
 _sim_init :: proc() {
 	config := foundation.config_get()
+	g_world = ecs.world_create()
 	switch config.system_creation_mode {
 	case .RANDOM:
 		sim_random_init()
 	case .FILE:
 		sim_file_init()
 	}
-	g_physic_system = physic.physic_system_create(g_objects, config)
+	physic.physic_init(g_world, config^)
+	g_scheduler = ecs.scheduler_create()
+	physic.physic_register_systems(g_scheduler)
 }
 
 @(private)
 _sim_end :: proc() {
-	physic.physic_system_destroy(&g_physic_system)
-	delete(g_objects^); g_objects = nil
+	ecs.scheduler_destroy(g_scheduler); g_scheduler = nil
+	ecs.world_destroy(g_world); g_world = nil
 }
 
 @(private)
 sim_file_init :: proc() {
 	config := foundation.config_get()
 	path := strings.concatenate({"./scenes/", config.filename}, context.temp_allocator)
-	objects, success := _read_json_scene(path)
-	if !success ||
-	   objects ==
-		   nil {log.errorf("Failed to load scene: %s", path); objects = new([dynamic]physic.PhysicObject)}
-	g_objects = objects
+	bodies, success := _read_json_scene(path)
+	if !success || bodies == nil {
+		log.errorf("Failed to load scene: %s", path)
+		bodies = new([dynamic]_Scene_Body)
+	}
+	defer {delete(bodies^); free(bodies)}
+	for body in bodies {
+		physic.body_spawn(
+			g_world,
+			body.position,
+			body.velocity,
+			body.mass,
+			body.radius,
+		)
+	}
 }
 
 @(private)
 sim_random_init :: proc() {
-	config := foundation.config_get(); objects := new([dynamic]physic.PhysicObject)
-	append(objects, physic.physic_object_make({0, 0, 0}, {0, 0, 0}, 6e27, 12371e3))
-	append(objects, physic.physic_object_make({0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3))
+	config := foundation.config_get()
+	physic.body_spawn(g_world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
+	physic.body_spawn(g_world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
 	for i in 0 ..< config.num_objects {
 		x := rand.float32_range(
 			-1e10,
 			1e10,
 		); y := rand.float32_range(-1e10, 1e10); z := rand.float32_range(-1e10, 1e10)
-		append(objects, physic.physic_object_make({x, y, z}, {0, 0, 0}, 6e27, 12371e3))
+		physic.body_spawn(g_world, {x, y, z}, {0, 0, 0}, 6e27, 12371e3)
 	}
-	g_objects = objects
 }
 
 main :: proc() {
@@ -184,6 +216,13 @@ main :: proc() {
 	foundation.parallel_init(config.worker_threads)
 	defer foundation.parallel_destroy()
 
+	when foundation.PROFILE_ENABLED {
+		foundation.profile_start(PROFILE_TRACE_PATH)
+		foundation.profile_thread_name("main")
+		defer foundation.profile_stop()
+		log.infof("profiling to %s (open it in the spall viewer)", PROFILE_TRACE_PATH)
+	}
+
 	window, window_ok := graphic.window_init(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
@@ -192,21 +231,23 @@ main :: proc() {
 	defer _sim_end()
 
 	ctx := SimulationContext {
-		objects       = g_objects,
-		physic_system = &g_physic_system,
-		window        = window,
+		world     = g_world,
+		scheduler = g_scheduler,
+		window    = window,
 	}
 
-	renderer, renderer_ok := graphic.renderer_init(window, g_objects, &g_physic_system, &ctx.delta_time)
+	renderer, renderer_ok := graphic.renderer_init(window, g_world)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 	ctx.renderer = renderer
+	graphic.graphic_register_systems(g_scheduler)
 
 	physics_thread, graphics_thread := parallel_start(&ctx)
 
 	last_log := time.tick_now()
 	for !graphic.window_should_close(window) {
-		graphic.window_poll_events()
+		foundation.profile_scope("main.loop")
+		graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
 
 		if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
 			last_log = time.tick_now()
