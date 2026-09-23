@@ -10,5 +10,6 @@
     "auto_adjust": true,
     "target_tickrate": 300,
     "theta_min": 0.2,
-    "theta_max": 1.2
+    "theta_max": 1.2,
+    "pick_scale": 2
 }

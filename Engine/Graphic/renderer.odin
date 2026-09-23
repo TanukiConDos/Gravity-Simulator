@@ -2,6 +2,7 @@ package graphic
 
 import phys "../physic"
 import ecs "../ecs"
+import found "../../foundation"
 import "core:log"
 import "core:sync"
 import "core:time"
@@ -111,10 +112,12 @@ renderer_update_instances :: proc(self: ^Renderer) {
 // after clearing to zero a pixel value of zero means "no hit".
 @(private)
 _renderer_create_pick_resources :: proc(self: ^Renderer) -> bool {
+	scale := max(found.config_get().pick_scale, 1)
 	self.pick_extent = vulkan.Extent2D{
-		width  = max(self.swapchain.extent.width / PICK_SCALE, 1),
-		height = max(self.swapchain.extent.height / PICK_SCALE, 1),
+		width  = max(self.swapchain.extent.width / u32(scale), 1),
+		height = max(self.swapchain.extent.height / u32(scale), 1),
 	}
+	log.debugf("[VULKAN]   Pick target %d x %d (pick_scale=%d)", self.pick_extent.width, self.pick_extent.height, scale)
 	self.pick_color = render_target_init(&self.gpu, Render_Target_Desc{
 		format = PICK_COLOR_FORMAT,
 		extent = self.pick_extent,

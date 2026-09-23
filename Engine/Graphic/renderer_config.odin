@@ -23,14 +23,10 @@ RENDERER_SHADERS := [?]Shader_Spec{
 }
 
 // The pick pass renders instance IDs (1-based) instead of color, so a zero pixel
-// means "nothing hit". Its output format is not the swapchain format.
+// means "nothing hit". Its output format is not the swapchain format. The target
+// extent is the swapchain divided by the configured `pick_scale`.
 @(private)
 PICK_COLOR_FORMAT :: vulkan.Format.R32_UINT
-
-// The pick target is the swapchain extent divided by this. Selection only needs
-// body-level precision, so a smaller target is cheaper to render and read back.
-@(private)
-PICK_SCALE :: 2
 
 @(private)
 RENDERER_PICK_SHADERS := [?]Shader_Spec{
