@@ -1,6 +1,6 @@
 {
     "system_creation_mode": "RANDOM",
-    "num_objects": 1000000,
+    "num_objects": 10000,
     "time": 1000,
     "filename": "tierra.json",
     "algorithm": "OCTREE",
@@ -8,7 +8,7 @@
     "worker_threads": 8,
     "theta": 0.8,
     "auto_adjust": true,
-    "target_tickrate": 300,
+    "target_tickrate": 60,
     "theta_min": 0.2,
     "theta_max": 1.2
 }

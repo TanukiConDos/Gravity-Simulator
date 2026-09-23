@@ -22,7 +22,10 @@ SimulationContext :: struct {
 @(private)
 g_sim_logger: log.Logger
 
-FIXED_STEP_SEC :: 1.0 / 300.0
+// Must match config.target_tickrate: the accumulator paces one step per
+// FIXED_STEP_SEC, so the adaptive controller's cost budget (1000/tickrate)
+// only lines up with the real loop rate when both agree.
+FIXED_STEP_SEC :: 1.0 / 60.0
 MAX_FRAME_SEC :: 0.25
 MAX_ACCUMULATED_STEPS :: 16
 
