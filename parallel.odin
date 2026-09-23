@@ -32,6 +32,10 @@ _physics_thread :: proc(th: ^thread.Thread) {
 	ctx := cast(^SimulationContext)th.data
 	if ctx == nil {log.errorf("[PARALLEL] physics thread: ctx is nil"); return}
 
+	foundation.profile_thread_ensure()
+	foundation.profile_thread_name("physics")
+	defer foundation.profile_thread_flush()
+
 	accumulator: f32 = 0
 	last_tick := time.tick_now()
 	for !sync.atomic_load(&ctx.exit) {
@@ -49,10 +53,13 @@ _physics_thread :: proc(th: ^thread.Thread) {
 
 		tick_start := time.tick_now()
 		updates := 0
-		for accumulator >= FIXED_STEP_SEC {
-			ecs.scheduler_run(ctx.scheduler, .PHYSICS, ctx.world, sim_dt)
-			accumulator -= FIXED_STEP_SEC
-			updates += 1
+		if accumulator >= FIXED_STEP_SEC {
+			foundation.profile_scope("physics.step")
+			for accumulator >= FIXED_STEP_SEC {
+				ecs.scheduler_run(ctx.scheduler, .PHYSICS, ctx.world, sim_dt)
+				accumulator -= FIXED_STEP_SEC
+				updates += 1
+			}
 		}
 		if updates > 0 {
 			total_us := time.duration_microseconds(time.tick_diff(tick_start, time.tick_now()))
@@ -72,6 +79,10 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 	ctx := cast(^SimulationContext)th.data
 	if ctx == nil {return}
 
+	foundation.profile_thread_ensure()
+	foundation.profile_thread_name("graphics")
+	defer foundation.profile_thread_flush()
+
 	last_frame := time.tick_now()
 	for !sync.atomic_load(&ctx.exit) {
 		now := time.tick_now()
@@ -80,10 +91,16 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 		last_frame = now
 
 		frame_start := time.tick_now()
-		ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta)
-		if ok := graphic.renderer_draw_frame(ctx.renderer); !ok {
-			sync.atomic_store(&ctx.exit, true)
-			break
+		{
+			foundation.profile_scope("graphics.frame")
+			ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta)
+			{
+				foundation.profile_scope("graphics.draw")
+				if ok := graphic.renderer_draw_frame(ctx.renderer); !ok {
+					sync.atomic_store(&ctx.exit, true)
+					break
+				}
+			}
 		}
 		sync.atomic_store(&ctx.frame_time, f32(time.duration_milliseconds(time.tick_diff(frame_start, time.tick_now()))))
 	}

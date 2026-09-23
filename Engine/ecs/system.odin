@@ -1,5 +1,7 @@
 package ecs
 
+import found "../../foundation"
+
 // Systems are plain procedures grouped by phase. The engine runs the PHYSICS
 // phase on the physics thread and the RENDER phase on the graphics thread;
 // within a phase they execute in registration order (deterministic).
@@ -39,6 +41,9 @@ scheduler_add :: proc(
 
 scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) {
 	for &sys in s.systems {
-		if sys.phase == phase {sys.run(w, dt)}
+		if sys.phase == phase {
+			found.profile_scope(sys.name)
+			sys.run(w, dt)
+		}
 	}
 }

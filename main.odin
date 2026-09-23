@@ -17,6 +17,16 @@ g_world: ^ecs.World
 @(private)
 g_scheduler: ^ecs.Scheduler
 
+// Main-loop event wait. The loop has nothing to do between events, so it blocks
+// instead of polling; the timeout keeps input latency bounded if the window
+// stays idle. The physics thread paces itself and the graphics thread is
+// independent, so this only affects event handling.
+MAIN_LOOP_TIMEOUT_SEC :: 1.0 / 60.0
+
+// Built with `-define:PROFILE=true`, the whole app (physics, graphics and main
+// threads) is traced to this file. Without the flag it is never touched.
+PROFILE_TRACE_PATH :: "trace_app.spall"
+
 // Initial conditions read from a scene file, before they become ECS bodies.
 @(private)
 _Scene_Body :: struct {
@@ -206,6 +216,13 @@ main :: proc() {
 	foundation.parallel_init(config.worker_threads)
 	defer foundation.parallel_destroy()
 
+	when foundation.PROFILE_ENABLED {
+		foundation.profile_start(PROFILE_TRACE_PATH)
+		foundation.profile_thread_name("main")
+		defer foundation.profile_stop()
+		log.infof("profiling to %s (open it in the spall viewer)", PROFILE_TRACE_PATH)
+	}
+
 	window, window_ok := graphic.window_init(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
 	defer graphic.window_destroy(window)
@@ -229,7 +246,8 @@ main :: proc() {
 
 	last_log := time.tick_now()
 	for !graphic.window_should_close(window) {
-		graphic.window_poll_events()
+		foundation.profile_scope("main.loop")
+		graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
 
 		if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
 			last_log = time.tick_now()

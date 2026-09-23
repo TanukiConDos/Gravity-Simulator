@@ -388,7 +388,10 @@ _choose_swap_surface_format :: proc(formats: [dynamic]vulkan.SurfaceFormatKHR) -
 
 @(private)
 _choose_swap_present_mode :: proc(modes: [dynamic]vulkan.PresentModeKHR) -> vulkan.PresentModeKHR {
-	for mode in modes {if mode == .MAILBOX {return mode}}
+	// FIFO queues presentation to vblank — that is vsync. The spec requires FIFO
+	// to be available, so it is used unconditionally; MAILBOX/IMMEDIATE would cap
+	// the graphics thread only by GPU throughput.
+	for mode in modes {if mode == .FIFO {return mode}}
 	return .FIFO
 }
 

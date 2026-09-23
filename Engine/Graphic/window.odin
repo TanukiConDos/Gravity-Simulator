@@ -50,6 +50,11 @@ window_destroy :: proc(self: ^Window) {
 window_should_close :: proc(self: ^Window) -> bool {return bool(glfw.WindowShouldClose(self.handle))}
 window_poll_events :: proc() {glfw.PollEvents()}
 
+// Blocks until an event arrives or `seconds` elapse. Preferred over
+// window_poll_events in a loop: polling spins the compositor/decoration event
+// machinery at full speed.
+window_wait_events_timeout :: proc(seconds: f64) {glfw.WaitEventsTimeout(seconds)}
+
 @(private) window_get_framebuffer_size :: proc(self: ^Window) -> (i32,i32) {return glfw.GetFramebufferSize(self.handle)}
 // Refreshes the cached framebuffer size. Returns false while the window is
 // minimized (0x0 framebuffer), in which case the swapchain must not be rebuilt.
