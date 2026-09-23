@@ -26,11 +26,18 @@ Renderer :: struct {
 	instances:       InstanceBuffer,
 	positions:       [dynamic]Vec3,
 	selected:        [dynamic]u8,
-	// Offscreen resources for the on-demand pick pass. They are single (not per
-	// frame in flight) because the readback serialises on vkQueueWaitIdle.
+	// Pick pass: one query in flight, coalesced, at swapchain/PICK_SCALE. The
+	// timeline semaphore signals completion so the readback never stalls the
+	// frame loop.
 	pick_color:      Render_Target,
 	pick_depth:      Render_Target,
 	pick_readback:   Buffer,
+	pick_cmd:        vulkan.CommandBuffer,
+	pick_timeline:   vulkan.Semaphore,
+	pick_extent:     vulkan.Extent2D,
+	pick_value:      u64,
+	pick_pending:    bool,
+	pick_slot:       u32,
 	current_frame:   u32,
 }
 
@@ -101,23 +108,30 @@ renderer_update_instances :: proc(self: ^Renderer) {
 }
 
 // Offscreen pick resources. The color target holds a 1-based instance ID, so
-// after clearing to zero a pixel value of zero means "no hit". Both images are
-// single, not per frame in flight, because a pick serialises on vkQueueWaitIdle.
+// after clearing to zero a pixel value of zero means "no hit".
 @(private)
 _renderer_create_pick_resources :: proc(self: ^Renderer) -> bool {
+	self.pick_extent = vulkan.Extent2D{
+		width  = max(self.swapchain.extent.width / PICK_SCALE, 1),
+		height = max(self.swapchain.extent.height / PICK_SCALE, 1),
+	}
 	self.pick_color = render_target_init(&self.gpu, Render_Target_Desc{
 		format = PICK_COLOR_FORMAT,
-		extent = self.swapchain.extent,
+		extent = self.pick_extent,
 		usage  = {.COLOR_ATTACHMENT, .TRANSFER_SRC},
 		aspect = {.COLOR},
 	}) or_return
 	self.pick_depth = render_target_init(&self.gpu, Render_Target_Desc{
 		format = self.swapchain.depth_format,
-		extent = self.swapchain.extent,
+		extent = self.pick_extent,
 		usage  = {.DEPTH_STENCIL_ATTACHMENT},
 		aspect = {.DEPTH},
 	}) or_return
 	self.pick_readback = buffer_init(&self.gpu, size_of(u32), {.TRANSFER_DST}, .HostVisible) or_return
+	self.pick_timeline = _timeline_semaphore_init(&self.gpu, 0)
+	self.pick_cmd = command_pool_allocate(&self.command_pool)
+	self.pick_value = 0
+	self.pick_pending = false
 	return true
 }
 
@@ -126,6 +140,18 @@ _renderer_destroy_pick_resources :: proc(self: ^Renderer) {
 	render_target_destroy(&self.pick_color)
 	render_target_destroy(&self.pick_depth)
 	buffer_destroy(&self.pick_readback)
+	if self.pick_timeline != 0 {vulkan.DestroySemaphore(self.gpu.device, self.pick_timeline, nil); self.pick_timeline = 0}
+	if self.pick_cmd != nil {vulkan.FreeCommandBuffers(self.gpu.device, self.command_pool.pool, 1, &self.pick_cmd); self.pick_cmd = nil}
+	self.pick_pending = false
+}
+
+@(private)
+_timeline_semaphore_init :: proc(gpu: ^GPU, initial_value: u64) -> vulkan.Semaphore {
+	type_info := vulkan.SemaphoreTypeCreateInfo{sType = .SEMAPHORE_TYPE_CREATE_INFO, semaphoreType = .TIMELINE, initialValue = initial_value}
+	create_info := vulkan.SemaphoreCreateInfo{sType = .SEMAPHORE_CREATE_INFO, pNext = &type_info}
+	semaphore: vulkan.Semaphore
+	vk_assert(vulkan.CreateSemaphore(gpu.device, &create_info, nil, &semaphore), "vkCreateSemaphore")
+	return semaphore
 }
 
 // Recreates the swapchain and, only if the attachment formats actually changed,
@@ -197,17 +223,12 @@ _renderer_record_frame :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame
 	swapchain_prepare_present(&self.swapchain, cmd, image_index)
 }
 
-// Runs one pick pass and reads back the ID under the cursor. Returns the
-// instance index (the order bodies are drawn in) or -1 for a miss.
+// Records the pick pass and the one-pixel copy into the pick command buffer.
 @(private)
-_renderer_pick :: proc(self: ^Renderer, x, y: u32) -> i32 {
-	if self.pick_color.image == 0 || self.pick_readback.mapped == nil {return -1}
-
-	frame := self.current_frame
+_renderer_pick_record :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame, x, y: u32) {
 	pipeline := pipeline_registry_get(&self.pipelines, self.pick_pipeline)
-	cmd := command_pool_begin_one_shot(&self.command_pool)
 
-	frame_pass_begin(cmd, &self.pick_pass, self.pick_color, &self.pick_depth, self.swapchain.extent)
+	frame_pass_begin(cmd, &self.pick_pass, self.pick_color, &self.pick_depth, self.pick_extent)
 	pipeline_bind(pipeline, cmd)
 
 	ubo: UniformBufferObject
@@ -246,35 +267,75 @@ _renderer_pick :: proc(self: ^Renderer, x, y: u32) -> i32 {
 		imageExtent = vulkan.Extent3D{width = 1, height = 1, depth = 1},
 	}
 	vulkan.CmdCopyImageToBuffer(cmd, self.pick_color.image, .TRANSFER_SRC_OPTIMAL, self.pick_readback.buffer, 1, &region)
-
-	// Submits and waits for idle; the readback buffer is host-visible and
-	// coherent, so it can be read directly afterwards.
-	command_pool_end_one_shot(&self.command_pool, cmd)
-
-	id := (cast(^u32)self.pick_readback.mapped)^
-	if id == 0 {return -1}
-	return i32(id - 1)
 }
 
-// Consumes a pending Pick_Request and hands the resulting instance index to the
-// physics thread, which owns the Selected pool. The graphic side only writes the
-// atomic Selection_State; it never touches the world's pools.
+// Submits the pick query on its own submission, signalled through the timeline
+// semaphore so it never delays any frame or present. While a query is in flight
+// the request is left pending, so only the latest click is served.
 @(private)
-_renderer_maybe_pick :: proc(self: ^Renderer) {
-	if self.world == nil {return}
+_renderer_pick_enqueue :: proc(self: ^Renderer, frame: u32) {
+	if self.world == nil || self.pick_pending {return}
 	req := ecs.world_resource(self.world, Pick_Request)
 	if !req.requested {return}
 	req.requested = false
 
-	extent := self.swapchain.extent
-	if extent.width == 0 || extent.height == 0 {return}
-	x := u32(clamp(req.u, 0, 1) * f32(extent.width - 1) + 0.5)
-	y := u32(clamp(req.v, 0, 1) * f32(extent.height - 1) + 0.5)
+	x := u32(clamp(req.u, 0, 1) * f32(self.pick_extent.width - 1) + 0.5)
+	y := u32(clamp(req.v, 0, 1) * f32(self.pick_extent.height - 1) + 0.5)
 
-	picked := _renderer_pick(self, x, y)
-	sel := phys.selection_state(self.world)
-	sync.atomic_store(&sel.picked, picked)
-	log.debugf("[PICK] instance %d at (%d, %d)", picked, x, y)
+	command_buffer_reset(self.pick_cmd)
+	_ = command_buffer_begin(self.pick_cmd)
+	_renderer_pick_record(self, self.pick_cmd, frame, x, y)
+	command_buffer_end(self.pick_cmd)
+
+	self.pick_value += 1
+	signal := vulkan.SemaphoreSubmitInfo{sType = .SEMAPHORE_SUBMIT_INFO, semaphore = self.pick_timeline, value = self.pick_value, stageMask = {.ALL_COMMANDS}}
+	cmd_info := vulkan.CommandBufferSubmitInfo{sType = .COMMAND_BUFFER_SUBMIT_INFO, commandBuffer = self.pick_cmd}
+	submit := vulkan.SubmitInfo2 {
+		sType                    = .SUBMIT_INFO_2,
+		commandBufferInfoCount   = 1,
+		pCommandBufferInfos      = &cmd_info,
+		signalSemaphoreInfoCount = 1,
+		pSignalSemaphoreInfos    = &signal,
+	}
+	if !vk_check(vulkan.QueueSubmit2(self.gpu.graphics_queue, 1, &submit, 0), "vkQueueSubmit2 (pick)") {return}
+	self.pick_pending = true
+	self.pick_slot = frame
+	log.debugf("[PICK] query (%d, %d) value=%d", x, y, self.pick_value)
+}
+
+// Non-blocking: publishes the readback once the timeline reaches the submitted
+// value. It never stalls the frame loop.
+@(private)
+_renderer_pick_resolve :: proc(self: ^Renderer) {
+	if !self.pick_pending {return}
+	value: u64
+	vk_assert(vulkan.GetSemaphoreCounterValue(self.gpu.device, self.pick_timeline, &value), "vkGetSemaphoreCounterValue")
+	if value < self.pick_value {return}
+
+	id := (cast(^u32)self.pick_readback.mapped)^
+	picked := i32(-1)
+	if id != 0 {picked = i32(id - 1)}
+	if self.world != nil {
+		sel := phys.selection_state(self.world)
+		sync.atomic_store(&sel.picked, picked)
+	}
+	self.pick_pending = false
+	log.debugf("[PICK] instance %d (value=%d)", picked, value)
+}
+
+// Blocks only if the slot about to be rewritten still has a pick reading its
+// buffers. In practice the pick from two frames ago is already resolved.
+@(private)
+_renderer_pick_wait_slot :: proc(self: ^Renderer, frame: u32) {
+	if !self.pick_pending || self.pick_slot != frame {return}
+	info := vulkan.SemaphoreWaitInfo {
+		sType          = .SEMAPHORE_WAIT_INFO,
+		semaphoreCount = 1,
+		pSemaphores    = &self.pick_timeline,
+		pValues        = &self.pick_value,
+	}
+	vk_assert(vulkan.WaitSemaphores(self.gpu.device, &info, max(u64)), "vkWaitSemaphores")
+	_renderer_pick_resolve(self)
 }
 
 renderer_draw_frame :: proc(self: ^Renderer) -> bool {
@@ -284,8 +345,11 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 		return true
 	}
 
+	_renderer_pick_resolve(self)
+
 	frame := self.current_frame
 	swapchain_wait_for_frame(&self.swapchain, frame)
+	_renderer_pick_wait_slot(self, frame)
 
 	recreate := false
 	result, image_idx := swapchain_acquire_next(&self.swapchain, frame)
@@ -324,7 +388,8 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 		if !_renderer_recreate_if_possible(self) {return false}
 	}
 
+	_renderer_pick_enqueue(self, frame)
+
 	self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT
-	_renderer_maybe_pick(self)
 	return true
 }

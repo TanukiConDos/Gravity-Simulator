@@ -161,10 +161,13 @@ resource). The graphics thread runs the `RENDER` phase, then
 `_renderer_record_frame`, which records a `Frame_Pass`. A pass is engine
 bookkeeping (pipeline + `Render_Target`s + load/clear), not a `VkRenderPass`, and
 every layout transition goes through `image_barrier`. The pick pass renders
-1-based instance IDs to an offscreen `R32_UINT` target on demand (left mouse
-press), reads one pixel back and hands the instance index to the physics thread
-through the atomic `Selection_State`; `physic.select` applies it to `Selected`
-and the next snapshot publishes the flags.
+1-based instance IDs to an offscreen `R32_UINT` target at `swapchain / PICK_SCALE`
+on demand (left mouse press). It is submitted on its own (one query in flight,
+coalesced) and signalled through a timeline semaphore, so the readback is polled
+with `vkGetSemaphoreCounterValue` and never stalls the frame loop. The resolved
+index is handed to the physics thread through the atomic `Selection_State`;
+`physic.select` applies it to `Selected`, and the next snapshot publishes the
+flags.
 
 ### Threading
 

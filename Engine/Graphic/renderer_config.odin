@@ -27,6 +27,11 @@ RENDERER_SHADERS := [?]Shader_Spec{
 @(private)
 PICK_COLOR_FORMAT :: vulkan.Format.R32_UINT
 
+// The pick target is the swapchain extent divided by this. Selection only needs
+// body-level precision, so a smaller target is cheaper to render and read back.
+@(private)
+PICK_SCALE :: 2
+
 @(private)
 RENDERER_PICK_SHADERS := [?]Shader_Spec{
 	{path = "Engine/Graphic/shader/pick.vert.spv"},

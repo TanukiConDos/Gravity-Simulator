@@ -35,6 +35,20 @@ command_pool_destroy :: proc(self: ^CommandPool) {
 @(private) command_pool_begin :: proc(command_pool: ^CommandPool, frame: u32) -> vulkan.CommandBuffer {command_buffer:=command_pool.command_buffers[frame]; vk_assert(vulkan.BeginCommandBuffer(command_buffer, &vulkan.CommandBufferBeginInfo{sType=.COMMAND_BUFFER_BEGIN_INFO}), "vkBeginCommandBuffer"); return command_buffer}
 @(private) command_pool_end :: proc(command_pool: ^CommandPool, cmd: vulkan.CommandBuffer) {vk_assert(vulkan.EndCommandBuffer(cmd), "vkEndCommandBuffer")}
 
+// Allocates a standalone primary buffer owned by the pool; the pool reclaims it
+// on destroy unless the caller frees it earlier.
+@(private)
+command_pool_allocate :: proc(command_pool: ^CommandPool) -> vulkan.CommandBuffer {
+	allocate_info := vulkan.CommandBufferAllocateInfo{sType=.COMMAND_BUFFER_ALLOCATE_INFO,commandPool=command_pool.pool,level=.PRIMARY,commandBufferCount=1}
+	command_buffer: vulkan.CommandBuffer
+	vk_assert(vulkan.AllocateCommandBuffers(command_pool.gpu.device, &allocate_info, &command_buffer), "vkAllocateCommandBuffers")
+	return command_buffer
+}
+
+@(private) command_buffer_reset :: proc(cmd: vulkan.CommandBuffer) {vk_assert(vulkan.ResetCommandBuffer(cmd, {}), "vkResetCommandBuffer")}
+@(private) command_buffer_begin :: proc(cmd: vulkan.CommandBuffer) -> vulkan.CommandBuffer {vk_assert(vulkan.BeginCommandBuffer(cmd, &vulkan.CommandBufferBeginInfo{sType=.COMMAND_BUFFER_BEGIN_INFO}), "vkBeginCommandBuffer"); return cmd}
+@(private) command_buffer_end :: proc(cmd: vulkan.CommandBuffer) {vk_assert(vulkan.EndCommandBuffer(cmd), "vkEndCommandBuffer")}
+
 @(private)
 command_pool_begin_one_shot :: proc(command_pool: ^CommandPool) -> vulkan.CommandBuffer {
 	allocate_info := vulkan.CommandBufferAllocateInfo{sType=.COMMAND_BUFFER_ALLOCATE_INFO,commandPool=command_pool.pool,level=.PRIMARY,commandBufferCount=1}
