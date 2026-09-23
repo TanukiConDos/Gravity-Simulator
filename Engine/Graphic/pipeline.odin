@@ -30,6 +30,57 @@ Pipeline :: struct {
 	descriptors:  [dynamic]Merged_Descriptor,
 }
 
+// Pipeline handles are indices into the registry, so a Frame_Pass can name its
+// pipeline without owning it. The registry replaces the single Renderer.pipeline
+// and is what makes a second pass mechanical to add.
+@(private)
+Pipeline_ID :: distinct u32
+
+@(private)
+Pipeline_Entry :: struct {
+	name:     string,
+	pipeline: Pipeline,
+}
+
+@(private)
+Pipeline_Registry :: struct {
+	gpu:     ^GPU,
+	entries: [dynamic]Pipeline_Entry,
+}
+
+@(private)
+pipeline_registry_init :: proc(gpu: ^GPU) -> Pipeline_Registry {
+	return Pipeline_Registry{gpu = gpu, entries = make([dynamic]Pipeline_Entry, 0, 4)}
+}
+
+@(private)
+pipeline_registry_add :: proc(
+	self: ^Pipeline_Registry,
+	name: string,
+	cfg: Pipeline_Config,
+	color_format, depth_format: vulkan.Format,
+) -> (
+	id: Pipeline_ID,
+	ok: bool,
+) {
+	pipeline := pipeline_init(self.gpu, cfg, color_format, depth_format) or_return
+	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
+	return Pipeline_ID(len(self.entries) - 1), true
+}
+
+@(private)
+pipeline_registry_get :: proc(self: ^Pipeline_Registry, id: Pipeline_ID) -> ^Pipeline {
+	assert(u32(id) < u32(len(self.entries)), "pipeline id is not registered")
+	return &self.entries[u32(id)].pipeline
+}
+
+@(private)
+pipeline_registry_destroy :: proc(self: ^Pipeline_Registry) {
+	for &entry in self.entries {pipeline_destroy(&entry.pipeline)}
+	delete(self.entries)
+	self.entries = nil
+}
+
 // pipeline_init builds the whole pipeline from a declarative config: shader
 // modules, vertex input and descriptor set layouts all come from SPIR-V
 // reflection, while the CPU-side buffer structs provide offsets and strides.
