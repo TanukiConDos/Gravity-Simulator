@@ -213,15 +213,20 @@ main :: proc() {
 	log.infof("Gravity Simulator - Odin Edition")
 
 	config := foundation.config_load("./config.json")
-	foundation.parallel_init(config.worker_threads)
-	defer foundation.parallel_destroy()
 
+	// Start tracing before the worker pool so that, at exit, parallel_destroy
+	// runs first (LIFO defers) and the workers can release their buffers while
+	// the context is still alive.
 	when foundation.PROFILE_ENABLED {
 		foundation.profile_start(PROFILE_TRACE_PATH)
+		foundation.profile_process_name("Gravity-Simulator")
 		foundation.profile_thread_name("main")
 		defer foundation.profile_stop()
 		log.infof("profiling to %s (open it in the spall viewer)", PROFILE_TRACE_PATH)
 	}
+
+	foundation.parallel_init(config.worker_threads)
+	defer foundation.parallel_destroy()
 
 	window, window_ok := graphic.window_init(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
@@ -246,14 +251,19 @@ main :: proc() {
 
 	last_log := time.tick_now()
 	for !graphic.window_should_close(window) {
-		foundation.profile_scope("main.loop")
-		graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
+		{
+			foundation.profile_scope("main.wait_events")
+			graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
+		}
 
-		if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
-			last_log = time.tick_now()
-			frame := sync.atomic_load(&ctx.frame_time)
-			tick := sync.atomic_load(&ctx.tick_time)
-			log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame, tick)
+		{
+			foundation.profile_scope("main.tick")
+			if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
+				last_log = time.tick_now()
+				frame := sync.atomic_load(&ctx.frame_time)
+				tick := sync.atomic_load(&ctx.tick_time)
+				log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame, tick)
+			}
 		}
 	}
 

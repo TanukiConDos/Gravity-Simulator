@@ -39,6 +39,10 @@ OctTree :: struct {
 	min_half:          f32,
 	arena:             found.Arena,
 	typical_half:      f32,
+	// Largest body radius at build time, used to inflate the collision query
+	// sphere so a theta-accepted node can never hide a contact. Valid only while
+	// radii stay immutable after spawn (any structural change forces a rebuild).
+	max_radius:        f32,
 	leaf_obj_hist:     [MAX_DEPTH_CAP + 1]u32,
 	node_count:        int,
 	median_leaf_depth: int,
@@ -104,6 +108,7 @@ _octtree_build :: proc(t: ^OctTree) {
 
 	min := Vec3{math.F32_MAX, math.F32_MAX, math.F32_MAX}
 	max := Vec3{-math.F32_MAX, -math.F32_MAX, -math.F32_MAX}
+	max_radius: f32
 	for idx in t.order {
 		p := Vec3(t.view.position[idx])
 		if p.x < min.x {min.x = p.x}
@@ -112,7 +117,10 @@ _octtree_build :: proc(t: ^OctTree) {
 		if p.x > max.x {max.x = p.x}
 		if p.y > max.y {max.y = p.y}
 		if p.z > max.z {max.z = p.z}
+		r := f32(t.view.radius[idx])
+		if r > max_radius {max_radius = r}
 	}
+	t.max_radius = max_radius
 	center := (min + max) * 0.5
 	half := math.max(math.max(max.x - min.x, max.y - min.y), max.z - min.z) * 0.5 + 1.0
 	if half <= 0 {half = 1e6}
@@ -381,7 +389,6 @@ _calc_force_collect :: proc(
 	index: u32,
 	theta: f32,
 	dt: f32,
-	max_radius: f32,
 	contacts: ^[dynamic]Contact,
 	mutex: ^sync.Mutex,
 ) {
@@ -392,7 +399,7 @@ _calc_force_collect :: proc(
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
 	obj_mass := f64(view.mass[index])
-	collision_radius := f32(view.radius[index]) + max_radius
+	collision_radius := f32(view.radius[index]) + t.max_radius
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -461,12 +468,11 @@ octtree_calc_force_and_collect :: proc(
 	self: ^OctTree,
 	index: u32,
 	dt: f32,
-	max_radius: f32,
 	contacts: ^[dynamic]Contact,
 	mutex: ^sync.Mutex,
 ) {
 	if self == nil || self.nodes == nil {return}
-	_calc_force_collect(self, index, self.theta, dt, max_radius, contacts, mutex)
+	_calc_force_collect(self, index, self.theta, dt, contacts, mutex)
 }
 
 // Diagnostic tallies for one gravity solve, used by the bench `interactions`

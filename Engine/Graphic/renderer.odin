@@ -2,6 +2,7 @@ package graphic
 
 import phys "../physic"
 import ecs "../ecs"
+import found "../../foundation"
 import "core:log"
 import "core:sync"
 import "core:time"
@@ -196,19 +197,28 @@ _renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u
 	push_descriptors_write(&self.push, CAMERA_SET, CAMERA_BINDING, frame, &ubo, size_of(UniformBufferObject))
 
 	if self.world != nil && len(self.positions) > 0 {
-		n := phys.physic_snapshot_read(
-			self.snapshot,
-			raw_data(self.positions),
-			raw_data(self.selected),
-			len(self.positions),
-		)
-		if n > 0 {instance_buffer_update_positions(&self.instances, frame, self.positions[:n], self.selected[:n])}
+		n: int
+		{
+			found.profile_scope_args("graphics.snapshot_read", "max=%d", {len(self.positions)})
+			n = phys.physic_snapshot_read(
+				self.snapshot,
+				raw_data(self.positions),
+				raw_data(self.selected),
+				len(self.positions),
+			)
+		}
+		if n > 0 {
+			found.profile_scope_args("graphics.instances", "n=%d", {n})
+			instance_buffer_update_positions(&self.instances, frame, self.positions[:n], self.selected[:n])
+		}
 	}
 
+	found.profile_scope("graphics.push_descriptors")
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, frame)
 	model_bind(&self.model, cmd, MESH_BINDING)
 	instance_buffer_bind(&self.instances, cmd, frame, INSTANCE_BINDING)
 	if len(self.positions) > 0 {
+		found.profile_scope_args("graphics.draw_indexed", "instances=%d", {len(self.positions)})
 		vulkan.CmdDrawIndexed(cmd, self.model.index_count, u32(len(self.positions)), 0, 0, 0)
 	}
 }
@@ -283,11 +293,19 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	_renderer_pick_resolve_ready(self)
 
 	frame := self.current_frame
-	swapchain_wait_for_frame(&self.swapchain, frame)
+	{
+		found.profile_scope("graphics.wait_frame")
+		swapchain_wait_for_frame(&self.swapchain, frame)
+	}
 	_renderer_pick_resolve_slot(self, frame)
 
 	recreate := false
-	result, image_idx := swapchain_acquire_next(&self.swapchain, frame)
+	result: vulkan.Result
+	image_idx: u32
+	{
+		found.profile_scope("graphics.acquire")
+		result, image_idx = swapchain_acquire_next(&self.swapchain, frame)
+	}
 	if result == .ERROR_OUT_OF_DATE_KHR {
 		if !_renderer_recreate_if_possible(self) {return false}
 		return true
@@ -297,6 +315,7 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	} else if result == .SUBOPTIMAL_KHR {
 		recreate = true
 	}
+	found.profile_mark("graphics.acquired", "frame=%d image=%d", {frame, image_idx})
 
 	swapchain_prepare_frame(&self.swapchain, frame, image_idx)
 	command_pool_reset(&self.command_pool, frame)
@@ -306,18 +325,30 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 		req := ecs.world_resource(self.world, Pick_Request)
 		fg_set_pass_enabled(&self.frame_graph, "pick_copy", req.requested)
 	}
-	if !frame_graph_execute(&self.frame_graph, command_buffer, frame, self.swapchain.extent) {
-		log.errorf("[FG] Frame graph execution failed")
-		return false
+	{
+		found.profile_scope_args("graphics.framegraph", "frame=%d", {frame})
+		if !frame_graph_execute(&self.frame_graph, command_buffer, frame, self.swapchain.extent) {
+			log.errorf("[FG] Frame graph execution failed")
+			return false
+		}
 	}
 	command_pool_end(&self.command_pool, command_buffer)
 
-	if res := swapchain_submit(&self.swapchain, command_buffer, frame, image_idx); res != .SUCCESS {
+	submit_result: vulkan.Result
+	{
+		found.profile_scope("graphics.submit")
+		submit_result = swapchain_submit(&self.swapchain, command_buffer, frame, image_idx)
+	}
+	if submit_result != .SUCCESS {
 		log.errorf("[VULKAN] Failed to submit frame!")
 		return false
 	}
 
-	present_result := swapchain_present(&self.swapchain, frame, image_idx)
+	present_result: vulkan.Result
+	{
+		found.profile_scope("graphics.present")
+		present_result = swapchain_present(&self.swapchain, frame, image_idx)
+	}
 	if present_result == .ERROR_OUT_OF_DATE_KHR || present_result == .SUBOPTIMAL_KHR {
 		recreate = true
 	} else if present_result != .SUCCESS {
@@ -327,6 +358,7 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	if sync.atomic_load(&self.window.framebuffer_resized) {recreate = true}
 
 	if recreate {
+		found.profile_mark("graphics.recreate", "frame=%d", {frame})
 		sync.atomic_store(&self.window.framebuffer_resized, false)
 		if !_renderer_recreate_if_possible(self) {return false}
 	}

@@ -9,21 +9,21 @@ import "core:thread"
 import "core:time"
 
 SimulationContext :: struct {
-	world:        ^ecs.World,
-	scheduler:    ^ecs.Scheduler,
-	renderer:     ^graphic.Renderer,
-	window:       ^graphic.Window,
-	frame_time:   f32,
-	tick_time:    f32,
-	delta_time:   f32,
-	exit:         bool,
+	world:      ^ecs.World,
+	scheduler:  ^ecs.Scheduler,
+	renderer:   ^graphic.Renderer,
+	window:     ^graphic.Window,
+	frame_time: f32,
+	tick_time:  f32,
+	delta_time: f32,
+	exit:       bool,
 }
 
 @(private)
 g_sim_logger: log.Logger
 
-FIXED_STEP_SEC :: 1.0 / 60.0
-MAX_FRAME_SEC  :: 0.25
+FIXED_STEP_SEC :: 1.0 / 300.0
+MAX_FRAME_SEC :: 0.25
 MAX_ACCUMULATED_STEPS :: 16
 
 @(private)
@@ -34,7 +34,7 @@ _physics_thread :: proc(th: ^thread.Thread) {
 
 	foundation.profile_thread_ensure()
 	foundation.profile_thread_name("physics")
-	defer foundation.profile_thread_flush()
+	defer foundation.profile_thread_destroy()
 
 	accumulator: f32 = 0
 	last_tick := time.tick_now()
@@ -64,6 +64,7 @@ _physics_thread :: proc(th: ^thread.Thread) {
 		if updates > 0 {
 			total_us := time.duration_microseconds(time.tick_diff(tick_start, time.tick_now()))
 			sync.atomic_store(&ctx.tick_time, f32(total_us) / f32(updates))
+			foundation.profile_mark("physics.updates", "updates=%d", {updates})
 		}
 
 		remaining := FIXED_STEP_SEC - accumulator
@@ -81,7 +82,7 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 
 	foundation.profile_thread_ensure()
 	foundation.profile_thread_name("graphics")
-	defer foundation.profile_thread_flush()
+	defer foundation.profile_thread_destroy()
 
 	last_frame := time.tick_now()
 	for !sync.atomic_load(&ctx.exit) {
@@ -92,7 +93,7 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 
 		frame_start := time.tick_now()
 		{
-			foundation.profile_scope("graphics.frame")
+			foundation.profile_scope_args("graphics.frame", "dt=%.4f", {delta})
 			ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta)
 			{
 				foundation.profile_scope("graphics.draw")
@@ -102,11 +103,19 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 				}
 			}
 		}
-		sync.atomic_store(&ctx.frame_time, f32(time.duration_milliseconds(time.tick_diff(frame_start, time.tick_now()))))
+		sync.atomic_store(
+			&ctx.frame_time,
+			f32(time.duration_milliseconds(time.tick_diff(frame_start, time.tick_now()))),
+		)
 	}
 }
 
-parallel_start :: proc(ctx: ^SimulationContext) -> (physics: ^thread.Thread, graphics: ^thread.Thread) {
+parallel_start :: proc(
+	ctx: ^SimulationContext,
+) -> (
+	physics: ^thread.Thread,
+	graphics: ^thread.Thread,
+) {
 	physics = thread.create(_physics_thread, .Normal, "physics")
 	physics.data = ctx
 	graphics = thread.create(_graphics_thread, .Normal, "graphics")

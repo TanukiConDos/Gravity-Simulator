@@ -31,10 +31,18 @@ parallel_init :: proc(worker_count: int) {
 	parallel_state.workers = make([dynamic]^thread.Thread, count)
 	for i in 0 ..< count {
 		t := thread.create(_parallel_worker_main, .Normal, "parallel-worker")
+		// The worker reads its index back to label its trace timeline.
+		t.data = rawptr(uintptr(i))
 		parallel_state.workers[i] = t
 		thread.start(t)
 	}
 	parallel_state.initialized = true
+}
+
+// Number of pool workers; 0 when the pool is not initialized. Used to annotate
+// solve spans with the parallelism actually available.
+parallel_worker_count :: proc() -> int {
+	return len(parallel_state.workers)
 }
 
 parallel_destroy :: proc() {
@@ -81,15 +89,22 @@ parallel_for :: proc(fn: proc(index: int, data: rawptr), data: rawptr, count: in
 
 @(private)
 _parallel_worker_main :: proc(t: ^thread.Thread) {
+	worker_index := int(uintptr(t.data))
+	defer profile_thread_destroy()
+
 	for {
 		sync.sema_wait(&parallel_state.work_ready)
 		if parallel_state.shutdown {break}
 
 		profile_thread_ensure()
-		profile_thread_name("worker")
+		profile_thread_name_id("worker", worker_index)
 		{
 			defer profile_thread_flush()
-			profile_scope("parallel_for")
+			profile_scope_args(
+				"parallel_for",
+				"count=%d chunk=%d workers=%d",
+				{parallel_state.job_count, parallel_state.chunk, len(parallel_state.workers)},
+			)
 
 			fn := parallel_state.job_fn
 			data := parallel_state.job_data

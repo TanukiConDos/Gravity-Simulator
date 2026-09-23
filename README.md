@@ -64,10 +64,10 @@ Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra l
    odin run bench -o:speed -disable-assert -microarch:native -- 10k     # sólo una etapa (1k | 10k | 100k)
    ```
 
-   Para generar una traza de perfilado con [`spall`](https://gravitymoth.com/spall/) (`core:prof`), compila con `-define:PROFILE=true` y usa la etapa `profile`:
+   Para generar una traza de perfilado con [`spall`](https://gravitymoth.com/spall/) (`core:prof`), compila con `-define:PROFILE=true` y usa la etapa `profile` (o la app, que vuelca a `trace_app.spall`):
 
    ```
    odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile 100000 16 0.5 50 16
    ```
 
-   Escribe `bench/results/trace_*.spall`, que puede abrirse en el visor de spall o en Perfetto. No uses `-define:PROFILE=true` para medir tiempos: deja las llamadas de instrumentación en el binario y altera los resultados.
+   Escribe `bench/results/trace_*.spall`, que puede abrirse en el visor de spall o en Perfetto. Cada hilo (main, physics, graphics, `worker.0`…) aparece con su propio timeline y nombre de proceso, y los spans llevan datos adjuntos (`n`, `theta`, nodos del octree, pares de colisión, tamaño de chunk, pases del frame graph, etc.); los eventos puntuales se registran como marcadores de duración cero. El visor solo entiende Begin/End y nombres, así que no hay contadores ni eventos instantáneos. No uses `-define:PROFILE=true` para medir tiempos: deja las llamadas de instrumentación en el binario y altera los resultados.

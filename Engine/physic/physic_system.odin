@@ -148,6 +148,7 @@ physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) {
 	for idx in bodies {acc[idx] = Acceleration(Vec3{0, 0, 0})}
 
 	if state.algorithm == .OCTREE {
+		found.profile_scope("tree.ensure")
 		_ensure_tree(state, w, delta_time)
 	}
 }
@@ -160,6 +161,7 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) {
 
 	switch state.algorithm {
 	case .BRUTE_FORCE:
+		found.profile_scope_args("brute.force", "n=%d", {len(bodies)})
 		_brute_force_solve(w, bodies, seconds)
 	case .OCTREE:
 		if state.tree != nil {
@@ -167,14 +169,10 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) {
 			// The gravity traversal doubles as the collision broad phase:
 			// positions do not change between the two phases, so the contacts
 			// it collects are exactly what a separate pass would have found.
+			// The collision sphere is inflated by the tree's build-time max
+			// radius, so the query never hides a contact.
 			clear(&state.collision_contacts)
-			max_radius: f32
-			radius := ecs.world_pool(w, Radius).data
-			for idx in bodies {
-				r := f32(radius[idx])
-				if r > max_radius {max_radius = r}
-			}
-			_octree_solve(state, bodies, seconds, max_radius)
+			_octree_solve(state, bodies, seconds)
 		}
 	}
 }
@@ -186,6 +184,7 @@ physic_system_collision :: proc(w: ^ecs.World, _: f32) {
 
 	switch state.algorithm {
 	case .BRUTE_FORCE:
+		found.profile_scope_args("brute.collision", "n=%d", {len(bodies)})
 		_brute_force_collision(w, bodies)
 	case .OCTREE:
 		if state.tree != nil {_collision_resolve(state, w)}
@@ -219,6 +218,7 @@ physic_system_select :: proc(w: ^ecs.World, _: f32) {
 	if picked == SELECTION_NONE {return}
 	sync.atomic_store(&sel.picked, SELECTION_NONE)
 
+	found.profile_scope_args("physic.select", "picked=%d", {picked})
 	view := body_view(w)
 	for idx in view.bodies {view.selected[idx] = Selected(false)}
 	if picked >= 0 && int(picked) < len(view.bodies) {
@@ -227,6 +227,7 @@ physic_system_select :: proc(w: ^ecs.World, _: f32) {
 }
 
 physic_system_publish :: proc(w: ^ecs.World, _: f32) {
+	found.profile_scope_args("snapshot.publish", "n=%d", {len(ecs.world_pool(w, Body).dense)})
 	physic_snapshot_publish(w)
 }
 
@@ -235,6 +236,11 @@ physic_system_adapt :: proc(w: ^ecs.World, _: f32) {
 	if len(ecs.world_pool(w, Body).dense) == 0 {return}
 	cost_ms := f32(
 		time.duration_milliseconds(time.tick_diff(state.tick_start, time.tick_now())),
+	)
+	found.profile_scope_args(
+		"physic.adapt",
+		"cost=%.2fms ema=%.2fms theta=%.2f",
+		{cost_ms, state.ema_cost_ms, state.theta},
 	)
 	_adaptive_controller(state, cost_ms)
 }
@@ -290,6 +296,18 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 			}
 			state.max_disp_sq = 0
 		}
+		found.profile_mark(
+			"octree.built",
+			"n=%d nodes=%d med_depth=%d max_depth=%d typical_half=%.4g rebuilds=%d",
+			{
+				len(bodies),
+				state.tree.node_count,
+				state.tree.median_leaf_depth,
+				state.tree.max_leaf_depth,
+				state.tree.typical_half,
+				state.rebuild_count,
+			},
+		)
 	}
 	state.updates_since_build += 1
 	if state.tree != nil {state.tree.view = view}
@@ -344,8 +362,10 @@ _adaptive_controller :: proc(state: ^Physic_State, cost_ms: f32) {
 	)
 	if !adapted {return}
 
+	old_theta := state.theta
 	state.theta = new_theta
 	state.cooldown_left = ADAPTIVE_COOLDOWN
+	found.profile_mark("adaptive.theta", "from=%.2f to=%.2f", {old_theta, new_theta})
 	log.infof(
 		"[PHYSIC] adaptive: ema=%.2fms target=%.2fms theta=%.2f rebuilds=%d",
 		state.ema_cost_ms,
@@ -463,28 +483,31 @@ _brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
 	}
 }
 
-_octree_solve :: proc(state: ^Physic_State, bodies: []u32, seconds: f64, max_radius: f32) {
+_octree_solve :: proc(state: ^Physic_State, bodies: []u32, seconds: f64) {
 	tree := state.tree
 	if tree == nil {return}
-	found.profile_scope("octree.solve")
+	found.profile_scope_args(
+		"octree.solve",
+		"n=%d theta=%.2f max_r=%.4g workers=%d",
+		{len(bodies), tree.theta, tree.max_radius, found.parallel_worker_count()},
+	)
 	data := _OctreeSolveData {
-		tree       = tree,
-		indices    = bodies,
-		dt         = f32(seconds),
-		max_radius = max_radius,
-		contacts   = &state.collision_contacts,
-		mutex      = &state.collision_mutex,
+		tree     = tree,
+		indices  = bodies,
+		dt       = f32(seconds),
+		contacts = &state.collision_contacts,
+		mutex    = &state.collision_mutex,
 	}
 	found.parallel_for(_octree_solve_worker, &data, len(bodies))
+	found.profile_mark("octree.solved", "pairs=%d", {len(state.collision_contacts)})
 }
 
 _OctreeSolveData :: struct {
-	tree:       ^OctTree,
-	indices:    []u32,
-	dt:         f32,
-	max_radius: f32,
-	contacts:   ^[dynamic]Contact,
-	mutex:      ^sync.Mutex,
+	tree:     ^OctTree,
+	indices:  []u32,
+	dt:       f32,
+	contacts: ^[dynamic]Contact,
+	mutex:    ^sync.Mutex,
 }
 
 _octree_solve_worker :: proc(index: int, data: rawptr) {
@@ -493,7 +516,6 @@ _octree_solve_worker :: proc(index: int, data: rawptr) {
 		ctx.tree,
 		ctx.indices[index],
 		ctx.dt,
-		ctx.max_radius,
 		ctx.contacts,
 		ctx.mutex,
 	)
@@ -519,9 +541,9 @@ _collision_resolve :: proc(state: ^Physic_State, w: ^ecs.World) {
 	radius := ecs.world_pool(w, Radius).data
 	mass := ecs.world_pool(w, Mass).data
 
+	found.profile_scope_args("collision.narrow", "pairs=%d", {len(state.collision_contacts)})
 	slice.sort_by(state.collision_contacts[:], _contact_less)
 
-	found.profile_scope("collision.narrow")
 	for contact in state.collision_contacts {
 		a := contact.a
 		b := contact.b

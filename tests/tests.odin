@@ -213,7 +213,6 @@ test_octree_force_collect_equivalence :: proc(t: ^testing.T) {
 				tree,
 				idx,
 				1.0,
-				max_radius,
 				&contacts,
 				&mutex,
 			)

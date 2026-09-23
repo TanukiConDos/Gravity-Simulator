@@ -443,8 +443,12 @@ profile_run :: proc(args: []string) {
 	for _ in 0 ..< 3 {ecs.scheduler_run(s, .PHYSICS, w, SIM_DT)}
 
 	foundation.profile_start(path)
+	foundation.profile_process_name("bench")
 	foundation.profile_thread_name("main")
-	for _ in 0 ..< 5 {ecs.scheduler_run(s, .PHYSICS, w, SIM_DT)}
+	{
+		foundation.profile_scope_args("bench.profile_ticks", "n=%d theta=%.2f interval=%.0f workers=%d", {n, theta, interval, workers})
+		for _ in 0 ..< 5 {ecs.scheduler_run(s, .PHYSICS, w, SIM_DT)}
+	}
 	foundation.profile_stop()
 
 	ecs.scheduler_destroy(s)

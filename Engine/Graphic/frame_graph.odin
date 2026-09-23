@@ -5,6 +5,7 @@ import "core:log"
 import "core:os"
 import "core:slice"
 import "core:strings"
+import found "../../foundation"
 import "vendor:vulkan"
 
 // Path to the declarative frame graph, loaded once at renderer init.
@@ -684,6 +685,7 @@ frame_graph_execute :: proc(
 
 	for pid in order {
 		pass := &fg.passes[int(pid)]
+		found.profile_scope(pass.name)
 
 		for input in pass.inputs {
 			#partial switch input.access {

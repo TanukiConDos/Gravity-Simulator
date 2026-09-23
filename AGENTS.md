@@ -315,11 +315,21 @@ The profiler is compiled out entirely without `-define:PROFILE=true`. Do **not**
 combine the flag with timing runs: it leaves the (inactive) span calls in the
 binary and skews the numbers.
 
+The spall wire format only carries Begin/End and thread/process names; the Odin
+viewer rejects anything else, so there are no counters or instant events. Extra
+data rides as free-form `args` text on a span (shown as "user data"), and
+point-in-time facts (`adaptive.theta`, `octree.built`, `graphics.acquired`,
+`graphics.recreate`, `physics.updates`, ...) are emitted as zero-duration
+"marker" spans via `profile_mark`.
+
 **Bench.** Build with the flag and use the `profile` stage to record a spall
-trace of one config (warmup untraced, then 5 ticks). Spans cover the six
-`PHYSICS` systems (named by the scheduler), `octree.build`, `octree.solve`, and
-one `parallel_for` span per worker, each worker thread recording to its own
-buffer/timeline. Open the file at https://gravitymoth.com/spall/ or Perfetto.
+trace of one config (warmup untraced, then 5 ticks). Spans cover the `PHYSICS`
+systems (named by the scheduler), `tree.ensure`/`octree.build` (with node/leaf
+metrics), `octree.solve` (with `n`, `theta`, worker count and contact count),
+`collision.narrow`, `snapshot.publish`, `physic.adapt`, and one `parallel_for`
+span per worker with its job size/chunking. Each worker records to its own named
+timeline (`worker.0`...). Open the file at https://gravitymoth.com/spall/ or
+Perfetto.
 
 ```
 odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile [n] [depth] [theta] [interval] [workers]
@@ -327,10 +337,15 @@ odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -
 
 **App.** With the flag the app traces its whole run to `trace_app.spall`
 (gitignored). It covers every thread, each named in the viewer: the main loop
-(`main.loop`), the physics thread (`physics.step` plus the per-system spans and
-`octree.build`/`octree.solve`), the graphics thread (`graphics.frame`,
-`graphics.draw` and the `RENDER` spans) and the worker pool (`parallel_for`).
-Close the window to flush and exit; the file is truncated on each launch.
+(`main.wait_events`/`main.tick`), the physics thread (`physics.step` plus the
+per-system spans, `tree.ensure`, `octree.build`/`octree.solve`,
+`collision.narrow`, `snapshot.publish`, `physic.adapt`), the graphics thread
+(`graphics.frame`, `graphics.wait_frame`/`acquire`/`framegraph`/`submit`/`present`,
+one span per frame-graph pass named by pass, and `graphics.draw`/`draw_indexed`,
+`graphics.snapshot_read`, `graphics.instances`, `graphics.push_descriptors`), and
+the worker pool (`parallel_for` per worker). The process is named
+`Gravity-Simulator`. Close the window to flush and exit; the file is truncated
+on each launch.
 
 ```
 odin build . -o:speed -disable-assert -microarch:native -define:PROFILE=true
@@ -338,11 +353,14 @@ odin build . -o:speed -disable-assert -microarch:native -define:PROFILE=true
 ```
 
 A flat `profiler` API would need `when` gates at every call site, so the wrapper
-(`foundation/profiler.odin`) exposes only `profile_scope`/`profile_start`/`profile_stop`/
-`profile_thread_ensure`/`profile_thread_name`/`profile_thread_flush`, which fold
-to nothing when the flag is off. Threads must get a buffer
-(`profile_thread_ensure`) and be flushed before the context is destroyed; register
-the flush as a `defer` so span ends run first.
+(`foundation/profiler.odin`) exposes only the `profile_*` procedures, which fold
+to nothing when the flag is off. `profile_scope`/`profile_scope_args` open a span
+closed at the end of the enclosing scope; `profile_scope_args` formats its
+printf-style args only under the flag (the call site just builds a stack `[]any`),
+and `profile_mark` records a zero-duration fact. Start the trace before the
+thread pool so that, at exit, `parallel_destroy` runs first (LIFO defers) and each
+thread releases its own buffer (`profile_thread_destroy`) while the context is
+still alive.
 
 Measured on a Ryzen 7 7800X3D, `-microarch:native` (see `bench/results/`).
 Absolute numbers drift by up to ~20% between sessions (CPU boost/thermal/load),

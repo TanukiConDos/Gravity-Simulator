@@ -1,6 +1,6 @@
 {
     "system_creation_mode": "RANDOM",
-    "num_objects": 100,
+    "num_objects": 1000000,
     "time": 1000,
     "filename": "tierra.json",
     "algorithm": "OCTREE",
