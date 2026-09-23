@@ -3,3 +3,7 @@ lib
 x64
 !packages/**
 TFG
+Gravity-Simulator
+bench/results/
+perf.data*
+*.spall
