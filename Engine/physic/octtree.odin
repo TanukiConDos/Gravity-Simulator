@@ -57,7 +57,7 @@ octtree_create :: proc(view: Bodies, theta: f32) -> ^OctTree {
 octtree_create_ex :: proc(view: Bodies, theta: f32, max_depth: int, min_half: f32) -> ^OctTree {
 	t := new(OctTree)
 	t.theta = theta
-	t.max_depth = min(max(max_depth, 1), MAX_DEPTH_CAP)
+	t.max_depth = max_depth > 0 ? min(max_depth, MAX_DEPTH_CAP) : DEFAULT_MAX_DEPTH
 	t.min_half = min_half > 0 ? min_half : DEFAULT_MIN_HALF_SIZE
 	t.view = view
 
@@ -78,7 +78,7 @@ octtree_rebuild :: proc(self: ^OctTree, view: Bodies, theta: f32) {
 octtree_rebuild_ex :: proc(self: ^OctTree, view: Bodies, theta: f32, max_depth: int, min_half: f32) {
 	if self == nil {return}
 	self.theta = theta
-	self.max_depth = min(max(max_depth, 1), MAX_DEPTH_CAP)
+	self.max_depth = max_depth > 0 ? min(max_depth, MAX_DEPTH_CAP) : DEFAULT_MAX_DEPTH
 	self.min_half = min_half > 0 ? min_half : DEFAULT_MIN_HALF_SIZE
 	self.view = view
 

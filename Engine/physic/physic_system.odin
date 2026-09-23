@@ -89,8 +89,10 @@ physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	s.collision_algo = config.collision_algorithm
 	s.theta = config.theta
 	s.rebuild_interval = config.tree_rebuild_interval
-	s.max_depth = config.max_depth
-	s.min_half = config.min_half_size
+	s.max_depth =
+		config.max_depth > 0 ? min(config.max_depth, MAX_DEPTH_CAP) : DEFAULT_MAX_DEPTH
+	s.min_half =
+		config.min_half_size > 0 ? config.min_half_size : DEFAULT_MIN_HALF_SIZE
 	s.auto_adjust = config.auto_adjust
 	s.target_cost_ms = ADAPTIVE_HEADROOM * (1000.0 / max(config.target_tickrate, 1.0))
 	s.theta_min = config.theta_min

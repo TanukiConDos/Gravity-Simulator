@@ -42,6 +42,26 @@ test_octtree_depth_cap :: proc(t: ^testing.T) {
 	clamped := physics.octtree_create_ex(view, 0.5, 999, physics.DEFAULT_MIN_HALF_SIZE)
 	testing.expect(t, clamped.max_depth == physics.MAX_DEPTH_CAP)
 	physics.octtree_destroy(clamped)
+
+	// A non-positive cap means "unspecified", not "depth 1": callers building a
+	// zero-value config must still get a usable tree.
+	defaulted := physics.octtree_create_ex(view, 0.5, 0, physics.DEFAULT_MIN_HALF_SIZE)
+	testing.expect(t, defaulted.max_depth == physics.DEFAULT_MAX_DEPTH)
+	physics.octtree_destroy(defaulted)
+}
+
+@(test)
+test_physic_init_defaults :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+
+	// physic_init normalizes the optional octree knobs, so a zero-value Config
+	// cannot silently degrade the tree to depth 1.
+	physics.physic_init(w, foundation.Config{})
+	state := physics.physic_state(w)
+	testing.expect_value(t, state.max_depth, physics.DEFAULT_MAX_DEPTH)
+	testing.expect(t, state.min_half > 0, "min_half must fall back to a positive default")
 }
 
 @(test)
