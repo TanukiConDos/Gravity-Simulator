@@ -247,6 +247,10 @@ main :: proc() {
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 	graphic.graphic_register_systems(g_scheduler)
+	if !ecs.scheduler_finalize(g_scheduler) {
+		log.errorf("Failed to resolve the system schedule!")
+		return
+	}
 
 	// Every pool and resource the threads use now exists: freeze the registries
 	// so the physics and graphics threads only ever perform concurrent reads.

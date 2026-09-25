@@ -1,6 +1,7 @@
 package tests
 
 import ecs "../Engine/ecs"
+import "core:log"
 import "core:testing"
 
 @(private)
@@ -215,6 +216,143 @@ test_ecs_scheduler_stops_on_failure :: proc(t: ^testing.T) {
 
 	testing.expect(t, !ecs.scheduler_run(s, .PHYSICS, w, 0.016), "failure is reported")
 	testing.expect_value(t, string(g_fail_order[:]), "ax")
+}
+
+// Two `.ANY` systems with disjoint access share a wave; a dependency or an
+// access conflict splits it, and `.CALLER` systems are barriers.
+@(test)
+test_ecs_scheduler_waves :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	a := ecs.scheduler_add(s, "a", .PHYSICS, _sys_a)
+	b := ecs.scheduler_add(
+		s,
+		"b",
+		.PHYSICS,
+		_sys_b,
+		after = {a},
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+	c := ecs.scheduler_add(
+		s,
+		"c",
+		.PHYSICS,
+		_sys_r,
+		after = {a},
+		access = ecs.System_Access{writes = {typeid_of(Test_Velocity)}},
+		affinity = .ANY,
+	)
+	d := ecs.scheduler_add(
+		s,
+		"d",
+		.PHYSICS,
+		_sys_a,
+		after = {b, c},
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	waves := s.schedule[.PHYSICS].waves
+	testing.expect_value(t, len(waves), 3)
+	testing.expect_value(t, len(waves[0].systems), 1)
+	testing.expect_value(t, waves[0].systems[0], a)
+	testing.expect(t, !waves[0].parallel, "a CALLER system runs alone")
+
+	testing.expect_value(t, len(waves[1].systems), 2)
+	testing.expect(t, waves[1].parallel, "disjoint ANY systems share a wave")
+	testing.expect_value(t, waves[1].systems[0], b)
+	testing.expect_value(t, waves[1].systems[1], c)
+
+	testing.expect_value(t, len(waves[2].systems), 1)
+	testing.expect_value(t, waves[2].systems[0], d)
+	testing.expect(t, !waves[2].parallel, "a dependency prevents sharing")
+}
+
+@(test)
+test_ecs_scheduler_access_conflict_serializes :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	ecs.scheduler_add(
+		s,
+		"x",
+		.PHYSICS,
+		_sys_a,
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+	ecs.scheduler_add(
+		s,
+		"y",
+		.PHYSICS,
+		_sys_b,
+		access = ecs.System_Access{reads = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	waves := s.schedule[.PHYSICS].waves
+	testing.expect_value(t, len(waves), 2)
+	testing.expect(t, !waves[0].parallel && !waves[1].parallel, "writer vs reader serialises")
+}
+
+@(test)
+test_ecs_scheduler_readers_share :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	ecs.scheduler_add(
+		s,
+		"x",
+		.PHYSICS,
+		_sys_a,
+		access = ecs.System_Access{reads = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+	ecs.scheduler_add(
+		s,
+		"y",
+		.PHYSICS,
+		_sys_b,
+		access = ecs.System_Access{reads = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	waves := s.schedule[.PHYSICS].waves
+	testing.expect_value(t, len(waves), 1)
+	testing.expect(t, waves[0].parallel, "two readers share a wave")
+}
+
+@(test)
+test_ecs_scheduler_duplicate_name :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	ecs.scheduler_add(s, "dup", .PHYSICS, _sys_a)
+	ecs.scheduler_add(s, "dup", .PHYSICS, _sys_b)
+
+	prev := context.logger
+	context.logger = log.nil_logger()
+	ok := ecs.scheduler_finalize(s)
+	context.logger = prev
+	testing.expect(t, !ok, "duplicate names are rejected")
+}
+
+@(test)
+test_ecs_scheduler_cross_phase_dependency :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	a := ecs.scheduler_add(s, "a", .PHYSICS, _sys_a)
+	ecs.scheduler_add(s, "b", .RENDER, _sys_r, after = {a})
+
+	prev := context.logger
+	context.logger = log.nil_logger()
+	ok := ecs.scheduler_finalize(s)
+	context.logger = prev
+	testing.expect(t, !ok, "cross-phase dependencies are rejected")
 }
 
 @(test)

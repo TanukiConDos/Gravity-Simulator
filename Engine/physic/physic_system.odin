@@ -127,15 +127,57 @@ physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	return s
 }
 
-// Registered in this order; the scheduler runs them as the PHYSICS phase.
+// Registers the physics systems as the PHYSICS phase. Dependencies are declared
+// with handles rather than implied by registration order; `integrate` and
+// `select` touch disjoint columns and may share a wave.
 physic_register_systems :: proc(s: ^ecs.Scheduler) {
-	ecs.scheduler_add(s, "physic.begin", .PHYSICS, physic_system_begin)
-	ecs.scheduler_add(s, "physic.gravity", .PHYSICS, physic_system_gravity)
-	ecs.scheduler_add(s, "physic.collision", .PHYSICS, physic_system_collision)
-	ecs.scheduler_add(s, "physic.integrate", .PHYSICS, physic_system_integrate)
-	ecs.scheduler_add(s, "physic.select", .PHYSICS, physic_system_select)
-	ecs.scheduler_add(s, "physic.publish", .PHYSICS, physic_system_publish)
-	ecs.scheduler_add(s, "physic.adapt", .PHYSICS, physic_system_adapt)
+	begin := ecs.scheduler_add(s, "physic.begin", .PHYSICS, physic_system_begin)
+	gravity := ecs.scheduler_add(
+		s,
+		"physic.gravity",
+		.PHYSICS,
+		physic_system_gravity,
+		after = {begin},
+	)
+	collision := ecs.scheduler_add(
+		s,
+		"physic.collision",
+		.PHYSICS,
+		physic_system_collision,
+		after = {gravity},
+	)
+	integrate := ecs.scheduler_add(
+		s,
+		"physic.integrate",
+		.PHYSICS,
+		physic_system_integrate,
+		after = {collision},
+		access = ecs.System_Access {
+			reads = {typeid_of(Velocity), typeid_of(Physic_State)},
+			writes = {typeid_of(Position), typeid_of(Physic_State)},
+		},
+		affinity = .ANY,
+	)
+	select := ecs.scheduler_add(
+		s,
+		"physic.select",
+		.PHYSICS,
+		physic_system_select,
+		after = {collision},
+		access = ecs.System_Access {
+			reads = {typeid_of(Selection_State), typeid_of(Body)},
+			writes = {typeid_of(Selected)},
+		},
+		affinity = .ANY,
+	)
+	publish := ecs.scheduler_add(
+		s,
+		"physic.publish",
+		.PHYSICS,
+		physic_system_publish,
+		after = {integrate, select},
+	)
+	ecs.scheduler_add(s, "physic.adapt", .PHYSICS, physic_system_adapt, after = {publish})
 }
 
 physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) -> bool {

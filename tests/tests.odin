@@ -94,6 +94,7 @@ test_brute_force :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()
 	defer ecs.scheduler_destroy(s)
 	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
 
 	ecs.scheduler_run(s, .PHYSICS, w, 16.0)
 
@@ -120,6 +121,7 @@ test_octree_collision :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()
 	defer ecs.scheduler_destroy(s)
 	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
 
 	pa := ecs.world_get(w, a, physics.Position)
 	pb := ecs.world_get(w, b, physics.Position)

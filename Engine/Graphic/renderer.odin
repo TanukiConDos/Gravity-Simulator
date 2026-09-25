@@ -84,11 +84,11 @@ renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer,
 }
 
 // Registers the graphics systems. Input mutates the Camera resource, and render
-// runs the frame; registration order makes render read the camera input already
-// updated for this frame.
+// runs the frame; the dependency makes render read the camera already updated
+// for this frame regardless of registration order.
 graphic_register_systems :: proc(s: ^ecs.Scheduler) {
-	ecs.scheduler_add(s, "graphic.input", .RENDER, input_system)
-	ecs.scheduler_add(s, "graphic.render", .RENDER, renderer_system)
+	input := ecs.scheduler_add(s, "graphic.input", .RENDER, input_system)
+	ecs.scheduler_add(s, "graphic.render", .RENDER, renderer_system, after = {input})
 }
 
 // RENDER-phase system: draws one frame through the renderer resource. It returns

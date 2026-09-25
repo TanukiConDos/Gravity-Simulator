@@ -128,6 +128,7 @@ make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 	ecs.world_freeze(w)
 	s := ecs.scheduler_create()
 	physic.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
 	return w, s
 }
 
