@@ -10,7 +10,7 @@ The octree gravity solver is split across `worker_threads` via `foundation.paral
 
 Hot-path traversal stacks (`_calc_force`, `_calc_force_collect`) skip zero-initialization; every slot is written before it is read. Zero-initializing them cost ~5–12% of the tick at 100k bodies with `theta >= 0.75` (measured with the fold enabled; without it the effect was larger).
 
-Each tick publishes body positions and selection flags into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools.
+Each tick publishes body positions and selection flags into the `RenderSnapshot` resource; the graphics thread reads that snapshot, never the simulation pools. The handoff is a triple buffer with atomic state per buffer (no mutex): the physics thread publishes the latest complete version and the graphics thread claims and releases it, skipping versions it does not need.
 
 ## Adaptive tuning (`auto_adjust`)
 

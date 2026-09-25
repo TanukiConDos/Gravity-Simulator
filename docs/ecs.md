@@ -139,11 +139,17 @@ The world is not synchronised; one thread owns it at a time. All pools and
 resources are created during `physic_init`/`renderer_init` and the world is
 frozen before the threads start, so afterwards the graphics thread only performs
 concurrent reads of the registries. The physics thread owns all mutations and
-runs `world_flush`; the graphics thread reads only `RenderSnapshot`, which is
-guarded by its own mutex.
+runs `world_flush`.
+
+The render handoff is a lock-free triple buffer (`RenderSnapshot`): the physics
+thread copies the published view into a free buffer and atomically publishes it,
+and the graphics thread claims the latest published buffer, copies it and
+releases it. The writer never blocks and the reader always sees a complete
+version; if the reader is behind, intermediate ticks are skipped and rendering
+keeps the last complete frame. The graphics thread never touches the pools.
 
 `foundation` exposes one help-first job pool shared by the physics solver
-(`parallel_for`) and the scheduler's parallel waves. Workers and any thread
+(`parallel_for`) and the scheduler's ready `.ANY` systems. Workers and any thread
 blocked in `job_system_wait` pull from the same queue, so a job may submit
 children and wait for them without deadlocking. Only the owner phase may run
 `.ANY` systems; structural operations (`world_spawn`/`despawn`, `world_defer_*`,

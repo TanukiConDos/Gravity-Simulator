@@ -19,10 +19,31 @@ ADAPTIVE_HEADROOM :: 0.85
 ADAPTIVE_STALE_FACTOR :: 0.5
 ADAPTIVE_MIN_REBUILD_UPDATES :: 2
 
+// The published render view is a triple buffer: the physics thread writes into a
+// free buffer and atomically publishes it, the graphics thread claims the latest
+// published buffer and reads it. Latest wins, the writer never blocks and the
+// reader always sees a complete version. Only the two side threads touch it (one
+// writer, one reader), so the state machine is per buffer.
+SNAPSHOT_BUFFERS :: 3
+
+Snapshot_State :: enum(u32) {
+	FREE,
+	WRITING,
+	READING,
+	PUBLISHED,
+}
+
+Snapshot_Buffer :: struct {
+	data:     []Vec3,
+	selected: []u8,
+	count:    int,
+	state:    u32, // atomic Snapshot_State
+}
+
 RenderSnapshot :: struct {
-	mutex:    sync.Mutex,
-	data:     [dynamic]Vec3,
-	selected: [dynamic]u8,
+	buffers:   [SNAPSHOT_BUFFERS]Snapshot_Buffer,
+	published: i32, // atomic buffer index, -1 when nothing has been published
+	capacity:  int,
 }
 
 // Set by the graphics thread after a pick readback and consumed by the physics
@@ -76,9 +97,28 @@ _state_destroy :: proc(ptr: rawptr) {
 @(private)
 _snapshot_destroy :: proc(ptr: rawptr) {
 	s := cast(^RenderSnapshot)ptr
-	delete(s.data)
-	delete(s.selected)
+	for &b in s.buffers {
+		delete(b.data)
+		delete(b.selected)
+	}
 	free(ptr)
+}
+
+// Sizes every buffer for `capacity` bodies. Owner-thread only (no reader is
+// running during setup); growing while a reader holds a buffer would free the
+// memory it is reading.
+snapshot_reserve :: proc(s: ^RenderSnapshot, capacity: int) {
+	if capacity <= s.capacity {return}
+	for &b in s.buffers {
+		delete(b.data)
+		delete(b.selected)
+		b.data = make([]Vec3, capacity)
+		b.selected = make([]u8, capacity)
+		b.count = 0
+		sync.atomic_store(&b.state, u32(Snapshot_State.FREE))
+	}
+	sync.atomic_store(&s.published, i32(-1))
+	s.capacity = capacity
 }
 
 physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
@@ -96,7 +136,8 @@ selection_state :: proc(w: ^ecs.World) -> ^Selection_State {
 physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	// Create every pool and resource up front so the physics and graphics
 	// threads only ever read the registries concurrently.
-	_ = ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	snap := ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	snapshot_reserve(snap, max(w.capacity, body_count(w)))
 	sel := ecs.world_resource(w, Selection_State)
 	sel.picked = SELECTION_NONE
 	s := ecs.world_resource(w, Physic_State, _state_destroy)
@@ -451,37 +492,93 @@ adaptive_decide :: proc(
 	return
 }
 
+// Claims a free buffer (FREE -> WRITING) so the writer has somewhere to build the
+// next version. Returns -1 when the reader still holds every other buffer.
+@(private)
+_snapshot_acquire_write :: proc(s: ^RenderSnapshot) -> int {
+	for i in 0 ..< SNAPSHOT_BUFFERS {
+		expected := u32(Snapshot_State.FREE)
+		_, ok := sync.atomic_compare_exchange_strong(
+			&s.buffers[i].state,
+			expected,
+			u32(Snapshot_State.WRITING),
+		)
+		if ok {return i}
+	}
+	return -1
+}
+
+// Copies the pool state into the next buffer and publishes it. Owner thread only.
 physic_snapshot_publish :: proc(w: ^ecs.World) {
 	snapshot := physic_snapshot(w)
 	view := body_view(w)
 	count := len(view.bodies)
-	sync.mutex_lock(&snapshot.mutex)
-	resize(&snapshot.data, count)
-	resize(&snapshot.selected, count)
-	for i in 0 ..< count {
-		entity := view.bodies[i]
-		snapshot.data[i] = Vec3(view.position[entity])
-		snapshot.selected[i] = bool(view.selected[entity]) ? 1 : 0
+	if count > snapshot.capacity {
+		log.errorf(
+			"[PHYSIC] snapshot capacity %d is smaller than the body count %d",
+			snapshot.capacity,
+			count,
+		)
+		return
 	}
-	sync.mutex_unlock(&snapshot.mutex)
+
+	i := _snapshot_acquire_write(snapshot)
+	if i < 0 {
+		// The reader is holding every buffer; skip this version rather than
+		// block the simulation. Rendering keeps the last complete frame.
+		return
+	}
+	buf := &snapshot.buffers[i]
+	buf.count = count
+	for j in 0 ..< count {
+		entity := view.bodies[j]
+		buf.data[j] = Vec3(view.position[entity])
+		buf.selected[j] = bool(view.selected[entity]) ? 1 : 0
+	}
+	sync.atomic_store(&buf.state, u32(Snapshot_State.PUBLISHED))
+	old := sync.atomic_exchange(&snapshot.published, i32(i))
+	if old >= 0 && int(old) != i {
+		// Release the previous version unless the reader has claimed it.
+		expected := u32(Snapshot_State.PUBLISHED)
+		sync.atomic_compare_exchange_strong(
+			&snapshot.buffers[old].state,
+			expected,
+			u32(Snapshot_State.FREE),
+		)
+	}
 }
 
+// Claims the latest published buffer, copies it and releases it. Reader thread
+// only. Returns the number of bodies copied.
 physic_snapshot_read :: proc(
 	snapshot: ^RenderSnapshot,
 	dest: rawptr,
 	dest_selected: rawptr,
 	max_count: int,
 ) -> int {
-	sync.mutex_lock(&snapshot.mutex)
-	n := min(max_count, len(snapshot.data))
-	if n > 0 && dest != nil {
-		mem.copy(dest, raw_data(snapshot.data), n * size_of(Vec3))
+	for _ in 0 ..< 8 {
+		p := sync.atomic_load(&snapshot.published)
+		if p < 0 {return 0}
+		idx := int(p)
+		buf := &snapshot.buffers[idx]
+		expected := u32(Snapshot_State.PUBLISHED)
+		_, ok := sync.atomic_compare_exchange_strong(
+			&buf.state,
+			expected,
+			u32(Snapshot_State.READING),
+		)
+		if !ok {continue}
+		n := min(max_count, buf.count)
+		if n > 0 && dest != nil {
+			mem.copy(dest, raw_data(buf.data), n * size_of(Vec3))
+		}
+		if n > 0 && dest_selected != nil {
+			mem.copy(dest_selected, raw_data(buf.selected), n)
+		}
+		sync.atomic_store(&buf.state, u32(Snapshot_State.FREE))
+		return n
 	}
-	if n > 0 && dest_selected != nil {
-		mem.copy(dest_selected, raw_data(snapshot.selected), n)
-	}
-	sync.mutex_unlock(&snapshot.mutex)
-	return n
+	return 0
 }
 
 _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
