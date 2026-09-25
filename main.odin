@@ -157,7 +157,7 @@ _sim_init :: proc() {
 		sim_file_init()
 	}
 	physic.physic_init(g_world, config^)
-	g_scheduler = ecs.scheduler_create()
+	g_scheduler = ecs.scheduler_create(foundation.default_job_system())
 	physic.physic_register_systems(g_scheduler)
 }
 

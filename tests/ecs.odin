@@ -1,7 +1,9 @@
 package tests
 
 import ecs "../Engine/ecs"
+import found "../foundation"
 import "core:log"
+import "core:sync"
 import "core:testing"
 
 @(private)
@@ -353,6 +355,59 @@ test_ecs_scheduler_cross_phase_dependency :: proc(t: ^testing.T) {
 	ok := ecs.scheduler_finalize(s)
 	context.logger = prev
 	testing.expect(t, !ok, "cross-phase dependencies are rejected")
+}
+
+@(private)
+g_parallel_runs: i32
+
+@(private)
+_sys_par_a :: proc(w: ^ecs.World, dt: f32) -> bool {
+	sync.atomic_add(&g_parallel_runs, 1)
+	return true
+}
+
+@(private)
+_sys_par_b :: proc(w: ^ecs.World, dt: f32) -> bool {
+	sync.atomic_add(&g_parallel_runs, 1)
+	return true
+}
+
+// The two disjoint ANY systems resolve to one wave; the pool path runs in
+// release and the serial fallback in debug, but both must execute.
+@(test)
+test_ecs_scheduler_parallel_wave_runs :: proc(t: ^testing.T) {
+	js: found.Job_System
+	found.job_system_init(&js, 4)
+	defer found.job_system_destroy(&js)
+
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create(&js)
+	defer ecs.scheduler_destroy(s)
+
+	ecs.scheduler_add(
+		s,
+		"par.a",
+		.PHYSICS,
+		_sys_par_a,
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+	ecs.scheduler_add(
+		s,
+		"par.b",
+		.PHYSICS,
+		_sys_par_b,
+		access = ecs.System_Access{writes = {typeid_of(Test_Velocity)}},
+		affinity = .ANY,
+	)
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	testing.expect_value(t, len(s.schedule[.PHYSICS].waves), 1)
+	testing.expect(t, s.schedule[.PHYSICS].waves[0].parallel)
+
+	g_parallel_runs = 0
+	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "wave succeeds")
+	testing.expect_value(t, sync.atomic_load(&g_parallel_runs), i32(2))
 }
 
 @(test)

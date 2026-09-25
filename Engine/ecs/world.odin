@@ -1,5 +1,6 @@
 package ecs
 
+import found "../../foundation"
 import "core:log"
 
 // The world owns the entity registry and every component pool and resource.
@@ -202,6 +203,7 @@ _resource_entry_destroy :: proc($T: typeid) -> proc(ptr: rawptr) {
 // --- Entities ------------------------------------------------------------
 
 world_spawn :: proc(w: ^World) -> Entity {
+	if !_structural_allowed("world_spawn") {return ENTITY_NONE}
 	index: u32
 	if len(w.free) > 0 {
 		index = pop(&w.free)
@@ -233,13 +235,29 @@ world_is_alive :: proc(w: ^World, e: Entity) -> bool {
 // slots are only recycled at `world_flush`, so nothing aliases a live entity
 // mid-tick. The pending operations are visible to the owner thread only.
 world_despawn :: proc(w: ^World, e: Entity) {
+	if !_structural_allowed("world_despawn") {return}
 	if !world_is_alive(w, e) {return}
 	append(&w.deferred, Deferred{entity = e, kind = .DESPAWN})
+}
+
+// Structural changes (spawn/despawn/add/remove components) are only safe on the
+// world's owner thread. Job tasks can run any `.ANY` system, so reject them.
+@(private)
+_structural_allowed :: proc(op: string) -> bool {
+	if found.in_job_task() {
+		log.errorf(
+			"[ECS] %s from a job task is not allowed (structural changes are owner-only)",
+			op,
+		)
+		return false
+	}
+	return true
 }
 
 // Queues a component write for the next `world_flush`. Use this to add a
 // component while iterating a view; `world_set` would relocate `dense` under it.
 world_defer_set :: proc(w: ^World, e: Entity, value: $T) {
+	if !_structural_allowed("world_defer_set") {return}
 	if !world_is_alive(w, e) {return}
 	_ = world_pool(w, T)
 	data := new(T)
@@ -257,6 +275,7 @@ world_defer_set :: proc(w: ^World, e: Entity, value: $T) {
 
 // Queues a component removal for the next `world_flush`.
 world_defer_remove :: proc(w: ^World, e: Entity, $T: typeid) {
+	if !_structural_allowed("world_defer_remove") {return}
 	if !world_is_alive(w, e) {return}
 	_ = world_pool(w, T)
 	append(&w.deferred, Deferred{entity = e, kind = .REMOVE, apply = _deferred_remove(T)})
@@ -279,6 +298,7 @@ _deferred_remove :: proc($T: typeid) -> proc(w: ^World, e: Entity, data: rawptr)
 // clears the queue. Called by the owner thread (the physics loop) at the end of
 // a tick.
 world_flush :: proc(w: ^World) {
+	if !_structural_allowed("world_flush") {return}
 	if len(w.deferred) == 0 {return}
 	for op in w.deferred {
 		switch op.kind {
@@ -367,7 +387,10 @@ world_set :: proc(w: ^World, e: Entity, value: $T) {
 	}
 	p := world_pool(w, T)
 	if p == nil {return}
-	if !pool_has(p, e.index) {w.revision += 1}
+	if !pool_has(p, e.index) {
+		if !_structural_allowed("world_set (add component)") {return}
+		w.revision += 1
+	}
 	pool_set(p, e.index, value)
 }
 
@@ -388,6 +411,8 @@ world_remove :: proc(w: ^World, e: Entity, $T: typeid) {
 	if !world_is_alive(w, e) {return}
 	p := world_pool(w, T)
 	if p == nil {return}
-	if pool_has(p, e.index) {w.revision += 1}
+	if !pool_has(p, e.index) {return}
+	if !_structural_allowed("world_remove") {return}
+	w.revision += 1
 	pool_remove(p, e.index)
 }

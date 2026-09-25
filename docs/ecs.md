@@ -101,11 +101,32 @@ physics thread through the atomic `Selection_State`; `physic.select` applies it 
 ## Scheduler
 
 Systems are plain `proc(w, dt) -> bool` grouped by `Phase` (`PHYSICS` /
-`RENDER`) and run in registration order by `scheduler_run`, which stops at the
-first `false`. `Phase` maps to a thread, not a dependency graph: the physics
-thread runs `PHYSICS`, the graphics thread runs `RENDER`. Deferred structural
-changes are not applied by the scheduler (the phase may run on a non-owning
-thread); the owner flushes explicitly.
+`RENDER`). `scheduler_add` returns a `System_Handle`, and systems declare what
+they must run after with `after = {handles}`. Because a handle only exists for an
+already-registered system, every edge points backwards: the graph is acyclic by
+construction.
+
+`scheduler_finalize` resolves each phase into a list of **waves**. It builds a
+deterministic topological order (ties break by registration order) and groups
+consecutive systems into a wave when they may run together:
+
+- `.CALLER` (default) systems run alone on the phase thread. They are barriers
+  and the safe choice for anything that mutates structure, calls `parallel_for`
+  or touches the renderer.
+- `.ANY` systems may share a wave. They must declare `access = {reads, writes}`
+  (component/resource `typeid`s); the scheduler keeps a system out of a wave if
+  it depends on one already there or if its access conflicts (writer vs
+  anything). `.ANY` is only valid in the owner phase (`PHYSICS`); a `.ANY`
+  system elsewhere is rejected at finalize, because it would run concurrently
+  with the physics thread.
+
+`scheduler_run` walks the waves in order and stops on the first failure. A
+parallel wave runs its systems on the shared job pool (`foundation/job.odin`) and
+waits for all of them before reporting; a failure cannot cancel systems already
+in flight. A debug build executes every wave serially (the resolved grouping is
+identical), which keeps validation and determinism. Deferred structural changes
+are still applied by the owner (`world_flush`), never by the scheduler: a phase
+may run on a non-owning thread.
 
 ## Threading
 
@@ -115,3 +136,12 @@ frozen before the threads start, so afterwards the graphics thread only performs
 concurrent reads of the registries. The physics thread owns all mutations and
 runs `world_flush`; the graphics thread reads only `RenderSnapshot`, which is
 guarded by its own mutex.
+
+`foundation` exposes one help-first job pool shared by the physics solver
+(`parallel_for`) and the scheduler's parallel waves. Workers and any thread
+blocked in `job_system_wait` pull from the same queue, so a job may submit
+children and wait for them without deadlocking. Only the owner phase may run
+`.ANY` systems; structural operations (`world_spawn`/`despawn`, `world_defer_*`,
+`world_flush`, and `world_set`/`remove` that would add or drop a component)
+reject calls made from inside a job task.
+

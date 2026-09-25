@@ -126,7 +126,7 @@ make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 	}
 	physic.physic_init(w, config)
 	ecs.world_freeze(w)
-	s := ecs.scheduler_create()
+	s := ecs.scheduler_create(foundation.default_job_system())
 	physic.physic_register_systems(s)
 	_ = ecs.scheduler_finalize(s)
 	return w, s

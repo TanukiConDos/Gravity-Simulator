@@ -261,6 +261,54 @@ _contact_less :: proc(x, y: physics.Contact) -> bool {
 	return x.b < y.b
 }
 
+// Exercises the real physics registration through the global job pool with the
+// octree solver: gravity nests a parallel_for inside a CALLER system, then the
+// integrate/select wave runs on workers in release builds.
+@(test)
+test_physics_parallel_wave :: proc(t: ^testing.T) {
+	foundation.parallel_init(1)
+	defer foundation.parallel_destroy()
+
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	rand.reset_u64(11)
+	for _ in 0 ..< 1000 {
+		physics.body_spawn(
+			w,
+			{
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+				rand.float32_range(-1e10, 1e10),
+			},
+			{0, 0, 0},
+			6e27,
+			12371e3,
+		)
+	}
+	config := foundation.Config {
+		algorithm             = .OCTREE,
+		theta                 = 0.5,
+		tree_rebuild_interval = 0,
+		max_depth             = 48,
+		min_half_size         = 1e-4,
+		worker_threads        = 1,
+	}
+	physics.physic_init(w, config)
+
+	s := ecs.scheduler_create(foundation.default_job_system())
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
+
+	for _ in 0 ..< 100 {
+		if !ecs.scheduler_run(s, .PHYSICS, w, 0.016) {
+			testing.expectf(t, false, "physics phase failed")
+			return
+		}
+	}
+	testing.expect(t, true, "parallel physics phase ran")
+}
+
 @(test)
 test_body_components :: proc(t: ^testing.T) {
 	w := ecs.world_create()

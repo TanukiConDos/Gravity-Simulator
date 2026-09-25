@@ -2,6 +2,7 @@ package ecs
 
 import found "../../foundation"
 import "core:log"
+import "core:slice"
 
 // Systems are plain procedures grouped by phase. The engine runs the PHYSICS
 // phase on the physics thread and the RENDER phase on the graphics thread. A
@@ -66,16 +67,23 @@ Phase_Schedule :: struct {
 Scheduler :: struct {
 	systems:   [dynamic]System,
 	finalized: bool,
+	jobs:      ^found.Job_System,
 	schedule:  [Phase]Phase_Schedule,
 }
 
-scheduler_create :: proc() -> ^Scheduler {
-	return new(Scheduler)
+scheduler_create :: proc(jobs: ^found.Job_System = nil) -> ^Scheduler {
+	s := new(Scheduler)
+	s.jobs = jobs
+	return s
 }
 
 scheduler_destroy :: proc(s: ^Scheduler) {
 	if s == nil {return}
-	for &sys in s.systems {delete(sys.after)}
+	for &sys in s.systems {
+		delete(sys.after)
+		delete(sys.access.reads)
+		delete(sys.access.writes)
+	}
 	delete(s.systems)
 	for &sch in s.schedule {
 		for &wave in sch.waves {delete(wave.systems)}
@@ -105,7 +113,11 @@ scheduler_add :: proc(
 		access   = access,
 		affinity = affinity,
 	}
+	// The caller's `after`/`access` slices are usually compound literals on its
+	// stack; copy them so the system does not point at a dead frame.
 	for a in after {append(&sys.after, a)}
+	sys.access.reads = slice.clone(access.reads)
+	sys.access.writes = slice.clone(access.writes)
 	h := System_Handle(len(s.systems))
 	append(&s.systems, sys)
 	return h
@@ -149,6 +161,16 @@ scheduler_finalize :: proc(s: ^Scheduler) -> bool {
 				"[ECS] scheduler: .ANY system %q declares no access and may race",
 				sys.name,
 			)
+		}
+		if sys.affinity == .ANY && sys.phase != .PHYSICS {
+			// The pool is shared across phases; only the world's owner phase may
+			// run systems concurrently. A non-owner `.ANY` system would race with
+			// the physics thread.
+			log.errorf(
+				"[ECS] scheduler: %q is .ANY outside the owner phase (PHYSICS-only)",
+				sys.name,
+			)
+			ok = false
 		}
 	}
 	if !ok {return false}
@@ -296,6 +318,12 @@ scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) -> bool {
 		if !scheduler_finalize(s) {return false}
 	}
 	for &wave in s.schedule[phase].waves {
+		// Parallel waves are release-only: a debug build keeps validation and
+		// deterministic ordering, and the wave contents are identical either way.
+		if wave.parallel && s.jobs != nil && len(s.jobs.workers) > 0 && !ODIN_DEBUG {
+			if !_run_wave_parallel(s, &wave, w, dt) {return false}
+			continue
+		}
 		for h in wave.systems {
 			sys := &s.systems[h]
 			found.profile_scope(sys.name)
@@ -303,4 +331,55 @@ scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) -> bool {
 		}
 	}
 	return true
+}
+
+@(private)
+MAX_WAVE_SYSTEMS :: 64
+
+@(private)
+_Wave_Task :: struct {
+	sys: ^System,
+	w:   ^World,
+	dt:  f32,
+	ok:  bool,
+}
+
+// Runs the systems of one wave on the job pool and waits for all of them. A
+// failure cannot cancel the systems already running, so the whole wave finishes
+// before the scheduler reports it.
+@(private)
+_run_wave_parallel :: proc(s: ^Scheduler, wave: ^Wave, w: ^World, dt: f32) -> bool {
+	n := len(wave.systems)
+	if n == 0 {return true}
+	if n > MAX_WAVE_SYSTEMS {
+		assert(false, "scheduler: wave larger than MAX_WAVE_SYSTEMS")
+		return false
+	}
+	tasks: [MAX_WAVE_SYSTEMS]_Wave_Task
+	for h, i in wave.systems {
+		tasks[i] = _Wave_Task {
+			sys = &s.systems[h],
+			w   = w,
+			dt  = dt,
+		}
+	}
+	counter: found.Job_Counter
+	found.job_counter_init(&counter, s.jobs, n)
+	for i in 0 ..< n {
+		found.job_system_submit(s.jobs, _run_wave_task, &tasks[i], &counter)
+	}
+	found.job_system_wait(s.jobs, &counter)
+
+	ok := true
+	for i in 0 ..< n {
+		if !tasks[i].ok {ok = false}
+	}
+	return ok
+}
+
+@(private)
+_run_wave_task :: proc(data: rawptr) {
+	task := cast(^_Wave_Task)data
+	found.profile_scope(task.sys.name)
+	task.ok = task.sys.run(task.w, task.dt)
 }
