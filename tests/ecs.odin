@@ -220,10 +220,49 @@ test_ecs_scheduler_stops_on_failure :: proc(t: ^testing.T) {
 	testing.expect_value(t, string(g_fail_order[:]), "ax")
 }
 
-// Two `.ANY` systems with disjoint access share a wave; a dependency or an
-// access conflict splits it, and `.CALLER` systems are barriers.
+// A failure drops every system that has not started, including ones blocked on
+// the failed system; the phase must still complete and report the failure.
+@(private)
+g_chain_order: [dynamic]u8
+
+@(private)
+_sys_chain_a :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_chain_order, 'a'); return true}
+@(private)
+_sys_chain_x :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_chain_order, 'x'); return false}
+@(private)
+_sys_chain_b :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_chain_order, 'b'); return true}
+
 @(test)
-test_ecs_scheduler_waves :: proc(t: ^testing.T) {
+test_ecs_scheduler_failure_chain :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	a := ecs.scheduler_add(s, "a", .PHYSICS, _sys_chain_a)
+	x := ecs.scheduler_add(s, "x", .PHYSICS, _sys_chain_x, after = {a})
+	ecs.scheduler_add(s, "b", .PHYSICS, _sys_chain_b, after = {x})
+
+	delete(g_chain_order)
+	g_chain_order = {}
+	defer delete(g_chain_order)
+
+	testing.expect(t, !ecs.scheduler_run(s, .PHYSICS, w, 0.016), "failure is reported")
+	testing.expect_value(t, string(g_chain_order[:]), "ax")
+}
+
+@(private)
+_has_edge :: proc(s: ^ecs.Scheduler, from, to: ecs.System_Handle) -> bool {
+	for e in s.schedule[.PHYSICS].successors[int(from)] {
+		if e == to {return true}
+	}
+	return false
+}
+
+// The graph carries the explicit `after` edges plus access-conflict edges
+// between `.ANY` systems; it is the only ordering mechanism.
+@(test)
+test_ecs_scheduler_graph :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()
 	defer ecs.scheduler_destroy(s)
 
@@ -251,26 +290,20 @@ test_ecs_scheduler_waves :: proc(t: ^testing.T) {
 		"d",
 		.PHYSICS,
 		_sys_a,
-		after = {b, c},
+		after = {a},
 		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
 		affinity = .ANY,
 	)
 
 	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
-	waves := s.schedule[.PHYSICS].waves
-	testing.expect_value(t, len(waves), 3)
-	testing.expect_value(t, len(waves[0].systems), 1)
-	testing.expect_value(t, waves[0].systems[0], a)
-	testing.expect(t, !waves[0].parallel, "a CALLER system runs alone")
-
-	testing.expect_value(t, len(waves[1].systems), 2)
-	testing.expect(t, waves[1].parallel, "disjoint ANY systems share a wave")
-	testing.expect_value(t, waves[1].systems[0], b)
-	testing.expect_value(t, waves[1].systems[1], c)
-
-	testing.expect_value(t, len(waves[2].systems), 1)
-	testing.expect_value(t, waves[2].systems[0], d)
-	testing.expect(t, !waves[2].parallel, "a dependency prevents sharing")
+	testing.expect(t, _has_edge(s, a, b), "explicit edge a->b")
+	testing.expect(t, _has_edge(s, a, c), "explicit edge a->c")
+	testing.expect(t, _has_edge(s, a, d), "explicit edge a->d")
+	testing.expect(t, _has_edge(s, b, d), "conflict edge b->d")
+	testing.expect(t, !_has_edge(s, c, d), "disjoint access needs no edge")
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(b)], 1)
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(c)], 1)
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(d)], 2)
 }
 
 @(test)
@@ -278,7 +311,7 @@ test_ecs_scheduler_access_conflict_serializes :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()
 	defer ecs.scheduler_destroy(s)
 
-	ecs.scheduler_add(
+	x := ecs.scheduler_add(
 		s,
 		"x",
 		.PHYSICS,
@@ -286,7 +319,7 @@ test_ecs_scheduler_access_conflict_serializes :: proc(t: ^testing.T) {
 		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
 		affinity = .ANY,
 	)
-	ecs.scheduler_add(
+	y := ecs.scheduler_add(
 		s,
 		"y",
 		.PHYSICS,
@@ -296,9 +329,8 @@ test_ecs_scheduler_access_conflict_serializes :: proc(t: ^testing.T) {
 	)
 
 	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
-	waves := s.schedule[.PHYSICS].waves
-	testing.expect_value(t, len(waves), 2)
-	testing.expect(t, !waves[0].parallel && !waves[1].parallel, "writer vs reader serialises")
+	testing.expect(t, _has_edge(s, x, y), "writer->reader edge serialises")
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(y)], 1)
 }
 
 @(test)
@@ -306,7 +338,7 @@ test_ecs_scheduler_readers_share :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()
 	defer ecs.scheduler_destroy(s)
 
-	ecs.scheduler_add(
+	x := ecs.scheduler_add(
 		s,
 		"x",
 		.PHYSICS,
@@ -314,7 +346,7 @@ test_ecs_scheduler_readers_share :: proc(t: ^testing.T) {
 		access = ecs.System_Access{reads = {typeid_of(Test_Position)}},
 		affinity = .ANY,
 	)
-	ecs.scheduler_add(
+	y := ecs.scheduler_add(
 		s,
 		"y",
 		.PHYSICS,
@@ -324,9 +356,9 @@ test_ecs_scheduler_readers_share :: proc(t: ^testing.T) {
 	)
 
 	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
-	waves := s.schedule[.PHYSICS].waves
-	testing.expect_value(t, len(waves), 1)
-	testing.expect(t, waves[0].parallel, "two readers share a wave")
+	testing.expect(t, !_has_edge(s, x, y) && !_has_edge(s, y, x), "readers share")
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(x)], 0)
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(y)], 0)
 }
 
 @(test)
@@ -372,10 +404,9 @@ _sys_par_b :: proc(w: ^ecs.World, dt: f32) -> bool {
 	return true
 }
 
-// The two disjoint ANY systems resolve to one wave; the pool path runs in
-// release and the serial fallback in debug, but both must execute.
+// Two disjoint ANY systems have no edge between them and both run.
 @(test)
-test_ecs_scheduler_parallel_wave_runs :: proc(t: ^testing.T) {
+test_ecs_scheduler_parallel_nodes_run :: proc(t: ^testing.T) {
 	js: found.Job_System
 	found.job_system_init(&js, 4)
 	defer found.job_system_destroy(&js)
@@ -385,7 +416,7 @@ test_ecs_scheduler_parallel_wave_runs :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create(&js)
 	defer ecs.scheduler_destroy(s)
 
-	ecs.scheduler_add(
+	a := ecs.scheduler_add(
 		s,
 		"par.a",
 		.PHYSICS,
@@ -393,7 +424,7 @@ test_ecs_scheduler_parallel_wave_runs :: proc(t: ^testing.T) {
 		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
 		affinity = .ANY,
 	)
-	ecs.scheduler_add(
+	b := ecs.scheduler_add(
 		s,
 		"par.b",
 		.PHYSICS,
@@ -402,12 +433,70 @@ test_ecs_scheduler_parallel_wave_runs :: proc(t: ^testing.T) {
 		affinity = .ANY,
 	)
 	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
-	testing.expect_value(t, len(s.schedule[.PHYSICS].waves), 1)
-	testing.expect(t, s.schedule[.PHYSICS].waves[0].parallel)
+	testing.expect(t, !_has_edge(s, a, b) && !_has_edge(s, b, a), "disjoint nodes independent")
 
 	g_parallel_runs = 0
-	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "wave succeeds")
+	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "phase succeeds")
 	testing.expect_value(t, sync.atomic_load(&g_parallel_runs), i32(2))
+}
+
+@(private)
+g_graph_order: [dynamic]u8
+
+@(private)
+_sys_graph_a :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_graph_order, 'a'); return true}
+@(private)
+_sys_graph_b :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_graph_order, 'b'); return true}
+@(private)
+_sys_graph_c :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_graph_order, 'c'); return true}
+@(private)
+_sys_graph_d :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_graph_order, 'd'); return true}
+
+// Ready systems start in dependency order and nothing runs before its
+// predecessors; the chain a -> {b, c} -> d is deterministic.
+@(test)
+test_ecs_scheduler_readiness_order :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	a := ecs.scheduler_add(s, "ga", .PHYSICS, _sys_graph_a)
+	b := ecs.scheduler_add(
+		s,
+		"gb",
+		.PHYSICS,
+		_sys_graph_b,
+		after = {a},
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+	c := ecs.scheduler_add(
+		s,
+		"gc",
+		.PHYSICS,
+		_sys_graph_c,
+		after = {a},
+		access = ecs.System_Access{writes = {typeid_of(Test_Velocity)}},
+		affinity = .ANY,
+	)
+	ecs.scheduler_add(
+		s,
+		"gd",
+		.PHYSICS,
+		_sys_graph_d,
+		after = {b, c},
+		access = ecs.System_Access{writes = {typeid_of(Test_Probe)}},
+		affinity = .ANY,
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	delete(g_graph_order)
+	g_graph_order = {}
+	defer delete(g_graph_order)
+
+	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "phase succeeds")
+	testing.expect_value(t, string(g_graph_order[:]), "abcd")
 }
 
 @(test)

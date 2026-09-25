@@ -106,27 +106,32 @@ they must run after with `after = {handles}`. Because a handle only exists for a
 already-registered system, every edge points backwards: the graph is acyclic by
 construction.
 
-`scheduler_finalize` resolves each phase into a list of **waves**. It builds a
-deterministic topological order (ties break by registration order) and groups
-consecutive systems into a wave when they may run together:
+`scheduler_finalize` resolves each phase into an execution graph. It takes the
+explicit `after` edges, adds access-conflict edges between `.ANY` systems
+(writer vs anything, added forward along a deterministic topological order), and
+stores each node's successors and dependency count:
 
-- `.CALLER` (default) systems run alone on the phase thread. They are barriers
-  and the safe choice for anything that mutates structure, calls `parallel_for`
-  or touches the renderer.
-- `.ANY` systems may share a wave. They must declare `access = {reads, writes}`
-  (component/resource `typeid`s); the scheduler keeps a system out of a wave if
-  it depends on one already there or if its access conflicts (writer vs
-  anything). `.ANY` is only valid in the owner phase (`PHYSICS`); a `.ANY`
-  system elsewhere is rejected at finalize, because it would run concurrently
+- `.CALLER` (default) systems are pinned to the phase thread. They are the safe
+  choice for anything that mutates structure, calls `parallel_for` or touches the
+  renderer.
+- `.ANY` systems must declare `access = {reads, writes}` (component/resource
+  `typeid`s); a `.ANY` system with no declaration is rejected at finalize, as is
+  one outside the owner phase (`PHYSICS`-only), because it would run concurrently
   with the physics thread.
 
-`scheduler_run` walks the waves in order and stops on the first failure. A
-parallel wave runs its systems on the shared job pool (`foundation/job.odin`) and
-waits for all of them before reporting; a failure cannot cancel systems already
-in flight. A debug build executes every wave serially (the resolved grouping is
-identical), which keeps validation and determinism. Deferred structural changes
-are still applied by the owner (`world_flush`), never by the scheduler: a phase
-may run on a non-owning thread.
+`scheduler_run` drives one phase to completion: a system becomes **ready** when
+all of its predecessors have finished. Ready `.CALLER` systems run inline on the
+phase thread; ready `.ANY` systems are submitted to the shared job pool
+(`foundation/job.odin`). Each completion releases its successors and wakes the
+runner, which dispatches the newly ready work. The phase finishes when the
+remaining count reaches zero.
+
+A failure sets the phase's failed flag; no further work is released, in-flight
+systems finish, and `scheduler_run` reports false. A debug build keeps `.ANY`
+systems on the phase thread (same graph, serial execution) so validation and
+determinism are easy to reason about. Deferred structural changes are still
+applied by the owner (`world_flush`), never by the scheduler: a phase may run on
+a non-owning thread.
 
 ## Threading
 

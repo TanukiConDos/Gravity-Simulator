@@ -3,17 +3,19 @@ package ecs
 import found "../../foundation"
 import "core:log"
 import "core:slice"
+import "core:sync"
 
 // Systems are plain procedures grouped by phase. The engine runs the PHYSICS
 // phase on the physics thread and the RENDER phase on the graphics thread. A
 // system returns false to abort the phase (a fatal error); the scheduler then
-// stops and reports it to its caller.
+// stops dispatching and reports it to its caller.
 //
-// Within a phase the execution order comes from `scheduler_finalize`, not from
-// registration order: each system may declare which systems it must run after,
-// and the scheduler also serialises systems that touch the same components. The
-// resolved schedule is cached as a list of waves; a wave with more than one
-// system is a set of mutually independent systems.
+// Within a phase execution is driven by a dependency graph resolved in
+// `scheduler_finalize`: each system may declare which systems it must run after,
+// and systems that touch the same components are serialised automatically. A
+// system becomes ready when all of its predecessors have finished; ready
+// `.CALLER` systems run on the phase thread and ready `.ANY` systems are
+// dispatched to the job pool.
 Phase :: enum {
 	PHYSICS,
 	RENDER,
@@ -26,17 +28,18 @@ System_Handle :: distinct u32
 
 INVALID_SYSTEM :: System_Handle(0xFFFFFFFF)
 
-// Whether a system may leave the phase thread and share a wave with others.
-// `.CALLER` (default) runs alone on the phase thread: it is the safe choice for
-// systems that mutate structure, call `parallel_for` or touch the renderer.
+// Where a ready system runs. `.CALLER` (default) is pinned to the phase thread
+// and is the safe choice for anything that mutates structure, calls
+// `parallel_for` or touches the renderer. `.ANY` may be dispatched to the job
+// pool once its dependencies are done.
 Affinity :: enum {
 	CALLER,
 	ANY,
 }
 
-// Declared data access, used only to serialise `.ANY` systems that would
-// otherwise share a wave. A system that touches a component must list it here;
-// callers are trusted to keep the declaration truthful.
+// Declared data access. It is used to serialise `.ANY` systems that touch the
+// same components (writer vs anything) by adding edges to the execution graph.
+// Callers are trusted to keep the declaration truthful.
 System_Access :: struct {
 	reads:  []typeid,
 	writes: []typeid,
@@ -51,17 +54,25 @@ System :: struct {
 	affinity: Affinity,
 }
 
-// A group of systems that can run together: `parallel` is true only when the
-// wave holds more than one `.ANY` system with no dependency or access conflict.
-Wave :: struct {
-	systems:  [dynamic]System_Handle,
-	parallel: bool,
-}
+// Upper bound on registered systems: the executor keeps small per-run scratch
+// arrays on the stack.
+MAX_SYSTEMS :: 128
 
-// Per-phase schedule resolved by `scheduler_finalize`. Public so callers and
-// tests can inspect the order and wave grouping.
+// Per-phase execution graph and its run scratch. `successors[i]` lists the
+// systems that must wait for `i`, `deps[i]` is how many predecessors `i` has.
+// The scratch (`deps_left`, `ready`, ...) is reset at the start of every
+// `scheduler_run`; a phase has exactly one runner thread.
 Phase_Schedule :: struct {
-	waves: [dynamic]Wave,
+	order:      [dynamic]System_Handle,
+	successors: [dynamic][dynamic]System_Handle,
+	deps:       []int,
+	deps_left:  []i32,
+	ready:      [dynamic]System_Handle,
+	to_run:     i32,
+	in_flight:  i32,
+	failed:     bool,
+	mutex:      sync.Mutex,
+	cond:       sync.Cond,
 }
 
 Scheduler :: struct {
@@ -86,8 +97,12 @@ scheduler_destroy :: proc(s: ^Scheduler) {
 	}
 	delete(s.systems)
 	for &sch in s.schedule {
-		for &wave in sch.waves {delete(wave.systems)}
-		delete(sch.waves)
+		delete(sch.order)
+		for &succ in sch.successors {delete(succ)}
+		delete(sch.successors)
+		delete(sch.deps)
+		delete(sch.deps_left)
+		delete(sch.ready)
 	}
 	free(s)
 }
@@ -123,12 +138,17 @@ scheduler_add :: proc(
 	return h
 }
 
-// Resolves the execution order and waves for every phase. Validates names and
-// handles; returns false (and logs) on a duplicate name, an unknown handle or a
-// handle from another phase. Idempotent.
+// Resolves the execution graph for every phase. Validates names and handles and
+// returns false (and logs) on a duplicate name, an unknown handle, a handle from
+// another phase, an `.ANY` system with no declared access, or `.ANY` outside the
+// owner phase. Idempotent.
 scheduler_finalize :: proc(s: ^Scheduler) -> bool {
 	if s.finalized {return true}
 	ok := true
+	if len(s.systems) > MAX_SYSTEMS {
+		log.errorf("[ECS] scheduler: %d systems exceed MAX_SYSTEMS", len(s.systems))
+		return false
+	}
 	for i in 0 ..< len(s.systems) {
 		for j in i + 1 ..< len(s.systems) {
 			if s.systems[i].name == s.systems[j].name {
@@ -156,21 +176,26 @@ scheduler_finalize :: proc(s: ^Scheduler) -> bool {
 				ok = false
 			}
 		}
-		if sys.affinity == .ANY && len(sys.access.reads) == 0 && len(sys.access.writes) == 0 {
-			log.warnf(
-				"[ECS] scheduler: .ANY system %q declares no access and may race",
-				sys.name,
-			)
-		}
-		if sys.affinity == .ANY && sys.phase != .PHYSICS {
-			// The pool is shared across phases; only the world's owner phase may
-			// run systems concurrently. A non-owner `.ANY` system would race with
-			// the physics thread.
-			log.errorf(
-				"[ECS] scheduler: %q is .ANY outside the owner phase (PHYSICS-only)",
-				sys.name,
-			)
-			ok = false
+		if sys.affinity == .ANY {
+			if len(sys.access.reads) == 0 && len(sys.access.writes) == 0 {
+				// Dynamic dispatch relies on the declared access to serialise
+				// conflicting systems; an empty declaration is unsafe.
+				log.errorf(
+					"[ECS] scheduler: .ANY system %q declares no access",
+					sys.name,
+				)
+				ok = false
+			}
+			if sys.phase != .PHYSICS {
+				// The pool is shared across phases; only the world's owner phase
+				// may run systems concurrently. A non-owner `.ANY` system would
+				// race with the physics thread.
+				log.errorf(
+					"[ECS] scheduler: %q is .ANY outside the owner phase (PHYSICS-only)",
+					sys.name,
+				)
+				ok = false
+			}
 		}
 	}
 	if !ok {return false}
@@ -183,42 +208,43 @@ scheduler_finalize :: proc(s: ^Scheduler) -> bool {
 	return ok
 }
 
-// Topologically orders one phase by explicit dependencies (deterministic: ties
-// break by registration order) and groups the result into waves. Consecutive
-// `.ANY` systems join a wave while they depend on nothing inside it and conflict
-// with none of its members; `.CALLER` systems are barriers that run alone.
+// Builds one phase's graph: explicit `after` edges plus access-conflict edges
+// between `.ANY` systems, then a deterministic topological order. Conflict
+// edges are added forward along that order, so it stays acyclic and the relative
+// order of conflicting systems is deterministic.
 @(private)
 _build_schedule :: proc(s: ^Scheduler, phase: Phase) -> bool {
+	n := len(s.systems)
+	sch := &s.schedule[phase]
+	sch.successors = make([dynamic][dynamic]System_Handle, n)
+	for i in 0 ..< n {sch.successors[i] = make([dynamic]System_Handle, 0, 4)}
+
 	indices := make([dynamic]int, 0, 8)
 	defer delete(indices)
-	for i in 0 ..< len(s.systems) {
+	for i in 0 ..< n {
 		if s.systems[i].phase == phase {append(&indices, i)}
 	}
-	if len(indices) == 0 {return true}
 
-	n := len(s.systems)
-	adj := make([dynamic][dynamic]int, n)
-	defer {
-		for &a in adj {delete(a)}
-		delete(adj)
-	}
-	indeg := make([]int, n)
-	defer delete(indeg)
-	for i in 0 ..< n {adj[i] = make([dynamic]int, 0, 4)}
-
+	// Explicit dependency edges.
 	for i in indices {
 		for a in s.systems[i].after {
 			if int(a) >= n {continue}
-			append(&adj[int(a)], i)
-			indeg[i] += 1
+			append(&sch.successors[int(a)], System_Handle(i))
 		}
 	}
 
+	// Deterministic topological order (ties break by registration order).
+	indeg := make([]int, n)
+	defer delete(indeg)
+	for i in 0 ..< n {
+		for succ in sch.successors[i] {indeg[int(succ)] += 1}
+	}
 	order := make([dynamic]int, 0, len(indices))
 	defer delete(order)
 	done := make([]bool, n)
 	defer delete(done)
-	for len(order) < len(indices) {
+	remaining := len(indices)
+	for remaining > 0 {
 		pick := -1
 		for i in indices {
 			if !done[i] && indeg[i] == 0 {
@@ -232,55 +258,36 @@ _build_schedule :: proc(s: ^Scheduler, phase: Phase) -> bool {
 		}
 		done[pick] = true
 		append(&order, pick)
-		for j in adj[pick] {if !done[j] {indeg[j] -= 1}}
+		remaining -= 1
+		for succ in sch.successors[pick] {
+			if !done[int(succ)] {indeg[int(succ)] -= 1}
+		}
 	}
 
-	waves := &s.schedule[phase].waves
-	current := make([dynamic]int, 0, 4)
-	defer delete(current)
-	for h in order {
-		sys := &s.systems[h]
-		if sys.affinity != .ANY {
-			_wave_flush(waves, &current)
-			append(waves, _singleton_wave(h))
-			continue
-		}
-		can_join := true
-		for c in current {
-			if _depends_on(sys, System_Handle(c)) || _conflicts(sys, &s.systems[c]) {
-				can_join = false
-				break
+	// Access-conflict edges between `.ANY` systems, pointing forward in `order`.
+	for ii in 0 ..< len(order) {
+		for jj in ii + 1 ..< len(order) {
+			a := &s.systems[order[ii]]
+			b := &s.systems[order[jj]]
+			if a.affinity != .ANY || b.affinity != .ANY {continue}
+			if _conflicts(a, b) {
+				append(&sch.successors[order[ii]], System_Handle(order[jj]))
 			}
 		}
-		if !can_join {_wave_flush(waves, &current)}
-		append(&current, h)
 	}
-	_wave_flush(waves, &current)
+
+	// Final dependency counts and run scratch.
+	clear(&sch.order)
+	for h in order {append(&sch.order, System_Handle(h))}
+	delete(sch.deps)
+	sch.deps = make([]int, n)
+	for i in 0 ..< n {
+		for succ in sch.successors[i] {sch.deps[int(succ)] += 1}
+	}
+	delete(sch.deps_left)
+	sch.deps_left = make([]i32, n)
+	clear(&sch.ready)
 	return true
-}
-
-@(private)
-_singleton_wave :: proc(h: int) -> Wave {
-	w := Wave{}
-	append(&w.systems, System_Handle(h))
-	return w
-}
-
-@(private)
-_wave_flush :: proc(waves: ^[dynamic]Wave, current: ^[dynamic]int) {
-	if len(current^) == 0 {return}
-	w := Wave{parallel = len(current^) > 1}
-	for h in current^ {append(&w.systems, System_Handle(h))}
-	append(waves, w)
-	clear(current)
-}
-
-@(private)
-_depends_on :: proc(sys: ^System, h: System_Handle) -> bool {
-	for a in sys.after {
-		if a == h {return true}
-	}
-	return false
 }
 
 @(private)
@@ -299,87 +306,160 @@ _conflicts :: proc(a, b: ^System) -> bool {
 _log_schedule :: proc(s: ^Scheduler) {
 	for phase in ([]Phase{.PHYSICS, .RENDER}) {
 		sch := &s.schedule[phase]
-		if len(sch.waves) == 0 {continue}
+		if len(sch.order) == 0 {continue}
 		log.debugf("[ECS] schedule %v:", phase)
-		for &wave in sch.waves {
-			for h in wave.systems {
-				log.debugf("  %v %q", wave.parallel ? "||" : "->", s.systems[h].name)
-			}
+		for h in sch.order {
+			log.debugf("  %q deps=%d", s.systems[h].name, sch.deps[h])
 		}
 	}
 }
 
-// Runs every wave of `phase` in order and returns false as soon as a system
-// fails (or, for a parallel wave, once every system in flight has reported).
-// Deferred structural changes are not applied here: the phase may run on a
-// non-owning thread, so the world's owner flushes explicitly.
+// Runs one phase to completion and returns false if any system failed.
+//
+// The call drives one runner (the phase thread): it takes the currently ready
+// systems, runs `.CALLER` ones inline and submits `.ANY` ones to the pool, then
+// sleeps until a completion makes more work ready. A completion decrements its
+// successors and re-seeds the ready set. Deferred structural changes are not
+// applied here: the owner thread flushes explicitly.
 scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) -> bool {
 	if !s.finalized {
 		if !scheduler_finalize(s) {return false}
 	}
-	for &wave in s.schedule[phase].waves {
-		// Parallel waves are release-only: a debug build keeps validation and
-		// deterministic ordering, and the wave contents are identical either way.
-		if wave.parallel && s.jobs != nil && len(s.jobs.workers) > 0 && !ODIN_DEBUG {
-			if !_run_wave_parallel(s, &wave, w, dt) {return false}
+	exec := &s.schedule[phase]
+	if len(exec.order) == 0 {return true}
+
+	sync.mutex_lock(&exec.mutex)
+	for i in 0 ..< len(exec.deps_left) {exec.deps_left[i] = i32(exec.deps[i])}
+	clear(&exec.ready)
+	exec.to_run = i32(len(exec.order))
+	exec.in_flight = 0
+	exec.failed = false
+	for h in exec.order {
+		if exec.deps_left[h] == 0 {append(&exec.ready, h)}
+	}
+	sync.mutex_unlock(&exec.mutex)
+
+	tasks: [MAX_SYSTEMS]_Node_Task
+	batch: [MAX_SYSTEMS]System_Handle
+
+	for {
+		sync.mutex_lock(&exec.mutex)
+		if exec.to_run <= 0 && exec.in_flight <= 0 {
+			sync.mutex_unlock(&exec.mutex)
+			break
+		}
+		count := len(exec.ready)
+		if count > MAX_SYSTEMS {count = MAX_SYSTEMS}
+		for i in 0 ..< count {batch[i] = exec.ready[i]}
+		clear(&exec.ready)
+		sync.mutex_unlock(&exec.mutex)
+
+		if count == 0 {
+			// Help the pool while waiting so the phase does not lose a wakeup
+			// round-trip to the OS. `try_run_one` takes the job lock, never
+			// `exec.mutex`, so it is safe here.
+			if s.jobs != nil && found.job_system_try_run_one(s.jobs) {
+				continue
+			}
+			sync.mutex_lock(&exec.mutex)
+			if exec.to_run <= 0 && exec.in_flight <= 0 {
+				sync.mutex_unlock(&exec.mutex)
+				break
+			}
+			if len(exec.ready) > 0 {
+				sync.mutex_unlock(&exec.mutex)
+				continue
+			}
+			if exec.to_run > 0 && exec.in_flight <= 0 {
+				// No runnable work and nothing in flight: the graph stalled.
+				log.errorf("[ECS] scheduler: stalled with %d systems left", exec.to_run)
+				sync.mutex_unlock(&exec.mutex)
+				break
+			}
+			sync.cond_wait(&exec.cond, &exec.mutex)
+			sync.mutex_unlock(&exec.mutex)
 			continue
 		}
-		for h in wave.systems {
+
+		for i in 0 ..< count {
+			h := batch[i]
+			sync.mutex_lock(&exec.mutex)
+			failed := exec.failed
+			if !failed {
+				exec.to_run -= 1
+				exec.in_flight += 1
+			}
+			sync.mutex_unlock(&exec.mutex)
+			if failed {
+				// Already dropping the rest of the phase; nothing to release.
+				continue
+			}
 			sys := &s.systems[h]
-			found.profile_scope(sys.name)
-			if !sys.run(w, dt) {return false}
+			if sys.affinity == .ANY &&
+			   s.jobs != nil &&
+			   len(s.jobs.workers) > 0 &&
+			   !ODIN_DEBUG {
+				tasks[h] = _Node_Task {
+					s      = s,
+					exec   = exec,
+					handle = h,
+					w      = w,
+					dt     = dt,
+				}
+				found.job_system_submit(s.jobs, _run_node_job, &tasks[h], nil)
+			} else {
+				found.profile_scope(sys.name)
+				ok := sys.run(w, dt)
+				_node_complete(s, exec, h, ok)
+			}
 		}
 	}
-	return true
+
+	sync.mutex_lock(&exec.mutex)
+	failed := exec.failed
+	sync.mutex_unlock(&exec.mutex)
+	return !failed
 }
 
 @(private)
-MAX_WAVE_SYSTEMS :: 64
-
-@(private)
-_Wave_Task :: struct {
-	sys: ^System,
-	w:   ^World,
-	dt:  f32,
-	ok:  bool,
+_Node_Task :: struct {
+	s:      ^Scheduler,
+	exec:   ^Phase_Schedule,
+	handle: System_Handle,
+	w:      ^World,
+	dt:     f32,
 }
 
-// Runs the systems of one wave on the job pool and waits for all of them. A
-// failure cannot cancel the systems already running, so the whole wave finishes
-// before the scheduler reports it.
 @(private)
-_run_wave_parallel :: proc(s: ^Scheduler, wave: ^Wave, w: ^World, dt: f32) -> bool {
-	n := len(wave.systems)
-	if n == 0 {return true}
-	if n > MAX_WAVE_SYSTEMS {
-		assert(false, "scheduler: wave larger than MAX_WAVE_SYSTEMS")
-		return false
-	}
-	tasks: [MAX_WAVE_SYSTEMS]_Wave_Task
-	for h, i in wave.systems {
-		tasks[i] = _Wave_Task {
-			sys = &s.systems[h],
-			w   = w,
-			dt  = dt,
+_run_node_job :: proc(data: rawptr) {
+	task := cast(^_Node_Task)data
+	sys := &task.s.systems[task.handle]
+	found.profile_scope(sys.name)
+	ok := sys.run(task.w, task.dt)
+	_node_complete(task.s, task.exec, task.handle, ok)
+}
+
+// Marks one dispatched node finished: when it succeeded, release its successors;
+// otherwise set the phase's failed flag and drop all work that has not started.
+// Always wakes the runner.
+@(private)
+_node_complete :: proc(
+	s: ^Scheduler,
+	exec: ^Phase_Schedule,
+	h: System_Handle,
+	ok: bool,
+) {
+	sync.mutex_lock(&exec.mutex)
+	if !ok {
+		exec.failed = true
+		exec.to_run = 0
+	} else if !exec.failed {
+		for succ in exec.successors[h] {
+			exec.deps_left[succ] -= 1
+			if exec.deps_left[succ] == 0 {append(&exec.ready, succ)}
 		}
 	}
-	counter: found.Job_Counter
-	found.job_counter_init(&counter, s.jobs, n)
-	for i in 0 ..< n {
-		found.job_system_submit(s.jobs, _run_wave_task, &tasks[i], &counter)
-	}
-	found.job_system_wait(s.jobs, &counter)
-
-	ok := true
-	for i in 0 ..< n {
-		if !tasks[i].ok {ok = false}
-	}
-	return ok
-}
-
-@(private)
-_run_wave_task :: proc(data: rawptr) {
-	task := cast(^_Wave_Task)data
-	found.profile_scope(task.sys.name)
-	task.ok = task.sys.run(task.w, task.dt)
+	exec.in_flight -= 1
+	sync.cond_signal(&exec.cond)
+	sync.mutex_unlock(&exec.mutex)
 }

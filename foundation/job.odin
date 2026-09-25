@@ -121,6 +121,13 @@ job_system_wait :: proc(js: ^Job_System, counter: ^Job_Counter) {
 	}
 }
 
+// Runs one queued task if there is any, helping progress without blocking.
+// Returns false when the queue is empty. Used by a runner that is otherwise
+// idle so it does not just sleep on a wakeup.
+job_system_try_run_one :: proc(js: ^Job_System) -> bool {
+	return _job_try_run_one(js)
+}
+
 @(private)
 _job_try_run_one :: proc(js: ^Job_System) -> bool {
 	sync.mutex_lock(&js.mutex)
