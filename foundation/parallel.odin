@@ -22,7 +22,7 @@ parallel_worker_count :: proc() -> int {
 }
 
 parallel_for :: proc(fn: proc(index: int, data: rawptr), data: rawptr, count: int) {
-	job_system_parallel_for(&g_job_system, fn, data, count)
+	job_system_parallel_chunks(&g_job_system, fn, data, count)
 }
 
 // The app-wide pool, shared by the physics solver and the system scheduler.

@@ -101,6 +101,18 @@ job_system_submit :: proc(
 	sync.mutex_unlock(&js.mutex)
 }
 
+// Appends a batch of tasks under a single lock and wakes the workers once. Used
+// by the chunked `parallel_for`, where one lock per task would dominate.
+job_system_submit_batch :: proc(js: ^Job_System, jobs: []Job, counter: ^Job_Counter) {
+	if len(jobs) == 0 {return}
+	sync.mutex_lock(&js.mutex)
+	for job in jobs {
+		append(&js.queue, Job{run = job.run, data = job.data, counter = counter})
+	}
+	sync.cond_broadcast(&js.cond)
+	sync.mutex_unlock(&js.mutex)
+}
+
 // Blocks until `counter` reaches zero, running queued tasks while it waits. Any
 // thread may call this, including one already running a task (nested wait).
 job_system_wait :: proc(js: ^Job_System, counter: ^Job_Counter) {
@@ -255,4 +267,69 @@ _range_driver :: proc(data: rawptr) {
 		end := min(start + state.chunk, state.count)
 		for i in start ..< end {state.fn(i, state.data)}
 	}
+}
+
+// --- Chunked parallel for -------------------------------------------------
+
+// Upper bound on chunk tasks per range; keeps the per-call descriptor arrays on
+// the stack. Real chunk counts are the worker count times
+// `PARALLEL_CHUNKS_PER_WORKER`, far below this.
+MAX_CHUNKS :: 1024
+
+@(private)
+_Chunk :: struct {
+	fn:    proc(index: int, data: rawptr),
+	data:  rawptr,
+	start: int,
+	end:   int,
+}
+
+@(private)
+_run_chunk :: proc(data: rawptr) {
+	c := cast(^_Chunk)data
+	for i in c.start ..< c.end {c.fn(i, c.data)}
+}
+
+// Runs `fn(i, data)` for `i` in `[0, count)` as one job per chunk, so every chunk
+// is an individually schedulable task. The caller waits (and helps) on a counter
+// that spans the chunks. Chunk descriptors live on the caller's stack, which is
+// valid because the call blocks until every chunk has finished.
+job_system_parallel_chunks :: proc(
+	js: ^Job_System,
+	fn: proc(index: int, data: rawptr),
+	data: rawptr,
+	count: int,
+) {
+	if count <= 0 {return}
+	if count < PARALLEL_MIN || js == nil || len(js.workers) == 0 {
+		for i in 0 ..< count {fn(i, data)}
+		return
+	}
+	worker_count := len(js.workers)
+	if worker_count > count {worker_count = count}
+	target_chunks := worker_count * PARALLEL_CHUNKS_PER_WORKER
+	chunk := (count + target_chunks - 1) / target_chunks
+	if chunk < PARALLEL_MIN_CHUNK {chunk = PARALLEL_MIN_CHUNK}
+	chunks := (count + chunk - 1) / chunk
+	if chunks > MAX_CHUNKS {
+		chunk = (count + MAX_CHUNKS - 1) / MAX_CHUNKS
+		chunks = (count + chunk - 1) / chunk
+	}
+
+	ctx: [MAX_CHUNKS]_Chunk = ---
+	jobs: [MAX_CHUNKS]Job = ---
+	counter: Job_Counter
+	job_counter_init(&counter, js, chunks)
+	for k in 0 ..< chunks {
+		start := k * chunk
+		ctx[k] = _Chunk {
+			fn    = fn,
+			data  = data,
+			start = start,
+			end   = min(start + chunk, count),
+		}
+		jobs[k] = Job{run = _run_chunk, data = &ctx[k], counter = &counter}
+	}
+	job_system_submit_batch(js, jobs[:chunks], &counter)
+	job_system_wait(js, &counter)
 }

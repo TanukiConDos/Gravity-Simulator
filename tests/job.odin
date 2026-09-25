@@ -47,6 +47,17 @@ test_job_system_parallel_for :: proc(t: ^testing.T) {
 	testing.expect_value(t, sum, i64(10000 * 9999 / 2))
 }
 
+@(test)
+test_job_system_parallel_chunks :: proc(t: ^testing.T) {
+	js: found.Job_System
+	found.job_system_init(&js, 4)
+	defer found.job_system_destroy(&js)
+
+	sum: i64
+	found.job_system_parallel_chunks(&js, _range_add, &sum, 10000)
+	testing.expect_value(t, sum, i64(10000 * 9999 / 2))
+}
+
 @(private)
 _Nested_Ctx :: struct {
 	js: ^found.Job_System,

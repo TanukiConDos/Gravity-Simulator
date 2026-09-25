@@ -118,9 +118,10 @@ stage.
   worker busy. At 1k (depth 16, interval=50) going from 1 to 16 workers takes
   2.00 ms/tick to 0.285 ms at `theta=0.5` (7.0x) and 0.50 to 0.093 ms at
   `theta=1.0` (5.3x); scaling is monotonic through 16 workers.
-- **The solver shares a general job pool.** `parallel_for` submits a handful of
-  driver tasks that claim chunks from an atomic cursor; the same pool runs the
-  scheduler's parallel waves. The help-first queue is a little heavier than the
-  old dedicated range loop: measured back to back at 10k it costs ~2% (1k is
-  within noise), so it buys generality, not speed.
+- **The solver submits one job per chunk.** `parallel_for` schedules each
+  adaptive chunk as an individual task on the shared job pool, and the scheduler
+  runs ready `.ANY` systems on the same pool. Compared with the previous
+  driver-tasks-plus-cursor scheme, measured back to back, it is ~10% faster at 1k
+  (0.53 vs 0.59 ms median) and on par at 10k: finer task granularity lets the
+  queue balance the uneven tree traversal that the single atomic cursor did not.
 

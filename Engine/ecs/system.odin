@@ -339,8 +339,8 @@ scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) -> bool {
 	}
 	sync.mutex_unlock(&exec.mutex)
 
-	tasks: [MAX_SYSTEMS]_Node_Task
-	batch: [MAX_SYSTEMS]System_Handle
+	tasks: [MAX_SYSTEMS]_Node_Task = ---
+	batch: [MAX_SYSTEMS]System_Handle = ---
 
 	for {
 		sync.mutex_lock(&exec.mutex)

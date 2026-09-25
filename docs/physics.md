@@ -6,7 +6,7 @@ Octree collision is **folded into the gravity traversal**: a node accepted by th
 
 The physics thread runs a **fixed-timestep** loop: one `PHYSICS` phase every 1/60 s of real time, each advancing `(1/60) * time` sim-seconds. An accumulator paces the loop; if the solver cannot keep up, the accumulator caps at 16 pending steps (the sim slows down rather than taking huge, unstable timesteps).
 
-The octree gravity solver is split across `worker_threads` via `foundation.parallel_for` (a fork-join worker pool with an adaptive chunk size — see `docs/benchmark.md`). The tree itself is read-only during solve, so per-body queries are embarrassingly parallel.
+The octree gravity solver is split across `worker_threads` via `foundation.parallel_for`, which schedules one job per adaptive chunk on the shared help-first job pool (see `docs/benchmark.md`). The tree itself is read-only during solve, so per-body queries are embarrassingly parallel.
 
 Hot-path traversal stacks (`_calc_force`, `_calc_force_collect`) skip zero-initialization; every slot is written before it is read. Zero-initializing them cost ~5–12% of the tick at 100k bodies with `theta >= 0.75` (measured with the fold enabled; without it the effect was larger).
 
