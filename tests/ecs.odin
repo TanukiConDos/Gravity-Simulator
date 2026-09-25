@@ -41,7 +41,7 @@ test_ecs_spawn_despawn :: proc(t: ^testing.T) {
 
 	ecs.world_despawn(w, a)
 	testing.expect(t, ecs.world_is_alive(w, a), "despawn is deferred until flush")
-	ecs.world_flush_despawns(w)
+	ecs.world_flush(w)
 	testing.expect(t, !ecs.world_is_alive(w, a), "flushed entity must be dead")
 
 	c := ecs.world_spawn(w)
@@ -134,7 +134,7 @@ test_ecs_flush_clears_all_pools :: proc(t: ^testing.T) {
 	ecs.world_set(w, e, Test_Velocity{2, 2, 2})
 
 	ecs.world_despawn(w, e)
-	ecs.world_flush_despawns(w)
+	ecs.world_flush(w)
 
 	testing.expect_value(t, len(ecs.world_pool(w, Test_Position).dense), 0)
 	testing.expect_value(t, len(ecs.world_pool(w, Test_Velocity).dense), 0)
@@ -158,11 +158,23 @@ test_ecs_resource :: proc(t: ^testing.T) {
 g_scheduler_order: [dynamic]u8
 
 @(private)
-_sys_a :: proc(w: ^ecs.World, dt: f32) {append(&g_scheduler_order, 'a')}
+_sys_a :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_scheduler_order, 'a'); return true}
 @(private)
-_sys_b :: proc(w: ^ecs.World, dt: f32) {append(&g_scheduler_order, 'b')}
+_sys_b :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_scheduler_order, 'b'); return true}
 @(private)
-_sys_r :: proc(w: ^ecs.World, dt: f32) {append(&g_scheduler_order, 'r')}
+_sys_r :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_scheduler_order, 'r'); return true}
+
+// Separate log for the failure test: the runner executes tests concurrently, so
+// tests must not share mutable globals.
+@(private)
+g_fail_order: [dynamic]u8
+
+@(private)
+_sys_fail_a :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_fail_order, 'a'); return true}
+@(private)
+_sys_fail_x :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_fail_order, 'x'); return false}
+@(private)
+_sys_fail_b :: proc(w: ^ecs.World, dt: f32) -> bool {append(&g_fail_order, 'b'); return true}
 
 @(test)
 test_ecs_scheduler_phase_order :: proc(t: ^testing.T) {
@@ -179,9 +191,95 @@ test_ecs_scheduler_phase_order :: proc(t: ^testing.T) {
 	g_scheduler_order = {}
 	defer delete(g_scheduler_order)
 
-	ecs.scheduler_run(s, .PHYSICS, w, 0.016)
+	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "phase succeeds")
 	testing.expect_value(t, string(g_scheduler_order[:]), "ab")
 
-	ecs.scheduler_run(s, .RENDER, w, 0.016)
+	testing.expect(t, ecs.scheduler_run(s, .RENDER, w, 0.016), "render phase succeeds")
 	testing.expect_value(t, string(g_scheduler_order[:]), "abr")
+}
+
+@(test)
+test_ecs_scheduler_stops_on_failure :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	ecs.scheduler_add(s, "a", .PHYSICS, _sys_fail_a)
+	ecs.scheduler_add(s, "fail", .PHYSICS, _sys_fail_x)
+	ecs.scheduler_add(s, "b", .PHYSICS, _sys_fail_b)
+
+	delete(g_fail_order)
+	g_fail_order = {}
+	defer delete(g_fail_order)
+
+	testing.expect(t, !ecs.scheduler_run(s, .PHYSICS, w, 0.016), "failure is reported")
+	testing.expect_value(t, string(g_fail_order[:]), "ax")
+}
+
+@(test)
+test_ecs_deferred_changes :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+
+	a := ecs.world_spawn(w)
+	b := ecs.world_spawn(w)
+	ecs.world_set(w, a, Test_Position{1, 0, 0})
+	ecs.world_set(w, b, Test_Position{2, 0, 0})
+	ecs.world_set(w, b, Test_Velocity{3, 0, 0})
+
+	// Queued changes are invisible until the flush, which is what lets a system
+	// add/remove components while iterating a view.
+	ecs.world_defer_set(w, a, Test_Velocity{4, 0, 0})
+	ecs.world_defer_remove(w, b, Test_Velocity)
+	testing.expect(t, !ecs.world_has(w, a, Test_Velocity), "deferred set is not applied yet")
+	testing.expect(t, ecs.world_has(w, b, Test_Velocity), "deferred remove is not applied yet")
+
+	ecs.world_flush(w)
+	testing.expect(t, ecs.world_has(w, a, Test_Velocity))
+	testing.expect_value(t, ecs.world_get(w, a, Test_Velocity).x, f32(4))
+	testing.expect(t, !ecs.world_has(w, b, Test_Velocity))
+	testing.expect(t, ecs.world_validate(w), "world stays consistent")
+}
+
+@(test)
+test_ecs_reserve_freeze :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+
+	ecs.world_reserve(w, 2)
+	a := ecs.world_spawn(w)
+	b := ecs.world_spawn(w)
+	ecs.world_set(w, a, Test_Position{1, 0, 0})
+	ecs.world_freeze(w)
+
+	c := ecs.world_spawn(w)
+	testing.expect(t, c == ecs.ENTITY_NONE, "spawning past capacity after freeze fails")
+	testing.expect(t, ecs.world_is_alive(w, a) && ecs.world_is_alive(w, b))
+
+	// Within the reserved capacity the columns are already there and usable.
+	ecs.world_set(w, b, Test_Position{2, 0, 0})
+	testing.expect_value(t, ecs.world_get(w, b, Test_Position).x, f32(2))
+	testing.expect(t, ecs.world_validate(w))
+}
+
+@(test)
+test_ecs_generation_retires_slot :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+
+	a := ecs.world_spawn(w)
+	// Simulate a slot that has been recycled to the end of its generation range.
+	w.generations[a.index] = ecs.MAX_U32
+	stale := ecs.Entity{index = a.index, generation = ecs.MAX_U32}
+	ecs.world_despawn(w, stale)
+	ecs.world_flush(w)
+
+	testing.expect(t, !ecs.world_is_alive(w, stale))
+	testing.expect_value(t, w.generations[a.index], ecs.MAX_U32)
+	testing.expect(t, len(w.free) == 0, "wrapped slot must not be recycled")
+
+	b := ecs.world_spawn(w)
+	testing.expect(t, b.index != a.index, "retired slot is never reused")
+	testing.expect(t, ecs.world_validate(w))
 }

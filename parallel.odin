@@ -11,7 +11,6 @@ import "core:time"
 SimulationContext :: struct {
 	world:      ^ecs.World,
 	scheduler:  ^ecs.Scheduler,
-	renderer:   ^graphic.Renderer,
 	window:     ^graphic.Window,
 	frame_time: f32,
 	tick_time:  f32,
@@ -59,7 +58,13 @@ _physics_thread :: proc(th: ^thread.Thread) {
 		if accumulator >= FIXED_STEP_SEC {
 			foundation.profile_scope("physics.step")
 			for accumulator >= FIXED_STEP_SEC {
-				ecs.scheduler_run(ctx.scheduler, .PHYSICS, ctx.world, sim_dt)
+				if !ecs.scheduler_run(ctx.scheduler, .PHYSICS, ctx.world, sim_dt) {
+					sync.atomic_store(&ctx.exit, true)
+					break
+				}
+				// The physics thread owns the world: apply deferred structural
+				// changes here, never from the graphics phase.
+				ecs.world_flush(ctx.world)
 				accumulator -= FIXED_STEP_SEC
 				updates += 1
 			}
@@ -97,13 +102,10 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 		frame_start := time.tick_now()
 		{
 			foundation.profile_scope_args("graphics.frame", "dt=%.4f", {delta})
-			ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta)
-			{
-				foundation.profile_scope("graphics.draw")
-				if ok := graphic.renderer_draw_frame(ctx.renderer); !ok {
-					sync.atomic_store(&ctx.exit, true)
-					break
-				}
+			// The render system draws the frame; a false result is fatal.
+			if !ecs.scheduler_run(ctx.scheduler, .RENDER, ctx.world, delta) {
+				sync.atomic_store(&ctx.exit, true)
+				break
 			}
 		}
 		sync.atomic_store(

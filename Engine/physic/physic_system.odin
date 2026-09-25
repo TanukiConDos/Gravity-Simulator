@@ -138,10 +138,10 @@ physic_register_systems :: proc(s: ^ecs.Scheduler) {
 	ecs.scheduler_add(s, "physic.adapt", .PHYSICS, physic_system_adapt)
 }
 
-physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) {
+physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
-	if len(bodies) == 0 {return}
+	if len(bodies) == 0 {return true}
 	state.tick_start = time.tick_now()
 
 	acc := ecs.world_pool(w, Acceleration).data
@@ -151,12 +151,13 @@ physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) {
 		found.profile_scope("tree.ensure")
 		_ensure_tree(state, w, delta_time)
 	}
+	return true
 }
 
-physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) {
+physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
-	if len(bodies) == 0 {return}
+	if len(bodies) == 0 {return true}
 	seconds := f64(delta_time)
 
 	switch state.algorithm {
@@ -175,12 +176,13 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) {
 			_octree_solve(state, bodies, seconds)
 		}
 	}
+	return true
 }
 
-physic_system_collision :: proc(w: ^ecs.World, _: f32) {
+physic_system_collision :: proc(w: ^ecs.World, _: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
-	if len(bodies) < 2 {return}
+	if len(bodies) < 2 {return true}
 
 	switch state.algorithm {
 	case .BRUTE_FORCE:
@@ -189,12 +191,13 @@ physic_system_collision :: proc(w: ^ecs.World, _: f32) {
 	case .OCTREE:
 		if state.tree != nil {_collision_resolve(state, w)}
 	}
+	return true
 }
 
-physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) {
+physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
-	if len(bodies) == 0 {return}
+	if len(bodies) == 0 {return true}
 
 	pos := ecs.world_pool(w, Position).data
 	vel := ecs.world_pool(w, Velocity).data
@@ -207,15 +210,16 @@ physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) {
 			if disp_sq > state.max_disp_sq {state.max_disp_sq = disp_sq}
 		}
 	}
+	return true
 }
 
 // Applies a pick result handed over by the graphics thread. Runs on the physics
 // thread, which owns the Selected pool; an out-of-range index is treated as a
 // miss and simply clears the selection.
-physic_system_select :: proc(w: ^ecs.World, _: f32) {
+physic_system_select :: proc(w: ^ecs.World, _: f32) -> bool {
 	sel := selection_state(w)
 	picked := sync.atomic_load(&sel.picked)
-	if picked == SELECTION_NONE {return}
+	if picked == SELECTION_NONE {return true}
 	sync.atomic_store(&sel.picked, SELECTION_NONE)
 
 	found.profile_scope_args("physic.select", "picked=%d", {picked})
@@ -224,16 +228,18 @@ physic_system_select :: proc(w: ^ecs.World, _: f32) {
 	if picked >= 0 && int(picked) < len(view.bodies) {
 		view.selected[view.bodies[int(picked)]] = Selected(true)
 	}
+	return true
 }
 
-physic_system_publish :: proc(w: ^ecs.World, _: f32) {
+physic_system_publish :: proc(w: ^ecs.World, _: f32) -> bool {
 	found.profile_scope_args("snapshot.publish", "n=%d", {len(ecs.world_pool(w, Body).dense)})
 	physic_snapshot_publish(w)
+	return true
 }
 
-physic_system_adapt :: proc(w: ^ecs.World, _: f32) {
+physic_system_adapt :: proc(w: ^ecs.World, _: f32) -> bool {
 	state := physic_state(w)
-	if len(ecs.world_pool(w, Body).dense) == 0 {return}
+	if len(ecs.world_pool(w, Body).dense) == 0 {return true}
 	cost_ms := f32(
 		time.duration_milliseconds(time.tick_diff(state.tick_start, time.tick_now())),
 	)
@@ -243,6 +249,7 @@ physic_system_adapt :: proc(w: ^ecs.World, _: f32) {
 		{cost_ms, state.ema_cost_ms, state.theta},
 	)
 	_adaptive_controller(state, cost_ms)
+	return true
 }
 
 @(private)

@@ -33,6 +33,14 @@ Renderer :: struct {
 	current_frame:   u32,
 }
 
+// Stored as a world resource so the RENDER-phase render system can reach the
+// renderer without the scheduler carrying a context pointer. The renderer owns
+// the underlying handle and clears this on destruction.
+@(private)
+Renderer_Ref :: struct {
+	renderer: ^Renderer,
+}
+
 renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer, ok: bool) {
 	renderer := new(Renderer)
 	committed := false
@@ -69,20 +77,36 @@ renderer_init :: proc(window: ^Window, world: ^ecs.World) -> (result: ^Renderer,
 		renderer_update_instances(renderer)
 	}
 	log.infof("========================================"); log.infof("[VULKAN] RENDERER INITIALIZATION COMPLETE (%d objects)", obj_count); log.infof("========================================")
+	ecs.world_resource(world, Renderer_Ref).renderer = renderer
 	committed = true
 	result = renderer
 	return result, true
 }
 
-// Registers the graphics systems. Input mutates the Camera resource, so it runs
-// before the renderer reads it for the frame.
+// Registers the graphics systems. Input mutates the Camera resource, and render
+// runs the frame; registration order makes render read the camera input already
+// updated for this frame.
 graphic_register_systems :: proc(s: ^ecs.Scheduler) {
 	ecs.scheduler_add(s, "graphic.input", .RENDER, input_system)
+	ecs.scheduler_add(s, "graphic.render", .RENDER, renderer_system)
+}
+
+// RENDER-phase system: draws one frame through the renderer resource. It returns
+// false only on a fatal Vulkan error, which aborts the phase (and the app).
+@(private)
+renderer_system :: proc(w: ^ecs.World, delta_seconds: f32) -> bool {
+	ref := ecs.world_resource(w, Renderer_Ref)
+	if ref.renderer == nil {return true}
+	return renderer_draw_frame(ref.renderer)
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
 	if self == nil {return}
 	log.infof("[VULKAN] Renderer shutdown...")
+	if self.world != nil {
+		ref := ecs.world_resource(self.world, Renderer_Ref)
+		ref.renderer = nil
+	}
 	gpu_wait(&self.gpu)
 	model_destroy(&self.model); push_descriptors_destroy(&self.push)
 	instance_buffer_destroy(&self.instances)

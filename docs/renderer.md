@@ -86,6 +86,16 @@ The package exposes only handles and their lifecycle/draw procedures:
 - Everything else is marked `@(private)`. Odin's `@(private)` is package-scoped:
   visible across the package's files, hidden from importers.
 
+## As an ECS system
+
+`graphic_register_systems` adds the `RENDER`-phase systems `graphic.input` (which
+mutates the `Camera` resource) and `graphic.render`. The latter looks the
+renderer up through a `Renderer_Ref` world resource and calls
+`renderer_draw_frame`; the system returns its result, so a fatal Vulkan error
+aborts the phase and the graphics thread shuts down. `main` owns the renderer and
+calls `renderer_destroy`, which clears the ref. The renderer still keeps a world
+back-reference for its frame-graph callbacks (pick request, selection).
+
 ## Vulkan usage
 
 - API 1.4 core, no extension fallbacks: dynamic rendering, synchronization2,

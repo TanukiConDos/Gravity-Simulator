@@ -52,12 +52,38 @@ body_count :: proc(w: ^ecs.World) -> int {
 }
 
 body_view :: proc(w: ^ecs.World) -> Bodies {
+	bodies := ecs.world_pool(w, Body).dense[:]
+	when ODIN_DEBUG {
+		_body_view_validate(w, bodies)
+	}
 	return Bodies {
-		bodies   = ecs.world_pool(w, Body).dense[:],
+		bodies   = bodies,
 		position = ecs.world_pool(w, Position).data[:],
 		velocity = ecs.world_pool(w, Velocity).data[:],
 		mass     = ecs.world_pool(w, Mass).data[:],
 		radius   = ecs.world_pool(w, Radius).data[:],
 		selected = ecs.world_pool(w, Selected).data[:],
+	}
+}
+
+// A body view indexes every column by entity index, so the columns only line up
+// if each body carries all of them. `body_spawn` is the only constructor and
+// adds them together, but a stray `world_remove` would silently break the
+// invariant; check it in debug instead of reading garbage in release.
+@(private)
+_body_view_validate :: proc(w: ^ecs.World, bodies: []u32) {
+	position := ecs.world_pool(w, Position)
+	velocity := ecs.world_pool(w, Velocity)
+	acceleration := ecs.world_pool(w, Acceleration)
+	mass := ecs.world_pool(w, Mass)
+	radius := ecs.world_pool(w, Radius)
+	selected := ecs.world_pool(w, Selected)
+	for idx in bodies {
+		assert(ecs.pool_has(position, idx), "body is missing Position")
+		assert(ecs.pool_has(velocity, idx), "body is missing Velocity")
+		assert(ecs.pool_has(acceleration, idx), "body is missing Acceleration")
+		assert(ecs.pool_has(mass, idx), "body is missing Mass")
+		assert(ecs.pool_has(radius, idx), "body is missing Radius")
+		assert(ecs.pool_has(selected, idx), "body is missing Selected")
 	}
 }

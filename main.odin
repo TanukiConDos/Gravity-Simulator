@@ -177,6 +177,7 @@ sim_file_init :: proc() {
 		bodies = new([dynamic]_Scene_Body)
 	}
 	defer {delete(bodies^); free(bodies)}
+	ecs.world_reserve(g_world, len(bodies^) + 1)
 	for body in bodies {
 		physic.body_spawn(
 			g_world,
@@ -191,6 +192,7 @@ sim_file_init :: proc() {
 @(private)
 sim_random_init :: proc() {
 	config := foundation.config_get()
+	ecs.world_reserve(g_world, config.num_objects + 2)
 	physic.body_spawn(g_world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
 	physic.body_spawn(g_world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
 	for i in 0 ..< config.num_objects {
@@ -244,8 +246,11 @@ main :: proc() {
 	renderer, renderer_ok := graphic.renderer_init(window, g_world)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
-	ctx.renderer = renderer
 	graphic.graphic_register_systems(g_scheduler)
+
+	// Every pool and resource the threads use now exists: freeze the registries
+	// so the physics and graphics threads only ever perform concurrent reads.
+	ecs.world_freeze(g_world)
 
 	physics_thread, graphics_thread := parallel_start(&ctx)
 

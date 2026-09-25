@@ -113,6 +113,7 @@ spawn_bodies :: proc(w: ^ecs.World, n: int) {
 
 make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 	w := ecs.world_create()
+	ecs.world_reserve(w, p.n)
 	spawn_bodies(w, p.n)
 	config := foundation.Config {
 		algorithm             = .OCTREE,
@@ -124,6 +125,7 @@ make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 		auto_adjust           = false,
 	}
 	physic.physic_init(w, config)
+	ecs.world_freeze(w)
 	s := ecs.scheduler_create()
 	physic.physic_register_systems(s)
 	return w, s
