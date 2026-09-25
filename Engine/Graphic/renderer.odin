@@ -220,6 +220,7 @@ _renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u
 	camera_transform(self.camera, &ubo)
 	push_descriptors_write(&self.push, CAMERA_SET, CAMERA_BINDING, frame, &ubo, size_of(UniformBufferObject))
 
+	valid := 0
 	if self.world != nil && len(self.positions) > 0 {
 		n: int
 		{
@@ -234,6 +235,7 @@ _renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u
 		if n > 0 {
 			found.profile_scope_args("graphics.instances", "n=%d", {n})
 			instance_buffer_update_positions(&self.instances, frame, self.positions[:n], self.selected[:n])
+			valid = n
 		}
 	}
 
@@ -241,9 +243,11 @@ _renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, frame)
 	model_bind(&self.model, cmd, MESH_BINDING)
 	instance_buffer_bind(&self.instances, cmd, frame, INSTANCE_BINDING)
-	if len(self.positions) > 0 {
-		found.profile_scope_args("graphics.draw_indexed", "instances=%d", {len(self.positions)})
-		vulkan.CmdDrawIndexed(cmd, self.model.index_count, u32(len(self.positions)), 0, 0, 0)
+	// Draw exactly the instances updated this frame; drawing more would reuse
+	// stale data in this frame's instance buffer.
+	if valid > 0 {
+		found.profile_scope_args("graphics.draw_indexed", "instances=%d", {valid})
+		vulkan.CmdDrawIndexed(cmd, self.model.index_count, u32(valid), 0, 0, 0)
 	}
 }
 

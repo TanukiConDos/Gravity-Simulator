@@ -33,6 +33,7 @@ _Snapshot_Reader :: struct {
 	done:     ^i32,
 	reads:    ^i32,
 	bad:      ^bool,
+	had_data: ^i32,
 }
 
 @(private)
@@ -45,7 +46,13 @@ _snapshot_reader_main :: proc(t: ^thread.Thread) {
 			nil,
 			len(ctx.buf),
 		)
-		if n == 0 {continue}
+		if n == 0 {
+			// Once a version exists, reads must keep serving it (re-serving the
+			// last data); a 0 would leave the renderer with a stale buffer.
+			if sync.atomic_load(ctx.had_data) != 0 {ctx.bad^ = true}
+			continue
+		}
+		sync.atomic_store(ctx.had_data, 1)
 		v := ctx.buf[0].x
 		for i in 1 ..< n {
 			if ctx.buf[i].x != v {
@@ -81,6 +88,13 @@ test_snapshot_roundtrip :: proc(t: ^testing.T) {
 	for i in 0 ..< n {
 		testing.expect_value(t, buf[i].x, f32(7))
 	}
+
+	// A second read with no new publish must still report the version (and leave
+	// the caller's data intact) so the renderer can re-upload it instead of
+	// drawing a stale buffer.
+	n2 := physics.physic_snapshot_read(snapshot, raw_data(buf[:]), nil, len(buf))
+	testing.expect_value(t, n2, 4)
+	testing.expect_value(t, buf[3].x, f32(7))
 }
 
 // A reader must never observe a torn publish: every snapshot it claims is one
@@ -100,6 +114,7 @@ test_snapshot_concurrent_reader :: proc(t: ^testing.T) {
 
 	done: i32
 	reads: i32
+	had_data: i32
 	bad := false
 	reader_ctx := _Snapshot_Reader {
 		snapshot = physics.physic_snapshot(w),
@@ -107,6 +122,7 @@ test_snapshot_concurrent_reader :: proc(t: ^testing.T) {
 		done     = &done,
 		reads    = &reads,
 		bad      = &bad,
+		had_data = &had_data,
 	}
 	defer delete(reader_ctx.buf)
 	writer_ctx := _Snapshot_Writer {

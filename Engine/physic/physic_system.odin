@@ -44,6 +44,10 @@ RenderSnapshot :: struct {
 	buffers:   [SNAPSHOT_BUFFERS]Snapshot_Buffer,
 	published: i32, // atomic buffer index, -1 when nothing has been published
 	capacity:  int,
+	// Bodies in the last version the reader successfully copied. Reader-private:
+	// when no newer version is available it re-serves this count so the renderer
+	// re-uploads the data it already holds instead of drawing a stale buffer.
+	last_count: int,
 }
 
 // Set by the graphics thread after a pick readback and consumed by the physics
@@ -119,6 +123,7 @@ snapshot_reserve :: proc(s: ^RenderSnapshot, capacity: int) {
 	}
 	sync.atomic_store(&s.published, i32(-1))
 	s.capacity = capacity
+	s.last_count = 0
 }
 
 physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
@@ -550,6 +555,12 @@ physic_snapshot_publish :: proc(w: ^ecs.World) {
 
 // Claims the latest published buffer, copies it and releases it. Reader thread
 // only. Returns the number of bodies copied.
+//
+// When no newer version is available (for example the renderer runs faster than
+// the simulation, or another thread already consumed this version) it returns
+// the last count without touching `dest`, which still holds that version: the
+// caller can re-upload it instead of drawing stale data. Returning 0 here means
+// "nothing has ever been published".
 physic_snapshot_read :: proc(
 	snapshot: ^RenderSnapshot,
 	dest: rawptr,
@@ -558,7 +569,7 @@ physic_snapshot_read :: proc(
 ) -> int {
 	for _ in 0 ..< 8 {
 		p := sync.atomic_load(&snapshot.published)
-		if p < 0 {return 0}
+		if p < 0 {return snapshot.last_count}
 		idx := int(p)
 		buf := &snapshot.buffers[idx]
 		expected := u32(Snapshot_State.PUBLISHED)
@@ -576,9 +587,10 @@ physic_snapshot_read :: proc(
 			mem.copy(dest_selected, raw_data(buf.selected), n)
 		}
 		sync.atomic_store(&buf.state, u32(Snapshot_State.FREE))
+		snapshot.last_count = n
 		return n
 	}
-	return 0
+	return snapshot.last_count
 }
 
 _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
