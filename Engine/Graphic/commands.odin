@@ -8,13 +8,21 @@ import "vendor:vulkan"
 CommandPool :: struct {gpu: ^GPU, pool: vulkan.CommandPool, command_buffers: [dynamic]vulkan.CommandBuffer}
 
 @(private)
-command_pool_init :: proc(gpu: ^GPU) -> (result: CommandPool, ok: bool) {
-	log.debugf("[VULKAN] CommandPool initialization...")
+command_pool_init :: proc(gpu: ^GPU) -> (CommandPool, bool) {
+	return command_pool_init_for(gpu, gpu.graphics_queue_family_index, MAX_FRAMES_IN_FLIGHT)
+}
+
+// command_pool_init_for creates `count` primary buffers for one queue family.
+// The renderer uses the graphics family; the compute context uses its own queue
+// family so the two threads never share a pool.
+@(private)
+command_pool_init_for :: proc(gpu: ^GPU, family_index: u32, count: int) -> (result: CommandPool, ok: bool) {
+	log.debugf("[VULKAN] CommandPool initialization (family=%d, buffers=%d)...", family_index, count)
 	tmp := CommandPool{gpu = gpu}
-	pool_info := vulkan.CommandPoolCreateInfo{sType=.COMMAND_POOL_CREATE_INFO,queueFamilyIndex=gpu.graphics_queue_family_index,flags={.RESET_COMMAND_BUFFER}}
+	pool_info := vulkan.CommandPoolCreateInfo{sType=.COMMAND_POOL_CREATE_INFO,queueFamilyIndex=family_index,flags={.RESET_COMMAND_BUFFER}}
 	vk_check(vulkan.CreateCommandPool(gpu.device, &pool_info, nil, &tmp.pool), "vkCreateCommandPool") or_return
-	tmp.command_buffers = make([dynamic]vulkan.CommandBuffer, MAX_FRAMES_IN_FLIGHT)
-	allocate_info := vulkan.CommandBufferAllocateInfo{sType=.COMMAND_BUFFER_ALLOCATE_INFO,commandPool=tmp.pool,level=.PRIMARY,commandBufferCount=MAX_FRAMES_IN_FLIGHT}
+	tmp.command_buffers = make([dynamic]vulkan.CommandBuffer, count)
+	allocate_info := vulkan.CommandBufferAllocateInfo{sType=.COMMAND_BUFFER_ALLOCATE_INFO,commandPool=tmp.pool,level=.PRIMARY,commandBufferCount=u32(count)}
 	vk_assert(vulkan.AllocateCommandBuffers(gpu.device, &allocate_info, raw_data(tmp.command_buffers)), "vkAllocateCommandBuffers")
 	log.debugf("[VULKAN]   CommandPool ready (%d command buffers)", len(tmp.command_buffers))
 	return tmp, true

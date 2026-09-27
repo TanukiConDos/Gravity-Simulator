@@ -15,6 +15,18 @@ against an exact O(N) sum, measured on one gravity solve from the
 deterministic (seed 42) initial conditions. Stages: `1k` (full grid),
 `10k` and `100k` (reduced grids).
 
+A separate `gpu` stage (`odin run bench -o:speed -- gpu [elements] [dispatches]
+[samples]`) creates a windowless compute context and runs the compute plumbing
+probe, verifying the output and reporting GPU dispatch time plus the host
+submit→wait round trip. `gpu-force [n] [ticks] [samples]` solves deterministic
+bodies with the CPU and GPU gravity backends, compares the velocity updates and
+reports ms per solve plus the speedup. `gpu-tree [n] [depth] [theta] [ticks]
+[samples]` does the same for the octree backend, with and without a tree rebuild
+per tick, and also compares the contact sets. `gpu-tick [n] [depth] [theta]
+[ticks] [samples] [octree|brute]` runs the whole PHYSICS phase through the
+scheduler on a CPU and a GPU world and reports ms per tick. See
+`docs/gpu_physics.md`.
+
 ## Profiling (spall)
 
 The profiler is compiled out entirely without `-define:PROFILE=true`. Do **not**

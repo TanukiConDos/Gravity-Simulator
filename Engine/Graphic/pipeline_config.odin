@@ -43,3 +43,10 @@ Pipeline_Config :: struct {
 	vertex_buffers: []Vertex_Buffer_Spec,
 	fixed:          Fixed_State,
 }
+
+// A compute pipeline holds exactly one compute shader; the workgroup size and
+// the descriptor/push-constant interface all come from its SPIR-V reflection.
+@(private)
+Compute_Config :: struct {
+	shaders: []Shader_Spec,
+}

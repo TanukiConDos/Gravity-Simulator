@@ -1,0 +1,28 @@
+#version 460
+
+// Compute plumbing probe: reads a storage buffer, transforms it and writes a
+// second one. The bench `gpu` stage uses it to verify the compute pipeline,
+// push descriptors, staging transfers and the timeline submit/wait loop without
+// any physics involved.
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) readonly buffer Probe_Input {
+    float values[];
+} probe_input;
+
+layout(set = 0, binding = 1) writeonly buffer Probe_Output {
+    float values[];
+} probe_output;
+
+layout(push_constant) uniform Probe_Push {
+    uint element_count;
+} probe_push;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= probe_push.element_count) {
+        return;
+    }
+    probe_output.values[index] = probe_input.values[index] * 2.0 + 1.0;
+}

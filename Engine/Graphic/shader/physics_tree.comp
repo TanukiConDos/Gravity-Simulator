@@ -1,0 +1,163 @@
+#version 460
+
+// GPU Barnes-Hut traversal for the octree backend (M2 of docs/gpu_physics.md).
+//
+// One invocation per live body walks the CPU-built tree exactly like
+// `_calc_force_collect` in Engine/physic/octtree.odin: theta-accepted nodes
+// apply their center of mass as a far-field term, accepted cells that intersect
+// the collision sphere are still descended into (so the opening angle can never
+// hide a contact), and leaf bodies contribute individually. Overlapping pairs
+// land in an atomic contact list that the CPU sorts before resolving. The solve
+// then applies the tick's velocity update in place (`vel += acc * dt`, M3).
+//
+// The traversal keeps a frame stack of (node, child cursor) instead of pushing
+// every sibling: the depth is bounded by the tree's max_depth, so a fixed 64
+// frames cover MAX_DEPTH_CAP = 48. The high bit of the node slot marks "gravity
+// already applied for this subtree".
+//
+// Arithmetic matches `_apply_gravity`: acceleration = dir * G * mass / r^2 with
+// the magnitude softening (r^2 >= 0.001) and a separate 1e-10 clamp for the
+// opening-angle test, both in f32.
+
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+struct Node {
+    vec3 center;
+    float half_size;
+    vec3 center_mass;
+    float mass;
+    uint first_obj;
+    uint obj_count;
+    uint child_count;
+    uint _pad;
+    uint children[8];
+};
+
+layout(set = 0, binding = 0) readonly buffer Nodes { Node nodes[]; } in_nodes;
+// The tree's permuted body list: invocation `k` solves the body at `order[k]`.
+// Dispatching in tree order keeps neighbouring lanes in nearby leaves, which is
+// what makes the divergent traversal cache-friendly.
+layout(set = 0, binding = 1) readonly buffer Order { uint order[]; } in_order;
+// Pool-indexed body columns: xyz = position, w = mass.
+layout(set = 0, binding = 2) readonly buffer Bodies { vec4 bodies[]; } in_bodies;
+layout(set = 0, binding = 3) readonly buffer Radii { float radii[]; } in_radii;
+// The CPU uploads the velocities it holds; the solve updates them so the
+// backend owns velocity integration (M3).
+layout(set = 0, binding = 4) buffer Velocities { vec4 velocities[]; } inout_velocities;
+layout(set = 0, binding = 5) buffer Contacts {
+    uint count;
+    uint _pad0;
+    uint _pad1;
+    uint _pad2;
+    uvec2 pairs[];
+} contacts;
+
+layout(push_constant) uniform Push {
+    uint live_count;
+    float theta;
+    float max_radius;
+    uint pair_capacity;
+    float dt;
+} push;
+
+const float GRAVITY_CONSTANT = 6.6743e-11;
+const float NODE_SOFTENING = 1e-10;
+const float APPLY_SOFTENING = 0.001;
+const float CONTACT_MIN_DIST_SQ = 1e-6;
+const int STACK_DEPTH = 64;
+const uint GRAVITY_DONE_BIT = 0x80000000u;
+const uint NODE_INDEX_MASK = 0x7fffffffu;
+
+bool cell_intersects_sphere(Node node, vec3 pos, float radius) {
+    vec3 closest = clamp(pos, node.center - node.half_size, node.center + node.half_size);
+    vec3 d = pos - closest;
+    return dot(d, d) <= radius * radius;
+}
+
+void main() {
+    uint invocation = gl_GlobalInvocationID.x;
+    if (invocation >= push.live_count) {
+        return;
+    }
+
+    uint index = in_order.order[invocation];
+    vec3 obj_pos = in_bodies.bodies[index].xyz;
+    float collision_radius = in_radii.radii[index] + push.max_radius;
+    vec3 acc = vec3(0.0);
+
+    uint node_stack[STACK_DEPTH];
+    uint cursor_stack[STACK_DEPTH];
+    int depth = 0;
+    node_stack[0] = 0u;
+    cursor_stack[0] = 0u;
+
+    while (depth >= 0) {
+        uint raw = node_stack[depth];
+        uint node_index = raw & NODE_INDEX_MASK;
+        bool gravity_done = (raw & GRAVITY_DONE_BIT) != 0u;
+        Node node = in_nodes.nodes[node_index];
+
+        if (node.child_count == 0u) {
+            for (uint i = node.first_obj; i < node.first_obj + node.obj_count; ++i) {
+                uint other = in_order.order[i];
+                if (other == index) {
+                    continue;
+                }
+                if (!gravity_done) {
+                    vec4 other_body = in_bodies.bodies[other];
+                    vec3 dir = other_body.xyz - obj_pos;
+                    float dist_sq = max(dot(dir, dir), APPLY_SOFTENING);
+                    acc += dir * (GRAVITY_CONSTANT * other_body.w / (dist_sq * sqrt(dist_sq)));
+                }
+                if (other > index) {
+                    vec4 other_body = in_bodies.bodies[other];
+                    vec3 d = other_body.xyz - obj_pos;
+                    float dist_sq = dot(d, d);
+                    float radius_sum = in_radii.radii[index] + in_radii.radii[other];
+                    if (dist_sq < radius_sum * radius_sum && dist_sq > CONTACT_MIN_DIST_SQ) {
+                        uint slot = atomicAdd(contacts.count, 1u);
+                        if (slot < push.pair_capacity) {
+                            contacts.pairs[slot] = uvec2(index, other);
+                        }
+                    }
+                }
+            }
+            depth -= 1;
+            continue;
+        }
+
+        if (!gravity_done) {
+            vec3 com = node.center_mass - obj_pos;
+            float com_dist_sq = max(dot(com, com), NODE_SOFTENING);
+            float com_dist = sqrt(com_dist_sq);
+            if ((node.half_size * 2.0) / com_dist <= push.theta) {
+                if (node.mass > 0.0 && com_dist > 0.001) {
+                    float apply_dist_sq = max(dot(com, com), APPLY_SOFTENING);
+                    acc += com * (GRAVITY_CONSTANT * node.mass / (apply_dist_sq * sqrt(apply_dist_sq)));
+                }
+                if (!cell_intersects_sphere(node, obj_pos, collision_radius)) {
+                    depth -= 1;
+                    continue;
+                }
+                gravity_done = true;
+                node_stack[depth] = node_index | GRAVITY_DONE_BIT;
+            }
+        } else if (!cell_intersects_sphere(node, obj_pos, collision_radius)) {
+            depth -= 1;
+            continue;
+        }
+
+        uint cursor = cursor_stack[depth];
+        if (cursor < node.child_count) {
+            cursor_stack[depth] = cursor + 1u;
+            depth += 1;
+            node_stack[depth] = node.children[cursor] | (gravity_done ? GRAVITY_DONE_BIT : 0u);
+            cursor_stack[depth] = 0u;
+            continue;
+        }
+        depth -= 1;
+    }
+
+    vec4 velocity = inout_velocities.velocities[index];
+    inout_velocities.velocities[index] = vec4(velocity.xyz + acc * push.dt, 0.0);
+}

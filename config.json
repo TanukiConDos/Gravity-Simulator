@@ -4,6 +4,7 @@
     "time": 1000,
     "filename": "tierra.json",
     "algorithm": "OCTREE",
+    "gravity_backend": "CPU",
     "tree_rebuild_interval": 1000,
     "worker_threads": 8,
     "theta": 0.8,

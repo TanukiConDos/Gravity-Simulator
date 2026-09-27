@@ -9,6 +9,10 @@
 //   odin run bench -define:PROFILE=true ... -- profile [n] [depth] [theta] [interval] [workers]
 //   odin run bench -o:speed ... -- contacts [n] [depth] [theta] [warmup] [scale]
 //   odin run bench -o:speed ... -- interactions [n] [depth] [theta] [warmup] [workers]
+//   odin run bench -o:speed ... -- gpu [elements] [dispatches] [samples]
+//   odin run bench -o:speed ... -- gpu-force [n] [ticks] [samples]
+//   odin run bench -o:speed ... -- gpu-tree [n] [depth] [theta] [ticks] [samples]
+//   odin run bench -o:speed ... -- gpu-tick [n] [depth] [theta] [ticks] [samples]
 //
 // Results are written to bench/results/sweep_<stage>.csv; `profile` writes a
 // spall trace to bench/results/trace_*.spall (open it in the spall viewer).
@@ -58,8 +62,9 @@ AccuracyKey :: struct {
 }
 
 CompareResult :: struct {
-	mean: f64,
-	max:  f64,
+	mean:    f64,
+	max:     f64,
+	max_abs: f64,
 }
 
 AccuracyEntry :: struct {
@@ -261,6 +266,7 @@ octree_accel :: proc(
 compare_accel :: proc(approx, exact: []physic.Vec3) -> CompareResult {
 	sum: f64
 	worst: f64
+	worst_abs: f64
 	for i in 0 ..< len(approx) {
 		dx := f64(approx[i].x) - f64(exact[i].x)
 		dy := f64(approx[i].y) - f64(exact[i].y)
@@ -272,13 +278,14 @@ compare_accel :: proc(approx, exact: []physic.Vec3) -> CompareResult {
 				f64(exact[i].y) * f64(exact[i].y) +
 				f64(exact[i].z) * f64(exact[i].z),
 			)
+		if num > worst_abs {worst_abs = num}
 		if den < 1e-30 {den = 1e-30}
 		err := num / den
 		sum += err
 		if err > worst {worst = err}
 	}
 	if len(approx) == 0 {return {}}
-	return {mean = sum / f64(len(approx)), max = worst}
+	return {mean = sum / f64(len(approx)), max = worst, max_abs = worst_abs}
 }
 
 accuracy_for :: proc(
@@ -684,6 +691,14 @@ main :: proc() {
 		contacts_run(os.args[2:])
 	} else if filter == "interactions" {
 		interactions_run(os.args[2:])
+	} else if filter == "gpu" {
+		gpu_run(os.args[2:])
+	} else if filter == "gpu-force" {
+		gpu_force_run(os.args[2:])
+	} else if filter == "gpu-tree" {
+		gpu_tree_run(os.args[2:])
+	} else if filter == "gpu-tick" {
+		gpu_tick_run(os.args[2:])
 	} else {
 		found_any := false
 		for st in stages {
@@ -692,7 +707,7 @@ main :: proc() {
 			found_any = true
 		}
 		if !found_any {
-			fmt.eprintfln("unknown stage %q (expected: all, 1k, 10k, 100k, profile, contacts, interactions)", filter)
+			fmt.eprintfln("unknown stage %q (expected: all, 1k, 10k, 100k, profile, contacts, interactions, gpu, gpu-force, gpu-tree, gpu-tick)", filter)
 		}
 	}
 

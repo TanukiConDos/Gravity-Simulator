@@ -119,6 +119,7 @@ mem_alloc_mapped :: proc(mem: MemAlloc) -> rawptr {
 @(private)
 _allocator_create_block :: proc(self: ^Allocator, kind: MemoryKind, type_bits: u32, min_size: vulkan.DeviceSize, dedicated: ^vulkan.MemoryDedicatedAllocateInfo) -> (result: ^MemoryBlock, ok: bool) {
 	required: vulkan.MemoryPropertyFlags
+	preferred: vulkan.MemoryPropertyFlags
 	default_size: vulkan.DeviceSize
 	switch kind {
 	case .DeviceLocal:
@@ -126,10 +127,15 @@ _allocator_create_block :: proc(self: ^Allocator, kind: MemoryKind, type_bits: u
 		default_size = DEFAULT_DEVICE_BLOCK_SIZE
 	case .HostVisible:
 		required = {.HOST_VISIBLE, .HOST_COHERENT}
+		// Readbacks (pick ID, GPU physics) read mapped memory from the host;
+		// without HOST_CACHED those reads are uncached PCIe accesses and
+		// dominate the transfer. Uploads stay correct, just less
+		// write-combined.
+		preferred = {.HOST_CACHED}
 		default_size = DEFAULT_HOST_BLOCK_SIZE
 	}
 
-	memory_type, found := _allocator_find_memory_type(self.physical_device, type_bits, required)
+	memory_type, found := _allocator_find_memory_type(self.physical_device, type_bits, required, preferred)
 	if !found {log.errorf("[VULKAN] No memory type for block (kind=%v)", kind); return nil, false}
 
 	// Dedicated allocations must match the resource's memory requirement exactly;
@@ -172,14 +178,29 @@ _allocator_destroy_block :: proc(self: ^Allocator, block: ^MemoryBlock) {
 }
 
 @(private)
-_allocator_find_memory_type :: proc(physical_device: vulkan.PhysicalDevice, type_bits: u32, required: vulkan.MemoryPropertyFlags) -> (u32, bool) {
+// _allocator_find_memory_type picks the first type matching `required`, but
+// returns a type that also matches `preferred` as soon as one exists.
+_allocator_find_memory_type :: proc(
+	physical_device: vulkan.PhysicalDevice,
+	type_bits: u32,
+	required: vulkan.MemoryPropertyFlags,
+	preferred: vulkan.MemoryPropertyFlags = {},
+) -> (u32, bool) {
 	props: vulkan.PhysicalDeviceMemoryProperties
 	vulkan.GetPhysicalDeviceMemoryProperties(physical_device, &props)
+	fallback: u32
+	found_fallback := false
 	for i in 0 ..< props.memoryTypeCount {
 		if (type_bits & (1 << u32(i))) == 0 {continue}
-		if (props.memoryTypes[i].propertyFlags & required) == required {return u32(i), true}
+		flags := props.memoryTypes[i].propertyFlags
+		if (flags & required) != required {continue}
+		if (flags & preferred) == preferred {return u32(i), true}
+		if !found_fallback {
+			fallback = u32(i)
+			found_fallback = true
+		}
 	}
-	return 0, false
+	return fallback, found_fallback
 }
 
 @(private)

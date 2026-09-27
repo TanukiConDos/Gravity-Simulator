@@ -1,0 +1,378 @@
+#version 460
+
+// GPU octree build (docs/gpu_physics.md).
+//
+// One build reproduces the CPU builder's structure (`_octtree_build` in
+// Engine/physic/octtree.odin): the same root cell from the body bounds, the same
+// `pos >= center` octant split, the same leaf rules (`obj_count <= 1`,
+// `depth >= max_depth`, `half_size <= min_half`) and the same center-of-mass
+// aggregation. Only the node allocation order and the order of bodies inside a
+// leaf differ, so the traversal sees the same multipole tree and the CPU/GPU
+// parity tests keep holding.
+//
+// The build runs level by level. Each level dispatches one workgroup per cell:
+// the workgroup counts its objects into eight octants, decides whether the cell
+// is a leaf, allocates its children, scatters the objects into the children's
+// ranges and copies leaf objects through, so the order buffer is complete after
+// every level. A second pass over the levels in descending order computes
+// masses and centers of mass bottom-up. Cells and per-level dispatch counts are
+// produced on the device, and the level dispatches are indirect, so a level with
+// no cells costs a no-op command.
+//
+// One source, six stages: compile with -DTREE_BUILD_STAGE=0..5.
+//   0 init     one thread prepares the counters and bounds
+//   1 setup    one thread per body: order copy, bounds, max radius
+//   2 root     one thread creates the root cell
+//   3 level    one workgroup per cell: count, split, scatter
+//   4 com      one thread per node: bottom-up mass and center of mass
+//   5 order    copies the final order into the traversal's buffer
+
+#ifndef TREE_BUILD_STAGE
+#define TREE_BUILD_STAGE 0
+#endif
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+#define MAX_DEPTH_CAP 48
+#define MAX_LEVELS (MAX_DEPTH_CAP + 1)
+
+struct Node {
+    vec3 center;
+    float half_size;
+    vec3 center_mass;
+    float mass;
+    uint first_obj;
+    uint obj_count;
+    uint child_count;
+    uint depth;
+    uint children[8];
+};
+
+struct Control {
+    uint nodes_top;
+    uint overflow;
+    uint max_leaf_depth;
+    uint order_parity;
+    uint max_radius_bits;
+    uint min_bounds[3];
+    uint max_bounds[3];
+    uint root_half_bits;
+    uint leaf_hist[MAX_LEVELS + 1];
+    uint level_base[MAX_LEVELS + 1];
+    uint level_dispatch[MAX_LEVELS + 1][3];
+    uint com_dispatch[MAX_LEVELS + 1][3];
+    uint cells_top;
+};
+
+uint octant_of(vec3 pos, vec3 center) {
+    return (pos.x >= center.x ? 4u : 0u) + (pos.y >= center.y ? 2u : 0u) + (pos.z >= center.z ? 1u : 0u);
+}
+
+// Monotonic float -> uint mapping for atomic min/max.
+uint float_key(float f) {
+    uint u = floatBitsToUint(f);
+    return u ^ (((u & 0x80000000u) != 0u) ? 0xffffffffu : 0x80000000u);
+}
+
+float float_unkey(uint k) {
+    uint u = ((k & 0x80000000u) != 0u) ? (k ^ 0x80000000u) : (k ^ 0xffffffffu);
+    return uintBitsToFloat(u);
+}
+
+#if TREE_BUILD_STAGE == 0
+
+layout(set = 0, binding = 0) buffer ControlBuffer { Control control; } inout_control;
+
+void main() {
+    Control c;
+    c.nodes_top = 1u;
+    c.overflow = 0u;
+    c.max_leaf_depth = 0u;
+    c.order_parity = 0u;
+    c.max_radius_bits = 0u;
+    c.min_bounds[0] = 0xff800000u; // key(+inf)
+    c.min_bounds[1] = 0xff800000u;
+    c.min_bounds[2] = 0xff800000u;
+    c.max_bounds[0] = 0x007fffffu; // key(-inf)
+    c.max_bounds[1] = 0x007fffffu;
+    c.max_bounds[2] = 0x007fffffu;
+    c.root_half_bits = 0u;
+    c.cells_top = 1u;
+    for (uint i = 0u; i <= MAX_LEVELS; ++i) {
+        c.leaf_hist[i] = 0u;
+        c.level_base[i] = 0u;
+        c.level_dispatch[i][0] = 0u;
+        c.level_dispatch[i][1] = 1u;
+        c.level_dispatch[i][2] = 1u;
+        c.com_dispatch[i][0] = 0u;
+        c.com_dispatch[i][1] = 1u;
+        c.com_dispatch[i][2] = 1u;
+    }
+    inout_control.control = c;
+}
+
+#elif TREE_BUILD_STAGE == 1
+
+layout(set = 0, binding = 0) readonly buffer Bodies { vec4 bodies[]; } in_bodies; // pool-indexed
+layout(set = 0, binding = 1) readonly buffer Radii { float radii[]; } in_radii;
+layout(set = 0, binding = 2) readonly buffer Live { uint live[]; } in_live;
+layout(set = 0, binding = 3) buffer OrderA { uint order_a[]; } inout_order_a;
+layout(set = 0, binding = 4) buffer ControlBuffer { Control control; } inout_control;
+
+layout(push_constant) uniform Push { uint count; } push;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= push.count) { return; }
+    uint b = in_live.live[i];
+    vec3 p = in_bodies.bodies[b].xyz;
+    inout_order_a.order_a[i] = b;
+    atomicMin(inout_control.control.min_bounds[0], float_key(p.x));
+    atomicMin(inout_control.control.min_bounds[1], float_key(p.y));
+    atomicMin(inout_control.control.min_bounds[2], float_key(p.z));
+    atomicMax(inout_control.control.max_bounds[0], float_key(p.x));
+    atomicMax(inout_control.control.max_bounds[1], float_key(p.y));
+    atomicMax(inout_control.control.max_bounds[2], float_key(p.z));
+    atomicMax(inout_control.control.max_radius_bits, float_key(in_radii.radii[b]));
+}
+
+#elif TREE_BUILD_STAGE == 2
+
+layout(set = 0, binding = 0) buffer Nodes { Node nodes[]; } inout_nodes;
+layout(set = 0, binding = 1) buffer Cells { uint cells[]; } inout_cells;
+layout(set = 0, binding = 2) buffer ControlBuffer { Control control; } inout_control;
+
+layout(push_constant) uniform Push { uint count; } push;
+
+void main() {
+    vec3 mn = vec3(
+        float_unkey(inout_control.control.min_bounds[0]),
+        float_unkey(inout_control.control.min_bounds[1]),
+        float_unkey(inout_control.control.min_bounds[2]));
+    vec3 mx = vec3(
+        float_unkey(inout_control.control.max_bounds[0]),
+        float_unkey(inout_control.control.max_bounds[1]),
+        float_unkey(inout_control.control.max_bounds[2]));
+    vec3 center = (mn + mx) * 0.5;
+    float cell_half = max(max(mx.x - mn.x, mx.y - mn.y), mx.z - mn.z) * 0.5 + 1.0;
+    if (cell_half <= 0.0) { cell_half = 1e6; }
+
+    Node root;
+    root.center = center;
+    root.half_size = cell_half;
+    root.center_mass = vec3(0.0);
+    root.mass = 0.0;
+    root.first_obj = 0u;
+    root.obj_count = push.count;
+    root.child_count = 0u;
+    root.depth = 0u;
+    for (uint k = 0u; k < 8u; ++k) { root.children[k] = 0u; }
+    inout_nodes.nodes[0] = root;
+
+    inout_control.control.root_half_bits = floatBitsToUint(cell_half);
+    inout_control.control.level_base[0] = 0u;
+    inout_control.control.level_dispatch[0][0] = 1u;
+    inout_control.control.cells_top = 1u;
+    inout_cells.cells[0] = 0u;
+}
+
+#elif TREE_BUILD_STAGE == 3
+
+layout(set = 0, binding = 0) buffer Nodes { Node nodes[]; } inout_nodes;
+layout(set = 0, binding = 1) readonly buffer Bodies { vec4 bodies[]; } in_bodies;
+layout(set = 0, binding = 2) buffer OrderA { uint order_a[]; } inout_order_a;
+layout(set = 0, binding = 3) buffer OrderB { uint order_b[]; } inout_order_b;
+layout(set = 0, binding = 4) buffer Cells { uint cells[]; } inout_cells;
+layout(set = 0, binding = 5) buffer ControlBuffer { Control control; } inout_control;
+
+layout(push_constant) uniform Push {
+    uint level;
+    uint src;
+    uint dst;
+    uint max_depth;
+    uint capacity;
+    float min_half;
+} push;
+
+shared uint hist[8];
+shared uint cursor[8];
+shared uint child_first[8];
+shared uint ok;
+
+uint order_read(uint i) {
+    return push.src == 0u ? inout_order_a.order_a[i] : inout_order_b.order_b[i];
+}
+
+void order_write(uint i, uint v) {
+    if (push.dst == 0u) {
+        inout_order_a.order_a[i] = v;
+    } else {
+        inout_order_b.order_b[i] = v;
+    }
+}
+
+void main() {
+    uint lid = gl_LocalInvocationID.x;
+    uint cell_id = inout_cells.cells[inout_control.control.level_base[push.level] + gl_WorkGroupID.x];
+    Node node = inout_nodes.nodes[cell_id];
+    uint start = node.first_obj;
+    uint count = node.obj_count;
+    uint depth = node.depth;
+    float cell_half = node.half_size;
+
+    // Next level's base and COM dispatch (every workgroup writes the same).
+    if (lid == 0u) {
+        uint cells_here = inout_control.control.level_dispatch[push.level][0];
+        inout_control.control.level_base[push.level + 1u] =
+            inout_control.control.level_base[push.level] + cells_here;
+        inout_control.control.com_dispatch[push.level][0] = (cells_here + 255u) / 256u;
+    }
+
+    if (lid < 8u) {
+        hist[lid] = 0u;
+        cursor[lid] = 0u;
+        child_first[lid] = 0u;
+    }
+    if (lid == 0u) { ok = 1u; }
+    barrier();
+
+    bool leaf = (count <= 1u) || (depth >= push.max_depth) || (cell_half <= push.min_half);
+    if (!leaf) {
+        for (uint i = lid; i < count; i += 256u) {
+            uint b = order_read(start + i);
+            atomicAdd(hist[octant_of(in_bodies.bodies[b].xyz, node.center)], 1u);
+        }
+        barrier();
+
+        if (lid == 0u) {
+            float child_half = cell_half * 0.5;
+            uint base = 0u;
+            uint nchild = 0u;
+            for (uint k = 0u; k < 8u; ++k) {
+                uint c = hist[k];
+                if (c > 0u && ok == 1u) {
+                    uint id = atomicAdd(inout_control.control.nodes_top, 1u);
+                    if (id < push.capacity) {
+                        child_first[k] = start + base;
+                        // Children are stored compactly, in octant order, like
+                        // the CPU builder: the traversal walks children[0..n).
+                        inout_nodes.nodes[cell_id].children[nchild] = id;
+                        base += c;
+                        nchild += 1u;
+
+                        Node child;
+                        child.center = node.center + vec3(
+                            (k & 4u) != 0u ? child_half : -child_half,
+                            (k & 2u) != 0u ? child_half : -child_half,
+                            (k & 1u) != 0u ? child_half : -child_half);
+                        child.half_size = child_half;
+                        child.center_mass = vec3(0.0);
+                        child.mass = 0.0;
+                        child.first_obj = child_first[k];
+                        child.obj_count = c;
+                        child.child_count = 0u;
+                        child.depth = depth + 1u;
+                        for (uint j = 0u; j < 8u; ++j) { child.children[j] = 0u; }
+                        inout_nodes.nodes[id] = child;
+
+                        uint cell_slot = atomicAdd(inout_control.control.cells_top, 1u);
+                        inout_cells.cells[cell_slot] = id;
+                        atomicAdd(inout_control.control.level_dispatch[push.level + 1u][0], 1u);
+                    } else {
+                        inout_control.control.overflow = 1u;
+                        ok = 0u;
+                    }
+                }
+            }
+            inout_nodes.nodes[cell_id].child_count = nchild;
+        }
+        barrier();
+
+        if (ok == 1u) {
+            for (uint i = lid; i < count; i += 256u) {
+                uint b = order_read(start + i);
+                uint oct = octant_of(in_bodies.bodies[b].xyz, node.center);
+                uint slot = atomicAdd(cursor[oct], 1u);
+                order_write(child_first[oct] + slot, b);
+            }
+        }
+    } else {
+        if (lid == 0u) {
+            atomicMax(inout_control.control.max_leaf_depth, depth);
+            atomicAdd(inout_control.control.leaf_hist[min(depth, uint(MAX_DEPTH_CAP))], count);
+        }
+        for (uint i = lid; i < count; i += 256u) {
+            order_write(start + i, order_read(start + i));
+        }
+    }
+
+    if (lid == 0u) { inout_control.control.order_parity = push.dst; }
+}
+
+#elif TREE_BUILD_STAGE == 4
+
+layout(set = 0, binding = 0) buffer Nodes { Node nodes[]; } inout_nodes;
+layout(set = 0, binding = 1) readonly buffer Bodies { vec4 bodies[]; } in_bodies;
+layout(set = 0, binding = 2) readonly buffer OrderA { uint order_a[]; } in_order_a;
+layout(set = 0, binding = 3) readonly buffer OrderB { uint order_b[]; } in_order_b;
+layout(set = 0, binding = 4) readonly buffer Cells { uint cells[]; } in_cells;
+layout(set = 0, binding = 5) readonly buffer ControlBuffer { Control control; } in_control;
+
+layout(push_constant) uniform Push { uint level; } push;
+
+uint order_read(uint i) {
+    return in_control.control.order_parity == 0u ? in_order_a.order_a[i] : in_order_b.order_b[i];
+}
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= in_control.control.level_dispatch[push.level][0]) { return; }
+    uint cell = in_cells.cells[in_control.control.level_base[push.level] + i];
+    Node node = inout_nodes.nodes[cell];
+
+    // Online weighted mean: never forms `position * mass`, which would overflow
+    // f32 for planetary masses (`6e27 * 1e10`), and stays stable for the large
+    // leaves the depth cap can produce.
+    float mass = 0.0;
+    vec3 com = vec3(0.0);
+    if (node.child_count == 0u) {
+        for (uint j = 0u; j < node.obj_count; ++j) {
+            uint b = order_read(node.first_obj + j);
+            vec4 body = in_bodies.bodies[b];
+            float next = mass + body.w;
+            float w = next > 0.0 ? body.w / next : 0.0;
+            com += (body.xyz - com) * w;
+            mass = next;
+        }
+    } else {
+        for (uint k = 0u; k < node.child_count; ++k) {
+            Node child = inout_nodes.nodes[node.children[k]];
+            float next = mass + child.mass;
+            float w = next > 0.0 ? child.mass / next : 0.0;
+            com += (child.center_mass - com) * w;
+            mass = next;
+        }
+    }
+    inout_nodes.nodes[cell].mass = mass;
+    inout_nodes.nodes[cell].center_mass = com;
+}
+
+#elif TREE_BUILD_STAGE == 5
+
+// Copies the finished order (in whichever parity buffer the last level wrote)
+// into the traversal's own buffer, so the solve path has one fixed binding.
+layout(set = 0, binding = 0) readonly buffer OrderA { uint order_a[]; } in_order_a;
+layout(set = 0, binding = 1) readonly buffer OrderB { uint order_b[]; } in_order_b;
+layout(set = 0, binding = 2) buffer OrderOut { uint order_out[]; } inout_order_out;
+layout(set = 0, binding = 3) readonly buffer ControlBuffer { Control control; } in_control;
+
+layout(push_constant) uniform Push { uint count; } push;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= push.count) { return; }
+    inout_order_out.order_out[i] =
+        in_control.control.order_parity == 0u ? in_order_a.order_a[i] : in_order_b.order_b[i];
+}
+
+#endif

@@ -59,15 +59,101 @@ Selection_State :: struct {
 	picked: i32,
 }
 
+// Gravity solver hook. A tick submits a solve early and applies its results only
+// when a consumer needs them, so the backend's work overlaps the CPU systems
+// that do not depend on it:
+//
+//   - `physic_system_gravity` calls `submit`, which records and submits one
+//     solve without waiting. Results stay in the backend's buffers; the pools
+//     are not touched.
+//   - `physic_system_collision` calls `finish` first when the backend's
+//     contacts feed the narrow phase (the octree fold does; see
+//     `finish_at_collision`).
+//   - `physic_system_integrate` calls `finish` first otherwise, before the
+//     position update that needs the new velocities.
+//
+// `finish` waits for the pending submission and applies its results: it writes
+// the velocities into the pool (`vel += acc * dt` happened on the backend, so
+// physic never integrates velocities for a hooked backend) and appends the
+// contacts it found. It is idempotent; a false return uninstalls the hook and
+// re-runs the CPU solver for the current tick. Tree backends read the tree from
+// `physic_state(w)`.
+Gravity_Submit_Proc :: proc(
+	user: rawptr,
+	w: ^ecs.World,
+	bodies: []u32,
+	seconds: f64,
+) -> bool
+
+Gravity_Finish_Proc :: proc(
+	user: rawptr,
+	w: ^ecs.World,
+	bodies: []u32,
+	contacts: ^[dynamic]Contact,
+) -> bool
+
+Gravity_Solver :: struct {
+	user:   rawptr,
+	submit: Gravity_Submit_Proc,
+	finish: Gravity_Finish_Proc,
+	// True when the narrow phase consumes the solve's contacts (the octree
+	// fold): collision finishes the solve before resolving. False lets the
+	// solve overlap the collision pass; integrate finishes it.
+	finish_at_collision: bool,
+	// Optional tree builder. While it is installed physic never builds the CPU
+	// tree: the rebuild decision (interval/adaptive staleness) stays here, the
+	// backend builds (on the GPU) and returns its metrics. A failed build
+	// uninstalls the solver and the CPU builder takes over for good.
+	build_tree: Tree_Build_Proc,
+}
+
+// Tree_Info summarizes a tree build. The adaptive controller, the tests and the
+// bench read it instead of the tree, so a backend can own the tree entirely.
+Tree_Info :: struct {
+	node_count:        int,
+	max_leaf_depth:    int,
+	median_leaf_depth: int,
+	typical_half:      f32,
+	max_radius:        f32,
+}
+
+// Tree builder hook; see `Gravity_Solver.build_tree`.
+Tree_Build_Proc :: proc(
+	user: rawptr,
+	w: ^ecs.World,
+	bodies: []u32,
+	max_depth: int,
+	min_half: f32,
+) -> (
+	info: Tree_Info,
+	ok: bool,
+)
+
+// Installs (or clears, with a zero value) the gravity solver. Call before the
+// world is frozen; the physics thread reads it without synchronization.
+physic_set_gravity_solver :: proc(w: ^ecs.World, solver: Gravity_Solver) {
+	state := physic_state(w)
+	state.gravity_solver = solver
+}
+
 // Solver/adaptive state lives as a world resource; the physics systems fetch it
 // at the start of a tick and keep the pointer for their duration.
 Physic_State :: struct {
 	algorithm:           found.Algorithm,
+	gravity_solver:      Gravity_Solver,
+	// A hooked backend's submission is in flight between `physic.gravity` and
+	// the first consumer (`physic.collision` or `physic.integrate`).
+	gravity_pending:     bool,
+	gravity_seconds:     f64,
 	theta:               f32,
 	rebuild_interval:    f32,
 	max_depth:           int,
 	min_half:            f32,
 	tree:                ^OctTree,
+	// True while the hooked backend owns the tree (built on the GPU); the CPU
+	// tree is then nil and only `tree_info` is valid.
+	tree_on_gpu:         bool,
+	tree_info:           Tree_Info,
 	tree_accumulator:    f32,
 	tree_body_count:     int,
 	tree_revision:       u64,
@@ -250,26 +336,112 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 
 	switch state.algorithm {
 	case .BRUTE_FORCE:
+		if state.gravity_solver.submit != nil {
+			found.profile_scope_args("gpu.submit", "n=%d", {len(bodies)})
+			if _submit_gravity(state, w, bodies, seconds) {return true}
+		}
 		found.profile_scope_args("brute.force", "n=%d", {len(bodies)})
 		_brute_force_solve(w, bodies, seconds)
 	case .OCTREE:
-		if state.tree != nil {
-			state.tree.theta = state.theta
+		if state.tree != nil || state.tree_on_gpu {
+			if state.tree != nil {state.tree.theta = state.theta}
 			// The gravity traversal doubles as the collision broad phase:
 			// positions do not change between the two phases, so the contacts
 			// it collects are exactly what a separate pass would have found.
 			// The collision sphere is inflated by the tree's build-time max
 			// radius, so the query never hides a contact.
 			clear(&state.collision_contacts)
-			_octree_solve(state, bodies, seconds)
+			if state.gravity_solver.submit != nil {
+				found.profile_scope_args("gpu.submit", "n=%d theta=%.2f", {len(bodies), state.theta})
+				if _submit_gravity(state, w, bodies, seconds) {return true}
+			}
+			_octree_cpu_solve(state, w, bodies, seconds)
 		}
 	}
 	return true
 }
 
+// _submit_gravity starts one hooked solve. On failure the hook is dropped and
+// the caller runs the CPU solver for this tick; the backend must not have
+// touched the pools.
+@(private)
+_submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seconds: f64) -> bool {
+	if state.gravity_solver.submit(state.gravity_solver.user, w, bodies, seconds) {
+		state.gravity_pending = true
+		state.gravity_seconds = seconds
+		return true
+	}
+	log.errorf("[PHYSIC] Gravity solver failed to submit; falling back to the CPU solver")
+	state.gravity_solver = {}
+	return false
+}
+
+// _finish_gravity completes a pending submission: it waits, scatters the
+// velocities the backend computed and appends its contacts. Called by whichever
+// system needs the results first; `gravity_pending` keeps it idempotent. When
+// the backend fails, its pools are untouched, so the CPU solver can still
+// produce this tick's gravity.
+@(private)
+_finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
+	state.gravity_pending = false
+	if state.gravity_solver.finish(
+		state.gravity_solver.user,
+		w,
+		bodies,
+		&state.collision_contacts,
+	) {
+		return
+	}
+	log.errorf("[PHYSIC] Gravity solver failed; falling back to the CPU solver")
+	state.gravity_solver = {}
+	clear(&state.collision_contacts)
+	switch state.algorithm {
+	case .BRUTE_FORCE:
+		// The finish usually happens after this tick's collision pass when the
+		// brute-force backend is hooked; the fallback then solves gravity from
+		// the post-collision positions. Only a device failure reaches here.
+		_brute_force_solve(w, bodies, state.gravity_seconds)
+	case .OCTREE:
+		_octree_cpu_solve(state, w, bodies, state.gravity_seconds)
+	}
+}
+
+// _octree_cpu_solve runs the CPU octree solve and builds the CPU tree on demand.
+// The lazy build happens when a GPU backend fails after physic stopped building
+// the CPU tree; it is the fallback path, so paying for a cold build is fine.
+@(private)
+_octree_cpu_solve :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seconds: f64) {
+	state.tree_on_gpu = false
+	if state.tree == nil {
+		view := body_view(w)
+		state.tree = octtree_create_ex(view, state.theta, state.max_depth, state.min_half)
+		state.tree_info = _tree_info(state.tree)
+		state.tree_body_count = len(bodies)
+		state.tree_revision = w.revision
+	}
+	state.tree.theta = state.theta
+	_octree_solve(state, bodies, seconds)
+}
+
+// physic_finish_gravity completes a pending hooked solve and applies its
+// results. The systems call it internally; benches and tests that drive the
+// solve steps directly use it too.
+physic_finish_gravity :: proc(w: ^ecs.World) {
+	state := physic_state(w)
+	if !state.gravity_pending {return}
+	_finish_gravity(state, w, ecs.world_pool(w, Body).dense[:])
+}
+
 physic_system_collision :: proc(w: ^ecs.World, _: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
+
+	// The octree fold produces the contacts this phase resolves, so the hooked
+	// solve has to complete first. The brute-force solve does not feed
+	// collision, so it stays in flight through this pass.
+	if state.gravity_pending && state.gravity_solver.finish_at_collision {
+		_finish_gravity(state, w, bodies)
+	}
 	if len(bodies) < 2 {return true}
 
 	switch state.algorithm {
@@ -277,7 +449,7 @@ physic_system_collision :: proc(w: ^ecs.World, _: f32) -> bool {
 		found.profile_scope_args("brute.collision", "n=%d", {len(bodies)})
 		_brute_force_collision(w, bodies)
 	case .OCTREE:
-		if state.tree != nil {_collision_resolve(state, w)}
+		if state.tree != nil || state.tree_on_gpu {_collision_resolve(state, w)}
 	}
 	return true
 }
@@ -285,6 +457,10 @@ physic_system_collision :: proc(w: ^ecs.World, _: f32) -> bool {
 physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	state := physic_state(w)
 	bodies := ecs.world_pool(w, Body).dense[:]
+	if state.gravity_pending {
+		found.profile_scope_args("gpu.finish", "n=%d", {len(bodies)})
+		_finish_gravity(state, w, bodies)
+	}
 	if len(bodies) == 0 {return true}
 
 	pos := ecs.world_pool(w, Position).data
@@ -344,18 +520,16 @@ physic_system_adapt :: proc(w: ^ecs.World, _: f32) -> bool {
 _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^OctTree {
 	view := body_view(w)
 	bodies := view.bodies
-	stale :=
-		state.tree == nil ||
-		state.tree_body_count != len(bodies) ||
-		state.tree_revision != w.revision
+	have := state.tree != nil || state.tree_on_gpu
+	stale := !have || state.tree_body_count != len(bodies) || state.tree_revision != w.revision
 
 	if !stale {
-		if state.auto_adjust && state.tree != nil {
+		if state.auto_adjust && have {
 			state.tree_accumulator += delta_time
 			if state.tree_accumulator >= state.rebuild_interval ||
 			   adaptive_tree_stale(
 				   state.max_disp_sq,
-				   state.tree.typical_half,
+				   state.tree_info.typical_half,
 				   state.updates_since_build,
 			   ) {
 				stale = true
@@ -370,36 +544,53 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 
 	if stale || (!state.auto_adjust && state.rebuild_interval <= 0) {
 		found.profile_scope("octree.build")
+		if state.gravity_solver.build_tree != nil {
+			info, ok := state.gravity_solver.build_tree(
+				state.gravity_solver.user,
+				w,
+				bodies,
+				state.max_depth,
+				state.min_half,
+			)
+			if ok {
+				state.tree_info = info
+				state.tree_on_gpu = true
+				_tree_build_bookkeeping(state, w, view, bodies)
+				found.profile_mark(
+					"octree.built",
+					"n=%d nodes=%d med_depth=%d max_depth=%d typical_half=%.4g rebuilds=%d source=gpu",
+					{
+						len(bodies),
+						info.node_count,
+						info.median_leaf_depth,
+						info.max_leaf_depth,
+						info.typical_half,
+						state.rebuild_count,
+					},
+				)
+				return nil
+			}
+			log.errorf("[PHYSIC] GPU tree build failed; falling back to the CPU solver")
+			state.gravity_solver = {}
+			state.tree_on_gpu = false
+		}
 		if state.tree != nil {
 			octtree_rebuild_ex(state.tree, view, state.theta, state.max_depth, state.min_half)
 		} else {
 			state.tree = octtree_create_ex(view, state.theta, state.max_depth, state.min_half)
 		}
-		state.tree_body_count = len(bodies)
-		state.tree_revision = w.revision
-		state.tree_accumulator = 0
-		state.updates_since_build = 0
-		state.rebuild_count += 1
-		if state.auto_adjust {
-			if cap(state.build_positions) < len(view.position) {
-				resize(&state.build_positions, len(view.position))
-			}
-			for idx in bodies {
-				if int(idx) < len(state.build_positions) {
-					state.build_positions[idx] = Vec3(view.position[idx])
-				}
-			}
-			state.max_disp_sq = 0
-		}
+		state.tree_on_gpu = false
+		state.tree_info = _tree_info(state.tree)
+		_tree_build_bookkeeping(state, w, view, bodies)
 		found.profile_mark(
 			"octree.built",
-			"n=%d nodes=%d med_depth=%d max_depth=%d typical_half=%.4g rebuilds=%d",
+			"n=%d nodes=%d med_depth=%d max_depth=%d typical_half=%.4g rebuilds=%d source=cpu",
 			{
 				len(bodies),
-				state.tree.node_count,
-				state.tree.median_leaf_depth,
-				state.tree.max_leaf_depth,
-				state.tree.typical_half,
+				state.tree_info.node_count,
+				state.tree_info.median_leaf_depth,
+				state.tree_info.max_leaf_depth,
+				state.tree_info.typical_half,
 				state.rebuild_count,
 			},
 		)
@@ -407,6 +598,39 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 	state.updates_since_build += 1
 	if state.tree != nil {state.tree.view = view}
 	return state.tree
+}
+
+// _tree_build_bookkeeping records that the tree now matches the world. Shared by
+// the CPU builder, the backend build hook and the adaptive staleness logic.
+@(private)
+_tree_build_bookkeeping :: proc(state: ^Physic_State, w: ^ecs.World, view: Bodies, bodies: []u32) {
+	state.tree_body_count = len(bodies)
+	state.tree_revision = w.revision
+	state.tree_accumulator = 0
+	state.updates_since_build = 0
+	state.rebuild_count += 1
+	if state.auto_adjust {
+		if cap(state.build_positions) < len(view.position) {
+			resize(&state.build_positions, len(view.position))
+		}
+		for idx in bodies {
+			if int(idx) < len(state.build_positions) {
+				state.build_positions[idx] = Vec3(view.position[idx])
+			}
+		}
+		state.max_disp_sq = 0
+	}
+}
+
+@(private)
+_tree_info :: proc(tree: ^OctTree) -> Tree_Info {
+	return Tree_Info {
+		node_count = tree.node_count,
+		max_leaf_depth = tree.max_leaf_depth,
+		median_leaf_depth = tree.median_leaf_depth,
+		typical_half = tree.typical_half,
+		max_radius = tree.max_radius,
+	}
 }
 
 adaptive_tree_stale :: proc(max_disp_sq, leaf_half: f32, updates_since_build: int) -> bool {

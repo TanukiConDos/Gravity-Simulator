@@ -16,6 +16,10 @@ Push_Binding_Spec :: struct {
 	binding:    u32,
 	descriptor: vulkan.DescriptorType,
 	size:       vulkan.DeviceSize,
+	// External bindings own no buffer; the caller supplies one per frame with
+	// push_descriptors_bind_buffer before flushing. Used by compute pipelines,
+	// whose storage buffers live with the solver.
+	external:   bool,
 }
 
 @(private)
@@ -25,9 +29,11 @@ Push_Binding :: struct {
 	descriptor:   vulkan.DescriptorType,
 	stage:        vulkan.ShaderStageFlags,
 	size:         vulkan.DeviceSize,
-	buffers:      [MAX_FRAMES_IN_FLIGHT]Buffer,
-	buffer_infos: [MAX_FRAMES_IN_FLIGHT]vulkan.DescriptorBufferInfo,
-	writes:       [MAX_FRAMES_IN_FLIGHT]vulkan.WriteDescriptorSet,
+	external:     bool,
+	buffers:      [PUSH_DESCRIPTOR_SLOTS]Buffer,
+	buffer_infos: [PUSH_DESCRIPTOR_SLOTS]vulkan.DescriptorBufferInfo,
+	writes:       [PUSH_DESCRIPTOR_SLOTS]vulkan.WriteDescriptorSet,
+	bound:        [PUSH_DESCRIPTOR_SLOTS]bool,
 }
 
 @(private)
@@ -56,26 +62,28 @@ push_descriptors_init :: proc(
 			binding    = spec.binding,
 			descriptor = spec.descriptor,
 			size       = spec.size,
+			external   = spec.external,
 		})
 
 		binding := &tmp.bindings[len(tmp.bindings) - 1]
-		for frame in 0 ..< MAX_FRAMES_IN_FLIGHT {
-			binding.buffers[frame] = buffer_init(gpu, spec.size, {.UNIFORM_BUFFER}, .HostVisible) or_return
-		}
-		for frame in 0 ..< MAX_FRAMES_IN_FLIGHT {
-			binding.buffer_infos[frame] = vulkan.DescriptorBufferInfo{
-				buffer = binding.buffers[frame].buffer,
-				offset = 0,
-				range  = spec.size,
-			}
+		// Every slot (render frames and compute submissions) needs a write
+		// descriptor, because external bindings are flushed from any slot.
+		for frame in 0 ..< PUSH_DESCRIPTOR_SLOTS {
 			binding.writes[frame] = vulkan.WriteDescriptorSet{
 				sType           = .WRITE_DESCRIPTOR_SET,
 				dstBinding      = spec.binding,
 				dstArrayElement = 0,
 				descriptorType  = spec.descriptor,
 				descriptorCount = 1,
-				pBufferInfo     = &binding.buffer_infos[frame],
 			}
+			if spec.external {continue}
+			binding.buffers[frame] = buffer_init(gpu, spec.size, {.UNIFORM_BUFFER}, .HostVisible) or_return
+			binding.buffer_infos[frame] = vulkan.DescriptorBufferInfo{
+				buffer = binding.buffers[frame].buffer,
+				offset = 0,
+				range  = spec.size,
+			}
+			binding.writes[frame].pBufferInfo = &binding.buffer_infos[frame]
 		}
 	}
 
@@ -165,6 +173,29 @@ push_descriptors_write :: proc(
 	buffer_write(&entry.buffers[frame], data, size, 0)
 }
 
+// push_descriptors_bind_buffer points an external binding at a caller-owned
+// buffer for this frame. The binding is pushed on the next flush (once).
+@(private)
+push_descriptors_bind_buffer :: proc(
+	self: ^Push_Descriptors,
+	set, binding, frame: u32,
+	buffer: vulkan.Buffer,
+	offset: vulkan.DeviceSize,
+	size: vulkan.DeviceSize,
+) {
+	entry := push_descriptors_find(self, set, binding)
+	assert(entry != nil, "push descriptor binding is not configured")
+	assert(entry.external, "push_descriptors_bind_buffer on a binding that owns its buffer")
+	assert(frame < PUSH_DESCRIPTOR_SLOTS, "push descriptor frame out of range")
+	assert(buffer != 0, "push_descriptors_bind_buffer with a null buffer")
+	entry.buffer_infos[frame] = vulkan.DescriptorBufferInfo{
+		buffer = buffer,
+		offset = offset,
+		range  = size,
+	}
+	entry.bound[frame] = true
+}
+
 @(private)
 push_descriptors_flush :: proc(
 	self: ^Push_Descriptors,
@@ -172,8 +203,11 @@ push_descriptors_flush :: proc(
 	layout: vulkan.PipelineLayout,
 	frame: u32,
 ) {
-	assert(frame < MAX_FRAMES_IN_FLIGHT, "push descriptor frame out of range")
+	assert(frame < PUSH_DESCRIPTOR_SLOTS, "push descriptor frame out of range")
 	for &entry in self.bindings {
+		// An external binding that was not supplied this frame is skipped: the
+		// recording path is responsible for binding everything its dispatch reads.
+		if entry.external && !entry.bound[frame] {continue}
 		// Recomputed every frame so the write never points at a stale address.
 		entry.writes[frame].pBufferInfo = &entry.buffer_infos[frame]
 		info := vulkan.PushDescriptorSetInfo{
@@ -185,5 +219,6 @@ push_descriptors_flush :: proc(
 			pDescriptorWrites    = &entry.writes[frame],
 		}
 		vulkan.CmdPushDescriptorSet2(cmd, &info)
+		if entry.external {entry.bound[frame] = false}
 	}
 }

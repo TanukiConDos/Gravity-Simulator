@@ -65,6 +65,9 @@ Reflection :: struct {
 	outputs:        []Input,
 	descriptors:    []Descriptor,
 	push_constants: []Push_Constant,
+	// Workgroup size from the entry point's LocalSize/LocalSizeId execution mode.
+	// Zero when the shader does not declare one (all graphics stages).
+	local_size: [3]u32,
 
 	allocator: mem.Allocator,
 }
@@ -208,15 +211,26 @@ _Entry :: struct {
 	name:  string,
 }
 
+// OpExecutionMode/OpExecutionModeId payload. Literals are kept raw; LocalSizeId
+// arguments are constant IDs and are resolved when the reflection is built.
+@(private)
+_Execution_Mode :: struct {
+	entry: u32,
+	mode:  u32,
+	args:  [3]u32,
+	argc:  u8,
+}
+
 @(private)
 _Parser :: struct {
-	allocator:   mem.Allocator,
-	types:       map[u32]_Type,
-	constants:   map[u32]u32,
-	names:       map[u32]string,
-	decorations: [dynamic]_Decoration,
-	variables:   [dynamic]_Variable,
-	entries:     [dynamic]_Entry,
+	allocator:       mem.Allocator,
+	types:           map[u32]_Type,
+	constants:       map[u32]u32,
+	names:           map[u32]string,
+	decorations:     [dynamic]_Decoration,
+	variables:       [dynamic]_Variable,
+	entries:         [dynamic]_Entry,
+	execution_modes: [dynamic]_Execution_Mode,
 }
 
 @(private)
@@ -236,6 +250,7 @@ _parser_destroy :: proc(self: ^_Parser) {
 		if len(entry.name) > 0 {delete(entry.name, self.allocator)}
 	}
 	delete(self.entries)
+	delete(self.execution_modes)
 }
 
 // -----------------------------------------------------------------------------
@@ -243,6 +258,8 @@ _parser_destroy :: proc(self: ^_Parser) {
 // -----------------------------------------------------------------------------
 
 @(private) OP_ENTRY_POINT        :: u16(15)
+@(private) OP_EXECUTION_MODE     :: u16(16)
+@(private) OP_EXECUTION_MODE_ID  :: u16(331)
 @(private) OP_NAME               :: u16(5)
 @(private) OP_MEMBER_NAME        :: u16(6)
 @(private) OP_DECORATE           :: u16(71)
@@ -284,6 +301,9 @@ _parser_destroy :: proc(self: ^_Parser) {
 @(private) DIM_BUFFER :: u32(5)
 @(private) IMAGE_SAMPLED_STORAGE :: u32(2)
 
+@(private) EXECUTION_MODE_LOCAL_SIZE    :: u32(17)
+@(private) EXECUTION_MODE_LOCAL_SIZE_ID :: u32(38)
+
 // -----------------------------------------------------------------------------
 // Instruction decoding
 // -----------------------------------------------------------------------------
@@ -295,6 +315,13 @@ _parse_instruction :: proc(p: ^_Parser, opcode: u16, ops: []u32) -> bool {
 		if len(ops) < 2 {return false}
 		name, _ := _read_string(ops[2:], p.allocator)
 		append(&p.entries, _Entry{model = ops[0], id = ops[1], name = name})
+
+	case OP_EXECUTION_MODE, OP_EXECUTION_MODE_ID:
+		if len(ops) < 2 {return false}
+		e := _Execution_Mode{entry = ops[0], mode = ops[1]}
+		e.argc = u8(min(len(ops) - 2, len(e.args)))
+		for i in 0 ..< int(e.argc) {e.args[i] = ops[2 + i]}
+		append(&p.execution_modes, e)
 
 	case OP_NAME:
 		if len(ops) < 2 {return false}
@@ -676,9 +703,11 @@ _build :: proc(p: ^_Parser, allocator: mem.Allocator) -> Reflection {
 
 	stage := Stage.Unknown
 	stage_bit := vulkan.ShaderStageFlag.VERTEX
+	local_size: [3]u32
 	if len(p.entries) > 0 {
 		stage = _stage_from_model(p.entries[0].model)
 		stage_bit = stage_flag(stage)
+		local_size = _entry_local_size(p, p.entries[0].id)
 	}
 
 	for v in p.variables {
@@ -752,6 +781,23 @@ _build :: proc(p: ^_Parser, allocator: mem.Allocator) -> Reflection {
 		outputs        = _compact(&outputs, allocator),
 		descriptors    = _compact(&descriptors, allocator),
 		push_constants = _compact(&push_constants, allocator),
+		local_size     = local_size,
 		allocator      = allocator,
 	}
+}
+
+// _entry_local_size resolves the workgroup size declared for `entry`. Literal
+// LocalSize operands are used directly; LocalSizeId operands are constant IDs.
+@(private)
+_entry_local_size :: proc(p: ^_Parser, entry: u32) -> [3]u32 {
+	for e in p.execution_modes {
+		if e.entry != entry || e.argc < 3 {continue}
+		switch e.mode {
+		case EXECUTION_MODE_LOCAL_SIZE:
+			return {e.args[0], e.args[1], e.args[2]}
+		case EXECUTION_MODE_LOCAL_SIZE_ID:
+			return {_constant(p, e.args[0]), _constant(p, e.args[1]), _constant(p, e.args[2])}
+		}
+	}
+	return {}
 }

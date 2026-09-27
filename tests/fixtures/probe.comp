@@ -1,0 +1,27 @@
+#version 460
+
+// Reflection fixture: a compute shader with a non-trivial workgroup size, two
+// storage buffers and a push constant block. The tests pin the reflected stage,
+// local size, descriptor bindings and push constant size.
+
+layout(local_size_x = 8, local_size_y = 4, local_size_z = 2) in;
+
+layout(set = 0, binding = 0) readonly buffer Probe_Input {
+    float values[];
+} probe_input;
+
+layout(set = 0, binding = 1) buffer Probe_Output {
+    float values[];
+} probe_output;
+
+layout(push_constant) uniform Probe_Push {
+    uint element_count;
+} probe_push;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= probe_push.element_count) {
+        return;
+    }
+    probe_output.values[index] = probe_input.values[index] * 2.0 + 1.0;
+}

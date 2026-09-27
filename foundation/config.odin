@@ -9,6 +9,13 @@ Algorithm :: enum {
 	OCTREE,
 }
 
+// Which solve runs for the brute-force algorithm: the built-in CPU loop or the
+// out-of-package GPU backend. Octree keeps its CPU solve in M1/M2.
+Gravity_Backend :: enum {
+	CPU,
+	GPU,
+}
+
 Mode :: enum {
 	RANDOM,
 	FILE,
@@ -20,6 +27,7 @@ Config :: struct {
 	time:                  f32,
 	filename:              string,
 	algorithm:             Algorithm,
+	gravity_backend:       Gravity_Backend,
 	theta:                 f32,
 	tree_rebuild_interval: f32,
 	max_depth:             int,
@@ -38,6 +46,7 @@ _config: Config = {
 	time                  = 1000,
 	filename              = "tierra.json",
 	algorithm             = .BRUTE_FORCE,
+	gravity_backend       = .CPU,
 	theta                 = 0.5,
 	tree_rebuild_interval = 50.0,
 	max_depth             = 48,
@@ -91,6 +100,9 @@ _apply_config :: proc(text: string) {
 		case "algorithm":
 			algo := _parse_string(text, &pos)
 			if algo == "OCTREE" {_config.algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.algorithm = .BRUTE_FORCE}
+		case "gravity_backend":
+			backend := _parse_string(text, &pos)
+			if backend == "GPU" {_config.gravity_backend = .GPU} else if backend == "CPU" {_config.gravity_backend = .CPU}
 		case "theta":
 			_config.theta = f32(_parse_number(text, &pos))
 		case "tree_rebuild_interval":

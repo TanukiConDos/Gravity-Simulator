@@ -12,5 +12,13 @@ fi
 
 glslc --target-env="$target" "$dir/vertexShader.vert" -o "$dir/vert.spv"
 glslc --target-env="$target" "$dir/fragmentShader.frag" -o "$dir/frag.spv"
+glslc --target-env="$target" "$dir/compute_probe.comp" -o "$dir/compute_probe.spv"
+glslc --target-env="$target" "$dir/physics_brute.comp" -o "$dir/physics_brute.spv"
+glslc --target-env="$target" "$dir/physics_tree.comp" -o "$dir/physics_tree.spv"
+
+# The GPU tree build is one GLSL source compiled per pass (see its header).
+for stage in 0 1 2 3 4 5; do
+    glslc --target-env="$target" -DTREE_BUILD_STAGE=$stage "$dir/tree_build.comp" -o "$dir/tree_build_$stage.spv"
+done
 
 echo "shaders compiled (target-env=$target) -> $dir"

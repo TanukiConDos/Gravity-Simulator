@@ -104,3 +104,37 @@ back-reference for its frame-graph callbacks (pick request, selection).
   flight, FIFO present mode (vsync).
 - The engine never enables validation layers itself (see Validation in
   `AGENTS.md`).
+
+## Compute
+
+`compute.odin` exposes the `Compute` handle: a device (headless, or the
+renderer's, which `gpu_physics.odin` attaches to), a command pool for the
+compute queue, a timeline semaphore and a ring of submission slots.
+`compute_begin`/`compute_submit`/`compute_wait` drive one slot at a time; a slot
+is safe to record again once its previous timeline value completed.
+`docs/gpu_physics.md` covers how the physics solver uses this.
+
+- `sync.odin` holds the primitives: the timeline semaphore (host wait with
+  `vkWaitSemaphores`, device wait/signal through `SemaphoreSubmitInfo`), buffer
+  memory barriers and timestamp query pools.
+- Compute pipelines are built like graphics ones: `Compute_Config` names one
+  compute shader and reflection supplies descriptor set layouts, the workgroup
+  size (`LocalSize`/`LocalSizeId`) and push constant ranges.
+  `pipeline_registry_add_compute` registers it; buffers move between passes
+  through buffer barriers, not image barriers.
+- Storage buffers are pushed with `vkCmdPushDescriptorSet2` like everything
+  else. `Push_Binding_Spec.external` bindings own no buffer; the caller supplies
+  one per submission with `push_descriptors_bind_buffer`.
+- Compute work is not part of `frame_graph.json`: it is submitted by the compute
+  side and ordered with the timeline semaphore. The frame graph only needs to
+  wait on timeline values once a render pass consumes GPU-produced buffers.
+- `gpu_physics.odin` is the first consumer: the `Gpu_Gravity` backend packs body
+  SSBOs, dispatches `physics_brute.comp` (all-pairs) or `physics_tree.comp`
+  (Barnes-Hut over the tree `tree_build.comp` builds on the GPU, `gpu_tree.odin`
+  and `gpu_tree_build.odin`), reads velocities and contacts back and installs
+  itself as `physic`'s gravity solver. The hook is
+  split into a non-blocking `submit` and an idempotent `finish`, so the solve
+  stays in flight until a consumer needs it. `gpu_gravity_init` attaches it to
+  the renderer's device; `gpu_gravity_init_headless` is the bench/test variant.
+- `gpu_init_headless` takes `vkGetInstanceProcAddr` from the loader loaded at
+  runtime (`vulkan_loader.odin`); the windowed path keeps GLFW's wrapper.

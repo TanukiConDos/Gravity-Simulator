@@ -5,6 +5,15 @@ import "vendor:vulkan"
 @(private)
 MAX_FRAMES_IN_FLIGHT :: 2
 
+// Command slots in a compute context's submission ring. Independent of the
+// renderer's frames in flight; shared state (push descriptor bindings) is sized
+// for the larger of the two.
+@(private)
+COMPUTE_SLOTS :: 3
+
+@(private)
+PUSH_DESCRIPTOR_SLOTS :: max(MAX_FRAMES_IN_FLIGHT, COMPUTE_SLOTS)
+
 // Upper bound for a frame pass's color attachments (and a pipeline's color
 // output formats). The renderer currently uses two: swapchain color + pick ID.
 @(private)

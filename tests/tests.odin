@@ -3,6 +3,7 @@ package tests
 import physics "../Engine/physic"
 import ecs "../Engine/ecs"
 import foundation "../foundation"
+import "core:log"
 import "core:math/rand"
 import "core:slice"
 import "core:sync"
@@ -363,4 +364,56 @@ test_adaptive_tree_stale :: proc(t: ^testing.T) {
 	threshold_sq := threshold * threshold
 	testing.expect(t, physics.adaptive_tree_stale(threshold_sq * 1.5, leaf_half, 5), "rebuild when drift exceeds threshold")
 	testing.expect(t, !physics.adaptive_tree_stale(threshold_sq * 0.5, leaf_half, 5), "no rebuild when drift under threshold")
+}
+
+// A solver hook whose submit always fails, used to pin the fallback contract.
+@(private)
+_failing_submit :: proc(user: rawptr, w: ^ecs.World, bodies: []u32, seconds: f64) -> bool {
+	return false
+}
+
+@(private)
+_failing_finish :: proc(
+	user: rawptr,
+	w: ^ecs.World,
+	bodies: []u32,
+	contacts: ^[dynamic]physics.Contact,
+) -> bool {
+	return false
+}
+
+@(test)
+test_gravity_solver_fallback :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	physics.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
+	physics.physic_set_gravity_solver(w, {submit = _failing_submit, finish = _failing_finish})
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
+
+	// The hook failure is intentional and logs at error level, which the test
+	// runner would count as a failure; silence the logger around the run.
+	previous_logger := context.logger
+	context.logger = log.nil_logger()
+	ecs.scheduler_run(s, .PHYSICS, w, 16.0)
+	context.logger = previous_logger
+
+	// The failed hook is dropped and the CPU loop still produces forces.
+	acceleration := ecs.world_get(w, object_b, physics.Acceleration)
+	testing.expect(t, acceleration != nil)
+	testing.expect(
+		t,
+		acceleration.x != 0 || acceleration.y != 0 || acceleration.z != 0,
+		"CPU fallback should still solve gravity",
+	)
+	testing.expect(
+		t,
+		physics.physic_state(w).gravity_solver.submit == nil,
+		"a failed solver should be uninstalled",
+	)
 }

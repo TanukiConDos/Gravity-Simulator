@@ -19,13 +19,26 @@ Merged_Descriptor :: struct {
 }
 
 @(private)
+Pipeline_Kind :: enum {
+	graphics,
+	compute,
+}
+
+@(private)
 Pipeline :: struct {
 	gpu:          ^GPU,
+	kind:         Pipeline_Kind,
 	layout:       vulkan.PipelineLayout,
 	handle:       vulkan.Pipeline,
 	set_layouts:  [dynamic]vulkan.DescriptorSetLayout,
 	color_format: vulkan.Format,
 	depth_format: vulkan.Format,
+	// Workgroup size declared by a compute shader; zero for graphics pipelines.
+	workgroup_size: [3]u32,
+	// Stage flags and byte size of the reflected push constant block, zero for
+	// pipelines whose shaders declare none.
+	push_stage:     vulkan.ShaderStageFlags,
+	push_size:      u32,
 	reflections:  [dynamic]spirv.Reflection,
 	descriptors:  [dynamic]Merged_Descriptor,
 }
@@ -65,6 +78,20 @@ pipeline_registry_add :: proc(
 	ok: bool,
 ) {
 	pipeline := pipeline_init(self.gpu, cfg, color_formats, depth_format) or_return
+	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
+	return Pipeline_ID(len(self.entries) - 1), true
+}
+
+@(private)
+pipeline_registry_add_compute :: proc(
+	self: ^Pipeline_Registry,
+	name: string,
+	cfg: Compute_Config,
+) -> (
+	id: Pipeline_ID,
+	ok: bool,
+) {
+	pipeline := pipeline_init_compute(self.gpu, cfg) or_return
 	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
 	return Pipeline_ID(len(self.entries) - 1), true
 }
@@ -110,60 +137,21 @@ pipeline_init :: proc(
 	)
 	tmp := Pipeline{
 		gpu          = gpu,
+		kind         = .graphics,
 		color_format = color_formats[0],
 		depth_format = depth_format,
 	}
-	tmp.reflections = make([dynamic]spirv.Reflection, 0, len(cfg.shaders))
 	tmp.descriptors = make([dynamic]Merged_Descriptor, 0, 8)
 	tmp.set_layouts = make([dynamic]vulkan.DescriptorSetLayout, 0, 1)
 	committed := false
 	defer if !committed {pipeline_destroy(&tmp)}
 
 	log.debugf("[VULKAN]   Loading and reflecting shaders...")
-	modules := make([dynamic]vulkan.ShaderModule, 0, len(cfg.shaders))
-	defer {
-		for module in modules {vulkan.DestroyShaderModule(gpu.device, module, nil)}
-		delete(modules)
-	}
-	stages := make([dynamic]vulkan.PipelineShaderStageCreateInfo, 0, len(cfg.shaders))
-
-	vertex_inputs: []spirv.Input
-	for spec in cfg.shaders {
-		code, read_err := os.read_entire_file(spec.path, context.temp_allocator)
-		if read_err != nil {
-			log.errorf("[VULKAN] Failed to load shader %s", spec.path)
-			return {}, false
-		}
-
-		reflection, reflected := spirv.reflect_with_allocator(code, context.allocator)
-		if !reflected {
-			log.errorf("[VULKAN] Failed to reflect shader %s", spec.path)
-			return {}, false
-		}
-		append(&tmp.reflections, reflection)
-
-		entry, _ := strings.clone_to_cstring(reflection.entry_point, context.temp_allocator)
-		module := _create_shader_module(gpu, code)
-		append(&modules, module)
-		append(&stages, vulkan.PipelineShaderStageCreateInfo{
-			sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
-			stage  = {spirv.stage_flag(reflection.stage)},
-			module = module,
-			pName  = entry,
-		})
-		log.debugf(
-			"[VULKAN]     %s: %s (%d bytes)",
-			spec.path,
-			reflection.entry_point,
-			len(code),
-		)
-
-		if reflection.stage == .Vertex {vertex_inputs = reflection.inputs}
-	}
-	if len(stages) == 0 {
-		log.errorf("[VULKAN] Pipeline config declares no shaders")
-		return {}, false
-	}
+	loaded := _load_shaders(gpu, cfg.shaders) or_return
+	defer _loaded_shaders_destroy(gpu, &loaded)
+	tmp.reflections = loaded.reflections
+	loaded.reflections = nil
+	vertex_inputs := loaded.vertex_inputs
 
 	log.debugf("[VULKAN]   Building vertex input...")
 	vertex_input, vertex_ok := _build_vertex_input(cfg, vertex_inputs)
@@ -262,8 +250,8 @@ pipeline_init :: proc(
 	pipeline_info := vulkan.GraphicsPipelineCreateInfo{
 		sType               = .GRAPHICS_PIPELINE_CREATE_INFO,
 		pNext               = &rendering_info,
-		stageCount          = u32(len(stages)),
-		pStages             = raw_data(stages),
+		stageCount          = u32(len(loaded.stages)),
+		pStages             = raw_data(loaded.stages),
 		pVertexInputState   = &vertex_info,
 		pInputAssemblyState = &input_assembly,
 		pViewportState      = &viewport_state,
@@ -284,6 +272,172 @@ pipeline_init :: proc(
 	return tmp, true
 }
 
+// pipeline_init_compute builds a compute pipeline from exactly one compute
+// shader. Descriptor set layouts and push constant ranges come from reflection,
+// so the shader interface stays the single source of truth.
+@(private)
+pipeline_init_compute :: proc(gpu: ^GPU, cfg: Compute_Config) -> (result: Pipeline, ok: bool) {
+	log.debugf("[VULKAN] Compute pipeline initialization...")
+	tmp := Pipeline{gpu = gpu, kind = .compute}
+	tmp.descriptors = make([dynamic]Merged_Descriptor, 0, 8)
+	tmp.set_layouts = make([dynamic]vulkan.DescriptorSetLayout, 0, 1)
+	committed := false
+	defer if !committed {pipeline_destroy(&tmp)}
+
+	loaded := _load_shaders(gpu, cfg.shaders) or_return
+	defer _loaded_shaders_destroy(gpu, &loaded)
+	if len(loaded.reflections) != 1 || loaded.reflections[0].stage != .Compute {
+		log.errorf("[VULKAN] A compute pipeline needs exactly one compute shader")
+		return {}, false
+	}
+	tmp.reflections = loaded.reflections
+	loaded.reflections = nil
+	tmp.workgroup_size = tmp.reflections[0].local_size
+	if tmp.workgroup_size[0] == 0 || tmp.workgroup_size[1] == 0 || tmp.workgroup_size[2] == 0 {
+		log.errorf("[VULKAN] Compute shader does not declare a workgroup size (LocalSize)")
+		return {}, false
+	}
+
+	if !_merge_descriptors(tmp.reflections[:], &tmp.descriptors) {return {}, false}
+	if !_create_set_layouts(gpu, tmp.descriptors[:], &tmp.set_layouts) {return {}, false}
+
+	push_ranges := make([dynamic]vulkan.PushConstantRange, 0, 4)
+	defer delete(push_ranges)
+	_push_constant_ranges(tmp.reflections[:], &push_ranges)
+	for r in push_ranges {
+		tmp.push_stage |= r.stageFlags
+		tmp.push_size = max(tmp.push_size, r.offset + r.size)
+	}
+
+	pipeline_layout_info := vulkan.PipelineLayoutCreateInfo{
+		sType                  = .PIPELINE_LAYOUT_CREATE_INFO,
+		setLayoutCount         = u32(len(tmp.set_layouts)),
+		pSetLayouts            = raw_data(tmp.set_layouts),
+		pushConstantRangeCount = u32(len(push_ranges)),
+		pPushConstantRanges    = raw_data(push_ranges),
+	}
+	vk_check(
+		vulkan.CreatePipelineLayout(gpu.device, &pipeline_layout_info, nil, &tmp.layout),
+		"vkCreatePipelineLayout",
+	) or_return
+
+	pipeline_info := vulkan.ComputePipelineCreateInfo {
+		sType  = .COMPUTE_PIPELINE_CREATE_INFO,
+		stage  = loaded.stages[0],
+		layout = tmp.layout,
+	}
+	vk_check(
+		vulkan.CreateComputePipelines(gpu.device, 0, 1, &pipeline_info, nil, &tmp.handle),
+		"vkCreateComputePipelines",
+	) or_return
+
+	log.debugf(
+		"[VULKAN]   Compute pipeline ready (workgroup %dx%dx%d)",
+		tmp.workgroup_size[0],
+		tmp.workgroup_size[1],
+		tmp.workgroup_size[2],
+	)
+	committed = true
+	return tmp, true
+}
+
+// _push_constant_ranges merges the reflected push constant blocks of every
+// stage. GLSL exposes one block per stage, but merging by offset/size keeps the
+// helper correct for any future layout.
+@(private)
+_push_constant_ranges :: proc(reflections: []spirv.Reflection, out: ^[dynamic]vulkan.PushConstantRange) {
+	for reflection in reflections {
+		stage := vulkan.ShaderStageFlags{spirv.stage_flag(reflection.stage)}
+		for block in reflection.push_constants {
+			merged := false
+			for &r in out {
+				if r.offset != block.offset || r.size != block.size {continue}
+				r.stageFlags |= stage
+				merged = true
+				break
+			}
+			if !merged {
+				append(out, vulkan.PushConstantRange{stageFlags = stage, offset = block.offset, size = block.size})
+			}
+		}
+	}
+}
+
+// _load_shaders loads, reflects and creates modules for every configured shader.
+// The caller owns the result and releases it with _loaded_shaders_destroy (or by
+// moving `reflections` into a Pipeline, which then owns them).
+@(private)
+_Loaded_Shaders :: struct {
+	modules:       [dynamic]vulkan.ShaderModule,
+	stages:        [dynamic]vulkan.PipelineShaderStageCreateInfo,
+	reflections:   [dynamic]spirv.Reflection,
+	vertex_inputs: []spirv.Input,
+}
+
+@(private)
+_load_shaders :: proc(gpu: ^GPU, specs: []Shader_Spec) -> (result: _Loaded_Shaders, ok: bool) {
+	result.modules = make([dynamic]vulkan.ShaderModule, 0, len(specs))
+	result.stages = make([dynamic]vulkan.PipelineShaderStageCreateInfo, 0, len(specs))
+	result.reflections = make([dynamic]spirv.Reflection, 0, len(specs))
+	committed := false
+	defer if !committed {
+		for module in result.modules {vulkan.DestroyShaderModule(gpu.device, module, nil)}
+		delete(result.modules)
+		delete(result.stages)
+		for &reflection in result.reflections {spirv.reflection_destroy(&reflection)}
+		delete(result.reflections)
+	}
+
+	for spec in specs {
+		code, read_err := os.read_entire_file(spec.path, context.temp_allocator)
+		if read_err != nil {
+			log.errorf("[VULKAN] Failed to load shader %s", spec.path)
+			return {}, false
+		}
+
+		reflection, reflected := spirv.reflect_with_allocator(code, context.allocator)
+		if !reflected {
+			log.errorf("[VULKAN] Failed to reflect shader %s", spec.path)
+			return {}, false
+		}
+		append(&result.reflections, reflection)
+
+		entry, _ := strings.clone_to_cstring(reflection.entry_point, context.temp_allocator)
+		module := _create_shader_module(gpu, code)
+		append(&result.modules, module)
+		append(&result.stages, vulkan.PipelineShaderStageCreateInfo{
+			sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
+			stage  = {spirv.stage_flag(reflection.stage)},
+			module = module,
+			pName  = entry,
+		})
+		log.debugf(
+			"[VULKAN]     %s: %s (%d bytes)",
+			spec.path,
+			reflection.entry_point,
+			len(code),
+		)
+
+		if reflection.stage == .Vertex {result.vertex_inputs = reflection.inputs}
+	}
+	if len(result.stages) == 0 {
+		log.errorf("[VULKAN] Pipeline config declares no shaders")
+		return {}, false
+	}
+	committed = true
+	return result, true
+}
+
+@(private)
+_loaded_shaders_destroy :: proc(gpu: ^GPU, loaded: ^_Loaded_Shaders) {
+	for module in loaded.modules {vulkan.DestroyShaderModule(gpu.device, module, nil)}
+	delete(loaded.modules)
+	delete(loaded.stages)
+	for &reflection in loaded.reflections {spirv.reflection_destroy(&reflection)}
+	delete(loaded.reflections)
+	loaded^ = {}
+}
+
 @(private)
 pipeline_destroy :: proc(self: ^Pipeline) {
 	if self.gpu == nil {return}
@@ -302,7 +456,22 @@ pipeline_destroy :: proc(self: ^Pipeline) {
 
 @(private)
 pipeline_bind :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
+	assert(self.kind == .graphics, "pipeline_bind expects a graphics pipeline")
 	vulkan.CmdBindPipeline(cmd, .GRAPHICS, self.handle)
+}
+
+@(private)
+pipeline_bind_compute :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
+	assert(self.kind == .compute, "pipeline_bind_compute expects a compute pipeline")
+	vulkan.CmdBindPipeline(cmd, .COMPUTE, self.handle)
+}
+
+// pipeline_push_constants uploads a block that stays within the reflected range.
+@(private)
+pipeline_push_constants :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer, data: rawptr, size: u32) {
+	assert(size <= self.push_size, "push constant write exceeds the reflected block")
+	assert(self.push_stage != {}, "pipeline has no push constant block")
+	vulkan.CmdPushConstants(cmd, self.layout, self.push_stage, 0, size, data)
 }
 
 // pipeline_descriptor looks up a merged descriptor by its Vulkan location.

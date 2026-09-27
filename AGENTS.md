@@ -8,6 +8,10 @@ odin test tests -debug     # Run tests
 odin build . -o:speed -disable-assert   # Optimized build (asserts compiled out)
 odin run bench -o:speed    # Physics benchmark
 odin run bench -o:speed -- 1k   # Single sweep stage (all | 1k | 10k | 100k)
+odin run bench -o:speed -- gpu [elements] [dispatches] [samples]  # Headless compute probe
+odin run bench -o:speed -- gpu-force [n] [ticks] [samples]  # GPU vs CPU gravity
+odin run bench -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]  # GPU vs CPU Barnes-Hut
+odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]  # whole-tick CPU vs GPU
 odin run bench -o:speed -define:PROFILE=true -- profile   # Record bench/results/trace_*.spall
 ```
 
@@ -82,6 +86,7 @@ missing/invalid fields fall back to defaults).
     "time": 1000,                     // simulation time multiplier
     "filename": "tierra.json",        // scene file when mode = FILE (in scenes/)
     "algorithm": "BRUTE_FORCE",       // solver + collision: "BRUTE_FORCE" or "OCTREE"
+    "gravity_backend": "CPU",         // brute-force gravity: "CPU" or "GPU"
     "tree_rebuild_interval": 50,      // sim-seconds between octree rebuilds
     "max_depth": 48,                  // octree depth cap (clamped to MAX_DEPTH_CAP)
     "min_half_size": 0.0001,          // octree leaf cell size floor
@@ -94,6 +99,9 @@ missing/invalid fields fall back to defaults).
 ```
 
 - `theta` (Barnes-Hut opening angle, default 0.5) trades octree speed for accuracy.
+- `gravity_backend` ("CPU"/"GPU") swaps the gravity solve for either algorithm;
+  the GPU backend attaches to the renderer's device and falls back to CPU on
+  failure. See `docs/gpu_physics.md`.
 - `tree_rebuild_interval` (sim-seconds, default 50; 0 = rebuild every tick).
 - `max_depth` (default 48, capped) and `min_half_size` (default `1e-4`) bound octree subdivision.
 - `worker_threads` (default 8) sizes the pool for the parallel gravity solver.
@@ -105,6 +113,7 @@ missing/invalid fields fall back to defaults).
 - `docs/ecs.md` — ECS core, physics/graphics as ECS, threading.
 - `docs/physics.md` — solver, collision fold, fixed timestep, adaptive tuning, app flow.
 - `docs/renderer.md` — reflection, ownership/error handling, visibility, Vulkan usage.
+- `docs/gpu_physics.md` — compute context, timeline semaphores, GPU physics roadmap.
 - `docs/benchmark.md` — bench harness, spall profiling, measured results.
 
 ## Skills

@@ -252,6 +252,26 @@ main :: proc() {
 		return
 	}
 
+	// GPU gravity is a backend of the selected gravity solver (brute force or
+	// octree). Install it before the world is frozen so the physics thread sees
+	// it from the first tick; on any failure the CPU solver runs instead.
+	gpu_gravity: ^graphic.Gpu_Gravity
+	if config.gravity_backend == .GPU {
+		capacity := max(g_world.capacity, physic.body_count(g_world))
+		if solver, solver_ok := graphic.gpu_gravity_init(renderer, config.algorithm, capacity); solver_ok {
+			gpu_gravity = solver
+			physic.physic_set_gravity_solver(g_world, graphic.gpu_gravity_backend(solver))
+			log.infof(
+				"GPU gravity enabled (%v): %s",
+				config.algorithm,
+				graphic.gpu_gravity_info(solver).device_name,
+			)
+		} else {
+			log.warnf("GPU gravity unavailable; falling back to the CPU solver")
+		}
+	}
+	defer if gpu_gravity != nil {graphic.gpu_gravity_destroy(gpu_gravity)}
+
 	// Every pool and resource the threads use now exists: freeze the registries
 	// so the physics and graphics threads only ever perform concurrent reads.
 	ecs.world_freeze(g_world)

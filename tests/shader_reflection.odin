@@ -109,6 +109,42 @@ test_spirv_descriptors_and_push_constants :: proc(t: ^testing.T) {
 }
 
 @(test)
+test_spirv_compute_reflection :: proc(t: ^testing.T) {
+	code := _load_spirv(t, "tests/fixtures/probe_comp.spv")
+	if code == nil {return}
+	defer delete(code, context.allocator)
+
+	reflection, ok := spirv.reflect(code)
+	testing.expect(t, ok, "compute shader should reflect")
+	if !ok {return}
+	defer spirv.reflection_destroy(&reflection)
+
+	testing.expect_value(t, reflection.stage, spirv.Stage.Compute)
+	testing.expect_value(t, reflection.local_size, [3]u32{8, 4, 2})
+
+	testing.expect_value(t, len(reflection.descriptors), 2)
+	if len(reflection.descriptors) == 2 {
+		// Descriptors are reported in declaration order, not by binding.
+		seen := [2]bool{}
+		for descriptor in reflection.descriptors {
+			testing.expect_value(t, descriptor.set, u32(0))
+			testing.expect_value(t, descriptor.descriptor, vulkan.DescriptorType.STORAGE_BUFFER)
+			testing.expect_value(t, descriptor.stage, vulkan.ShaderStageFlag.COMPUTE)
+			if descriptor.binding < 2 {seen[descriptor.binding] = true}
+		}
+		testing.expect(t, seen[0] && seen[1], "both storage buffers should be reflected")
+	}
+
+	testing.expect_value(t, len(reflection.push_constants), 1)
+	if len(reflection.push_constants) == 1 {
+		push := reflection.push_constants[0]
+		testing.expect_value(t, push.offset, u32(0))
+		testing.expect_value(t, push.size, u32(4))
+		testing.expect_value(t, push.stage, vulkan.ShaderStageFlag.COMPUTE)
+	}
+}
+
+@(test)
 test_spirv_rejects_invalid_modules :: proc(t: ^testing.T) {
 	// Malformed modules are logged at error level, which the test runner counts
 	// as a failure; silence the logger while exercising the rejection paths.

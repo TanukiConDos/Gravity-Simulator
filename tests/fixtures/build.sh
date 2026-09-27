@@ -5,5 +5,6 @@ set -euo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 glslc --target-env="vulkan1.4" "$dir/probe.frag" -o "$dir/probe_frag.spv"
+glslc --target-env="vulkan1.4" "$dir/probe.comp" -o "$dir/probe_comp.spv"
 
 echo "fixtures compiled -> $dir"

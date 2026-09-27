@@ -49,6 +49,22 @@ interface.
 and executes it; passes bind to code by name in `_renderer_record_pass`. Add a
 pass in the JSON and implement its record callback in the renderer.
 
+## Compute shaders
+
+Compute pipelines are built the same data-driven way: `Compute_Config` names one
+`.comp` shader, reflection supplies the workgroup size (`LocalSize`) and the
+descriptor/push-constant interface (`pipeline_registry_add_compute`). They are
+not declared in `frame_graph.json`; `Engine/Graphic/compute.odin` owns their
+submission and timeline synchronization (see `docs/gpu_physics.md`). The bench
+`gpu` stage runs `shader/compute_probe.comp` as an end-to-end plumbing check,
+`shader/physics_brute.comp` is the all-pairs gravity kernel (bench `gpu-force`)
+and `shader/physics_tree.comp` the Barnes-Hut traversal with the collision fold
+(bench `gpu-tree`); both gravity kernels also apply the tick's velocity update
+(`vel += acc * dt`), so they write the velocity SSBO instead of accelerations.
+`shader/tree_build.comp` is the GPU octree build, one source compiled six times
+with `-DTREE_BUILD_STAGE=0..5` (`tree_build_0..5.spv`) — see the file header.
+`tests/fixtures/probe.comp` pins the reflection of a compute interface.
+
 ## Verify
 
 - `odin test tests -debug` runs the SPIR-V reflection unit tests, which read the

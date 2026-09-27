@@ -1,0 +1,68 @@
+#version 460
+
+// Tiled all-pairs gravity for the brute-force backend. One invocation per body
+// computes its total acceleration by looping over cache-sized tiles of the body
+// array in shared memory, then applies the tick's velocity update in place
+// (`vel += acc * dt`). Ordered pairs are evaluated from both sides (the CPU
+// solver uses Newton's third law to halve that, the GPU trades the extra work
+// for a branch-free parallel loop).
+//
+// The arithmetic matches Engine/physic/physic_system.odin `_brute_force_solve`:
+// acceleration = dir * G * mass_other / r^2, with r^2 clamped to the same
+// softening floor. Evaluating G * mass_other (never G * m1 * m2) keeps the f32
+// result inside range for planetary masses.
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) readonly buffer Bodies {
+    // xyz = position, w = mass
+    vec4 bodies[];
+} in_bodies;
+
+// The CPU uploads the velocities it holds; the solve updates them so the
+// backend owns velocity integration (M3).
+layout(set = 0, binding = 1) buffer Velocities {
+    // xyz = velocity, w unused
+    vec4 velocities[];
+} inout_velocities;
+
+layout(push_constant) uniform Push {
+    uint body_count;
+    float dt;
+} push;
+
+const float GRAVITY_CONSTANT = 6.6743e-11;
+const float SOFTENING = 1e-6;
+const uint TILE_SIZE = 256;
+
+shared vec4 tile[TILE_SIZE];
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= push.body_count) {
+        return;
+    }
+
+    vec3 position = in_bodies.bodies[index].xyz;
+    vec3 acc = vec3(0.0);
+    uint tile_count = (push.body_count + TILE_SIZE - 1) / TILE_SIZE;
+
+    for (uint t = 0; t < tile_count; ++t) {
+        uint j = t * TILE_SIZE + gl_LocalInvocationID.x;
+        tile[gl_LocalInvocationID.x] = j < push.body_count ? in_bodies.bodies[j] : vec4(0.0);
+        barrier();
+
+        for (uint k = 0; k < TILE_SIZE; ++k) {
+            vec4 other = tile[k];
+            vec3 dir = other.xyz - position;
+            float dist_sq = max(dot(dir, dir), SOFTENING);
+            // dir / |dir| * (G * m / |dir|^2); the self entry contributes zero.
+            acc += dir * (GRAVITY_CONSTANT * other.w / (dist_sq * sqrt(dist_sq)));
+        }
+
+        barrier();
+    }
+
+    vec4 velocity = inout_velocities.velocities[index];
+    inout_velocities.velocities[index] = vec4(velocity.xyz + acc * push.dt, 0.0);
+}
