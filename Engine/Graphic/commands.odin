@@ -74,8 +74,40 @@ Buffer :: struct {
 
 @(private)
 buffer_init :: proc(gpu: ^GPU, size: vulkan.DeviceSize, usage: vulkan.BufferUsageFlags, kind: MemoryKind) -> (result: Buffer, ok: bool) {
+	return _buffer_init_ex(gpu, size, usage, kind, nil)
+}
+
+// buffer_init_shared creates a buffer several queue families use at once
+// (CONCURRENT). The GPU solver's render view needs it: the compute queue writes
+// the body columns and the graphics queue reads them when it builds instances.
+@(private)
+buffer_init_shared :: proc(
+	gpu: ^GPU,
+	size: vulkan.DeviceSize,
+	usage: vulkan.BufferUsageFlags,
+	kind: MemoryKind,
+	families: []u32,
+) -> (result: Buffer, ok: bool) {
+	return _buffer_init_ex(gpu, size, usage, kind, families)
+}
+
+@(private)
+_buffer_init_ex :: proc(
+	gpu: ^GPU,
+	size: vulkan.DeviceSize,
+	usage: vulkan.BufferUsageFlags,
+	kind: MemoryKind,
+	families: []u32,
+) -> (result: Buffer, ok: bool) {
 	tmp := Buffer{gpu = gpu, size = size}
-	buf_info := vulkan.BufferCreateInfo{sType = .BUFFER_CREATE_INFO, size = size, usage = usage, sharingMode = .EXCLUSIVE}
+	buf_info := vulkan.BufferCreateInfo {
+		sType = .BUFFER_CREATE_INFO,
+		size = size,
+		usage = usage,
+		sharingMode = len(families) > 1 ? .CONCURRENT : .EXCLUSIVE,
+		queueFamilyIndexCount = u32(len(families)),
+		pQueueFamilyIndices = raw_data(families),
+	}
 	vk_check(vulkan.CreateBuffer(gpu.device, &buf_info, nil, &tmp.buffer), "vkCreateBuffer") or_return
 	mem_reqs: vulkan.MemoryRequirements
 	vulkan.GetBufferMemoryRequirements(gpu.device, tmp.buffer, &mem_reqs)

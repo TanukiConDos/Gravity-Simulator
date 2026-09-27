@@ -260,6 +260,9 @@ main :: proc() {
 		capacity := max(g_world.capacity, physic.body_count(g_world))
 		if solver, solver_ok := graphic.gpu_gravity_init(renderer, config.algorithm, capacity); solver_ok {
 			gpu_gravity = solver
+			// The renderer draws straight from the solver's buffers (M5) instead
+			// of reading the CPU snapshot.
+			graphic.renderer_set_gravity_source(renderer, solver)
 			physic.physic_set_gravity_solver(g_world, graphic.gpu_gravity_backend(solver))
 			log.infof(
 				"GPU gravity enabled (%v): %s",

@@ -3,6 +3,7 @@ package graphic
 import phys "../physic"
 import ecs "../ecs"
 import "core:log"
+import "core:sync"
 import "vendor:vulkan"
 
 // GPU Barnes-Hut backend: the tree is built on the GPU (`tree_build.comp`, see
@@ -84,8 +85,6 @@ Tree_Leaf :: struct {
 
 @(private)
 Gpu_Tree :: struct {
-	radii_host:      Buffer,
-	radii_device:    Buffer,
 	order_device:    Buffer,
 	contacts_device: Buffer,
 	contacts_host:   Buffer,
@@ -108,13 +107,10 @@ _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 	self.tree.node_capacity = node_capacity
 	self.tree.pair_capacity = pair_capacity
 
-	radii_bytes := vulkan.DeviceSize(capacity * size_of(f32))
 	order_bytes := vulkan.DeviceSize(capacity * size_of(u32))
 	contact_bytes := vulkan.DeviceSize(GPU_CONTACT_HEADER_SIZE + pair_capacity * size_of(Gpu_Contact_Pair))
 
 	gpu := self.compute.gpu
-	self.tree.radii_host = buffer_init(gpu, radii_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.tree.radii_device = buffer_init(gpu, radii_bytes, {.STORAGE_BUFFER, .TRANSFER_DST}, .DeviceLocal) or_return
 	self.tree.order_device = buffer_init(
 		gpu,
 		order_bytes,
@@ -141,8 +137,6 @@ _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 
 @(private)
 _gpu_tree_release :: proc(self: ^Gpu_Gravity) {
-	buffer_destroy(&self.tree.radii_host)
-	buffer_destroy(&self.tree.radii_device)
 	buffer_destroy(&self.tree.order_device)
 	buffer_destroy(&self.tree.contacts_device)
 	buffer_destroy(&self.tree.contacts_host)
@@ -154,14 +148,17 @@ _gpu_tree_release :: proc(self: ^Gpu_Gravity) {
 }
 
 // _gpu_tree_pack_bodies writes the pool-indexed body columns (position, mass,
-// velocity, radius). Slot indices are entity indices; the dispatch index list is
-// the tree's own `order`, built on the GPU.
+// velocity, radius, selection) plus the live list that maps the render slots to
+// entities. Slot indices are entity indices; the traversal dispatch list is the
+// tree's own `order`, built on the GPU.
 @(private)
 _gpu_tree_pack_bodies :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32) {
 	view := phys.body_view(w)
 	records := cast([^]Gpu_Body_Record)self.bodies_host.mapped
 	velocities := cast([^]Gpu_Velocity_Record)self.velocities_host.mapped
-	radii := cast([^]f32)self.tree.radii_host.mapped
+	radii := cast([^]f32)self.radii_host.mapped
+	selected := cast([^]u32)self.selected_host.mapped
+	live := cast([^]u32)self.live_host.mapped
 	for k in 0 ..< len(bodies) {
 		entity := bodies[k]
 		assert(int(entity) < self.capacity, "tree body exceeds the reserved capacity")
@@ -170,6 +167,8 @@ _gpu_tree_pack_bodies :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32) 
 		records[entity] = {position.x, position.y, position.z, f32(view.mass[entity])}
 		velocities[entity] = {velocity.x, velocity.y, velocity.z, 0}
 		radii[entity] = f32(view.radius[entity])
+		selected[entity] = bool(view.selected[entity]) ? 1 : 0
+		live[k] = entity
 	}
 }
 
@@ -226,7 +225,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 
 	body_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Body_Record))
 	velocity_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Velocity_Record))
-	radii_bytes := vulkan.DeviceSize(copy_entries * size_of(f32))
+	pool_bytes := vulkan.DeviceSize(copy_entries * size_of(u32))
+	live_bytes := vulkan.DeviceSize(count * size_of(u32))
 	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, body_bytes)
 	_gpu_upload(
 		cmd,
@@ -236,7 +236,9 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		velocity_bytes,
 		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE},
 	)
-	_gpu_upload(cmd, self.compute.gpu, &tree.radii_host, &tree.radii_device, radii_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, pool_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &self.selected_device, pool_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.live_host, &self.live_device, live_bytes)
 
 	pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Tree_Push {
@@ -250,7 +252,7 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), tree.build.state_device.buffer, tree.build.nodes_offset, tree.build.nodes_bytes)
 	push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), tree.order_device.buffer, 0, tree.order_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), self.bodies_device.buffer, 0, self.bodies_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), tree.radii_device.buffer, 0, tree.radii_device.size)
+	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), self.radii_device.buffer, 0, self.radii_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 4, u32(slot), self.velocities_device.buffer, 0, self.velocities_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 5, u32(slot), tree.contacts_device.buffer, 0, tree.contacts_device.size)
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
@@ -311,8 +313,17 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		{.HOST_READ},
 	)
 
-	self.pending_value = compute_submit(&self.compute, slot)
+	self.pending_value = compute_submit(
+		&self.compute,
+		slot,
+		self.consumer_semaphore,
+		sync.atomic_load(&self.consumer_value),
+	)
 	self.pending = true
+	// Publish for the renderer: the count first, then the value that makes it
+	// (and the columns above) safe to read.
+	sync.atomic_store(&self.render_count, u32(count))
+	sync.atomic_store(&self.render_value, self.pending_value)
 	return true
 }
 

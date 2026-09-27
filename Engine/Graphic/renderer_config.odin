@@ -44,6 +44,45 @@ RENDERER_PUSH_BINDINGS := [?]Push_Binding_Spec{
 	},
 }
 
+// Direct rendering (M5): when a GPU gravity backend owns the world, a compute
+// pass packs the solver's buffers into the instance vertex buffer instead of the
+// CPU reading the snapshot. The pass runs on the frame's graphics queue and the
+// frame submission waits on the solver's timeline value before it.
+@(private)
+DIRECT_SHADER :: "Engine/Graphic/shader/instance_pack.spv"
+
+// Must match the shader's local_size_x; used only to size the dispatch.
+@(private)
+DIRECT_WORKGROUP :: 256
+
+@(private)
+DIRECT_SET :: u32(0)
+@(private)
+DIRECT_BODIES_BINDING :: u32(0)
+@(private)
+DIRECT_RADII_BINDING :: u32(1)
+@(private)
+DIRECT_SELECTED_BINDING :: u32(2)
+@(private)
+DIRECT_LIVE_BINDING :: u32(3)
+@(private)
+DIRECT_INSTANCES_BINDING :: u32(4)
+
+@(private)
+DIRECT_PUSH_BINDINGS := [?]Push_Binding_Spec{
+	{set = DIRECT_SET, binding = DIRECT_BODIES_BINDING, descriptor = .STORAGE_BUFFER, external = true},
+	{set = DIRECT_SET, binding = DIRECT_RADII_BINDING, descriptor = .STORAGE_BUFFER, external = true},
+	{set = DIRECT_SET, binding = DIRECT_SELECTED_BINDING, descriptor = .STORAGE_BUFFER, external = true},
+	{set = DIRECT_SET, binding = DIRECT_LIVE_BINDING, descriptor = .STORAGE_BUFFER, external = true},
+	{set = DIRECT_SET, binding = DIRECT_INSTANCES_BINDING, descriptor = .STORAGE_BUFFER, external = true},
+}
+
+@(private)
+Instance_Pack_Push :: struct {
+	count: u32,
+	mode:  u32,
+}
+
 @(private)
 _RENDERER_DYNAMIC_STATES := [?]vulkan.DynamicState{.VIEWPORT, .SCISSOR}
 

@@ -376,7 +376,7 @@ _gpu_tree_build :: proc(
 	control_size := build.control_bytes
 
 	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, entity_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.tree.radii_host, &self.tree.radii_device, radii_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, radii_bytes)
 	_gpu_upload(cmd, self.compute.gpu, &build.live_host, &build.live_device, live_bytes)
 
 	groups := u32((count + TREE_BUILD_WORKGROUP - 1) / TREE_BUILD_WORKGROUP)
@@ -393,7 +393,7 @@ _gpu_tree_build :: proc(
 	setup_push := Tree_Build_Setup_Push{count = u32(count)}
 	pipeline_push_constants(setup_pipeline, cmd, &setup_push, size_of(Tree_Build_Setup_Push))
 	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 0, frame, self.bodies_device.buffer, 0, self.bodies_device.size)
-	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 1, frame, self.tree.radii_device.buffer, 0, self.tree.radii_device.size)
+	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 1, frame, self.radii_device.buffer, 0, self.radii_device.size)
 	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 2, frame, build.live_device.buffer, 0, live_bytes)
 	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 3, frame, build.orders_device.buffer, build.order_a_offset, build.order_bytes)
 	push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 4, frame, build.state_device.buffer, build.control_offset, control_size)

@@ -32,8 +32,9 @@ instance_buffer_ensure :: proc(self: ^InstanceBuffer, count: int) {
 	for &buffer in self.buffers {buffer_destroy(&buffer)}
 	size := vulkan.DeviceSize(size_of(InstanceData) * vulkan.DeviceSize(max(count, 1)))
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-		// Runtime reallocation has no recovery path.
-		buffer, created := buffer_init(self.gpu, size, {.VERTEX_BUFFER}, .HostVisible)
+		// Runtime reallocation has no recovery path. The storage usage lets the
+		// direct-rendering pack write the buffer from compute (M5).
+		buffer, created := buffer_init(self.gpu, size, {.VERTEX_BUFFER, .STORAGE_BUFFER}, .HostVisible)
 		assert(created, "failed to create instance buffer")
 		self.buffers[i] = buffer
 	}

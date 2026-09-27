@@ -1,0 +1,57 @@
+#version 460
+
+// Renderer instance pack (M5 of docs/gpu_physics.md).
+//
+// When a GPU gravity backend owns the world, the renderer builds its instance
+// data straight from the solver's buffers instead of reading the CPU snapshot:
+// one invocation per live body reads the position, radius and selection flag
+// and writes the per-frame instance record the main pipeline draws.
+//
+// `live` maps the draw slot to the body's entity index, so the instance order
+// and the pick IDs stay the same as the snapshot path (`view.bodies` order).
+// `mode` picks the body column layout: the octree backend keeps `bodies`
+// pool-indexed (read through `live`), the brute-force backend packs it by slot.
+// The frame that runs this pass waits on the solver's timeline value, so the
+// buffers are complete and stable while it reads them.
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// Must match InstanceData: 32 bytes, packed.
+struct InstanceData {
+    vec3 position;
+    float radius;
+    int selected;
+    int _pad0;
+    vec2 _pad1;
+};
+
+layout(set = 0, binding = 0) readonly buffer Bodies { vec4 bodies[]; } in_bodies;
+layout(set = 0, binding = 1) readonly buffer Radii { float radii[]; } in_radii;
+layout(set = 0, binding = 2) readonly buffer Selected { uint selected[]; } in_selected;
+layout(set = 0, binding = 3) readonly buffer Live { uint live[]; } in_live;
+layout(set = 0, binding = 4) writeonly buffer Instances { InstanceData instances[]; } out_instances;
+
+layout(push_constant) uniform Push {
+    uint count;
+    uint mode;
+} push;
+
+// The instance buffer keeps positions and radii small so the model matrix stays
+// precise; the mesh is scaled to match. Must match INSTANCE_SCALE.
+const float INSTANCE_SCALE = 0.00001;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= push.count) { return; }
+
+    uint entity = in_live.live[i];
+    vec4 body = (push.mode == 0u) ? in_bodies.bodies[entity] : in_bodies.bodies[i];
+
+    InstanceData data;
+    data.position = body.xyz * INSTANCE_SCALE;
+    data.radius = in_radii.radii[entity] * INSTANCE_SCALE;
+    data.selected = int(in_selected.selected[entity]);
+    data._pad0 = 0;
+    data._pad1 = vec2(0.0);
+    out_instances.instances[i] = data;
+}

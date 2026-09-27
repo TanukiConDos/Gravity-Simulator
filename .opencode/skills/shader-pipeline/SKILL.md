@@ -62,7 +62,9 @@ and `shader/physics_tree.comp` the Barnes-Hut traversal with the collision fold
 (bench `gpu-tree`); both gravity kernels also apply the tick's velocity update
 (`vel += acc * dt`), so they write the velocity SSBO instead of accelerations.
 `shader/tree_build.comp` is the GPU octree build, one source compiled six times
-with `-DTREE_BUILD_STAGE=0..5` (`tree_build_0..5.spv`) — see the file header.
+with `-DTREE_BUILD_STAGE=0..5` (`tree_build_0..5.spv`) — see the file header —
+and `shader/instance_pack.comp` packs renderer instances from the solver's
+buffers (recorded before the render pass, it is compute).
 `tests/fixtures/probe.comp` pins the reflection of a compute interface.
 
 ## Verify

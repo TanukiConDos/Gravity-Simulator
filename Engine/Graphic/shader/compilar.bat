@@ -19,6 +19,7 @@ if not exist "%GLSLC%" (
 "%GLSLC%" --target-env=vulkan1.4 "%~dp0compute_probe.comp" -o "%~dp0compute_probe.spv"
 "%GLSLC%" --target-env=vulkan1.4 "%~dp0physics_brute.comp" -o "%~dp0physics_brute.spv"
 "%GLSLC%" --target-env=vulkan1.4 "%~dp0physics_tree.comp" -o "%~dp0physics_tree.spv"
+"%GLSLC%" --target-env=vulkan1.4 "%~dp0instance_pack.comp" -o "%~dp0instance_pack.spv"
 
 rem The GPU tree build is one GLSL source compiled per pass.
 for %%S in (0 1 2 3 4 5) do (

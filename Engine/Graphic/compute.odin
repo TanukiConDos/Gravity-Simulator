@@ -263,11 +263,30 @@ compute_begin :: proc(self: ^Compute) -> (cmd: vulkan.CommandBuffer, slot: int) 
 }
 
 // compute_submit closes and submits the slot, returning the timeline value that
-// signals its completion.
+// signals its completion. The optional (semaphore, value) pair adds a wait, which
+// the solver uses to keep its render columns stable while the renderer reads
+// them.
 @(private)
-compute_submit :: proc(self: ^Compute, slot: int) -> u64 {
+compute_submit :: proc(
+	self: ^Compute,
+	slot: int,
+	wait_semaphore: vulkan.Semaphore = 0,
+	wait_value: u64 = 0,
+) -> u64 {
 	s := &self.slots[slot]
 	vk_assert(vulkan.EndCommandBuffer(s.cmd), "vkEndCommandBuffer")
+
+	wait_infos: [1]vulkan.SemaphoreSubmitInfo
+	wait_count: u32
+	if wait_semaphore != 0 {
+		wait_infos[0] = vulkan.SemaphoreSubmitInfo {
+			sType     = .SEMAPHORE_SUBMIT_INFO,
+			semaphore = wait_semaphore,
+			value     = wait_value,
+			stageMask = {.ALL_COMMANDS},
+		}
+		wait_count = 1
+	}
 
 	value := timeline_next(&self.timeline)
 	cmd_info := vulkan.CommandBufferSubmitInfo {
@@ -282,6 +301,8 @@ compute_submit :: proc(self: ^Compute, slot: int) -> u64 {
 	}
 	submit_info := vulkan.SubmitInfo2 {
 		sType                  = .SUBMIT_INFO_2,
+		waitSemaphoreInfoCount = wait_count,
+		pWaitSemaphoreInfos    = &wait_infos[0],
 		commandBufferInfoCount = 1,
 		pCommandBufferInfos    = &cmd_info,
 		signalSemaphoreInfoCount = 1,

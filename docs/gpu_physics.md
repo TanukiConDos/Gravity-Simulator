@@ -8,14 +8,15 @@ snapshot publishing, adaptive tuning).
 ## Status
 
 **M0 (compute plumbing), M1 (GPU brute-force gravity), M2 (GPU Barnes-Hut),
-M3 (GPU integration) and M4 (GPU tree build) are done.** The engine can create a
+M3 (GPU integration), M4 (GPU tree build) and M5 (direct rendering) are done.** The engine can create a
 compute device (headless or attached to the renderer's), build compute pipelines
 from SPIR-V, run dispatch chains against storage buffers and synchronize them
 with a timeline semaphore. `gravity_backend = GPU` replaces either gravity solve
 with its compute path: the octree backend builds its tree on the GPU, traverses
 it, applies the velocity update (`vel += acc * dt`) and returns the collision
 contacts, while physic keeps collision resolution, the position update,
-selection, snapshot publishing and the adaptive controller. All of it is
+selection, snapshot publishing and the adaptive controller. The renderer draws
+those GPU buffers directly instead of reading the CPU snapshot. All of it is
 verified by the bench and pinned by tests.
 
 ## Solve pipeline (M3)
@@ -127,6 +128,39 @@ per-body velocity error against the CPU tree is f32-level on average
 acceleration is dominated by a tight cluster inside one large node. The contact
 sets stay exact.
 
+## Direct rendering (M5)
+
+The renderer never reads the CPU snapshot while a GPU backend owns the world.
+The solver publishes a *render view* for the renderer thread:
+
+- `bodies`, `radii`, `selected` and `live`, all CONCURRENT buffers the compute
+  and graphics queues share. `live` maps the draw slot to the entity, so the
+  instance order, the draw count and the pick IDs stay the same as the snapshot
+  path (`view.bodies` order). `mode` says whether `bodies` is entity-indexed
+  (octree) or packed by slot (brute force).
+- The timeline `value` whose completion makes the buffers safe to read, and the
+  `count` of live bodies. The pair is published after each solve and read with a
+  seqlock retry, so it always describes one submission.
+
+`shader/instance_pack.comp` runs on the graphics queue at the start of the
+frame, before the render pass begins (compute may not be recorded inside one):
+one invocation per instance reads position, radius and selection and writes the
+per-frame instance record. The main pipeline is untouched, and the frame
+submission waits on the solver's timeline before any of it runs.
+
+The reverse dependency matters too: a solve uploads new body columns every tick,
+so it must not overwrite them while a frame is reading. Each frame therefore
+signals a *frame timeline* (`vkQueueSubmit2` signal) and the solver's next
+submission waits on the latest published frame value, so the two queues take
+turns on the shared columns instead of racing. When the solver has no renderer
+(headless bench, tests) the wait is zero.
+
+Measured at 100k bodies: the per-frame instance work drops from 1.14 ms of CPU
+time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
+dispatch), and the solver's positions are one integration step behind the CPU
+snapshot - the renderer draws what the solve used. A CPU backend, or a GPU
+backend that failed and was uninstalled, keeps the snapshot path unchanged.
+
 ## Measurements
 
 Dev machine: RTX 4070 Ti SUPER, 16 CPU workers, `theta = 0.8`, depth 16.
@@ -222,9 +256,10 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   (`verify-engine`) stays intact.
 - **The frame graph owns render passes only.** Physics compute is a per-tick
   chain submitted by the compute side; it is not a render-frame pass. When the
-  renderer starts consuming GPU-produced body state (M5), the graph gains an
-  external producer/timeline wait at its resource resolution step instead of
-  becoming a submission-aware async graph. A per-pass queue model is deferred
+  renderer consumes GPU-produced body state (M5), the wait lives in the frame
+  submission rather than inside the graph: the instance pack is recorded before
+  the graph's passes and the submit waits on the solver's timeline value. The
+  graph itself stays a render-pass scheduler; a per-pass queue model is deferred
   until there is more than one async producer.
 
 ## Milestones
@@ -248,15 +283,17 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   while the brute-force solve overlaps the collision pass; the `gpu-tick` stage
   prices the whole PHYSICS phase. Position integration and collision stay on the
   CPU (they need the positions the next dispatch consumes, so moving them to the
-  GPU would not remove the readback — that is M5's job).
+  GPU would not remove the readback).
 - **M4 — GPU tree build (done).** `tree_build.comp` (six passes in one
   submission) rebuilds the octree on the GPU, produces the metrics physic needs
   as a small readback, and leaves the tree in the traversal's buffers. The CPU
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
-- **M5 — direct rendering.** The renderer consumes the GPU body/instance buffer
-  and the frame graph waits on the solver's completed timeline value; the
-  snapshot/instance upload retires for the GPU path.
+- **M5 — direct rendering (done).** The solver publishes a render view and a
+  timeline value; the renderer packs the per-frame instance data from it with a
+  compute pass and the frame submission waits on that value. The solver's next
+  submission waits on the frame timeline, so neither side sees a buffer the
+  other is writing. The snapshot path remains for CPU backends.
 
 ## Bench
 
@@ -270,7 +307,7 @@ odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octre
 `gpu` creates a windowless compute context, runs the transfer → dispatch →
 transfer probe (`shader/compute_probe.comp`), verifies the output and reports
 the GPU time per dispatch (timestamp queries) plus the host submit→wait round
-trip. The round trip is the per-tick latency floor M5 inherits; measure it
+trip. The round trip is the per-tick latency floor the solver inherits; measure it
 before choosing how much readback to pipeline.
 
 `gpu-force` builds the deterministic bench bodies (seed 42), solves them with

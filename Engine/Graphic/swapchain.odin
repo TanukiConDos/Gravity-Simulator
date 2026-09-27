@@ -129,26 +129,59 @@ swapchain_depth_target :: proc(self: ^SwapChain, frame: u32) -> ^Render_Target {
 }
 
 @(private)
-swapchain_submit :: proc(self: ^SwapChain, cmd: vulkan.CommandBuffer, frame, image_index: u32) -> vulkan.Result {
-	wait_info := vulkan.SemaphoreSubmitInfo{
+// swapchain_submit queues the frame. The optional (semaphore, value) pair adds a
+// timeline wait, which the direct-rendering path uses for the solver's completed
+// value before the frame reads its buffers.
+swapchain_submit :: proc(
+	self: ^SwapChain,
+	cmd: vulkan.CommandBuffer,
+	frame, image_index: u32,
+	wait_semaphore: vulkan.Semaphore = 0,
+	wait_value: u64 = 0,
+	signal_semaphore: vulkan.Semaphore = 0,
+	signal_value: u64 = 0,
+) -> vulkan.Result {
+	wait_infos: [2]vulkan.SemaphoreSubmitInfo
+	wait_infos[0] = vulkan.SemaphoreSubmitInfo{
 		sType = .SEMAPHORE_SUBMIT_INFO,
 		semaphore = self.image_available_semas[frame],
 		stageMask = {.COLOR_ATTACHMENT_OUTPUT},
 	}
-	signal_info := vulkan.SemaphoreSubmitInfo{
+	wait_count := u32(1)
+	if wait_semaphore != 0 {
+		wait_infos[1] = vulkan.SemaphoreSubmitInfo {
+			sType     = .SEMAPHORE_SUBMIT_INFO,
+			semaphore = wait_semaphore,
+			value     = wait_value,
+			stageMask = {.ALL_COMMANDS},
+		}
+		wait_count = 2
+	}
+	signal_infos: [2]vulkan.SemaphoreSubmitInfo
+	signal_infos[0] = vulkan.SemaphoreSubmitInfo{
 		sType = .SEMAPHORE_SUBMIT_INFO,
 		semaphore = self.render_finished_semas[image_index],
 		stageMask = {.ALL_COMMANDS},
 	}
+	signal_count := u32(1)
+	if signal_semaphore != 0 {
+		signal_infos[1] = vulkan.SemaphoreSubmitInfo {
+			sType     = .SEMAPHORE_SUBMIT_INFO,
+			semaphore = signal_semaphore,
+			value     = signal_value,
+			stageMask = {.ALL_COMMANDS},
+		}
+		signal_count = 2
+	}
 	cmd_info := vulkan.CommandBufferSubmitInfo{sType = .COMMAND_BUFFER_SUBMIT_INFO, commandBuffer = cmd}
 	submit_info := vulkan.SubmitInfo2{
 		sType = .SUBMIT_INFO_2,
-		waitSemaphoreInfoCount = 1,
-		pWaitSemaphoreInfos = &wait_info,
+		waitSemaphoreInfoCount = wait_count,
+		pWaitSemaphoreInfos = &wait_infos[0],
 		commandBufferInfoCount = 1,
 		pCommandBufferInfos = &cmd_info,
-		signalSemaphoreInfoCount = 1,
-		pSignalSemaphoreInfos = &signal_info,
+		signalSemaphoreInfoCount = signal_count,
+		pSignalSemaphoreInfos = &signal_infos[0],
 	}
 	if !vk_check(vulkan.QueueSubmit2(self.gpu.graphics_queue, 1, &submit_info, self.in_flight_fences[frame]), "vkQueueSubmit2") {
 		return .ERROR_UNKNOWN
