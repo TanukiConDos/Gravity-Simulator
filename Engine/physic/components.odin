@@ -48,21 +48,37 @@ body_spawn :: proc(
 }
 
 body_count :: proc(w: ^ecs.World) -> int {
-	return len(ecs.world_pool(w, Body).dense)
+	bodies := ecs.world_pool(w, Body)
+	assert(bodies != nil, "body_count: Body pool missing (world frozen before setup?)")
+	return len(bodies.dense)
 }
 
 body_view :: proc(w: ^ecs.World) -> Bodies {
-	bodies := ecs.world_pool(w, Body).dense[:]
+	body_pool := ecs.world_pool(w, Body)
+	position := ecs.world_pool(w, Position)
+	velocity := ecs.world_pool(w, Velocity)
+	mass := ecs.world_pool(w, Mass)
+	radius := ecs.world_pool(w, Radius)
+	selected := ecs.world_pool(w, Selected)
+	assert(
+		body_pool != nil &&
+		position != nil &&
+		velocity != nil &&
+		mass != nil &&
+		radius != nil &&
+		selected != nil,
+		"body_view: body pools missing (world frozen before setup?)",
+	)
 	when ODIN_DEBUG {
-		_body_view_validate(w, bodies)
+		_body_view_validate(w, body_pool.dense[:])
 	}
 	return Bodies {
-		bodies   = bodies,
-		position = ecs.world_pool(w, Position).data[:],
-		velocity = ecs.world_pool(w, Velocity).data[:],
-		mass     = ecs.world_pool(w, Mass).data[:],
-		radius   = ecs.world_pool(w, Radius).data[:],
-		selected = ecs.world_pool(w, Selected).data[:],
+		bodies   = body_pool.dense[:],
+		position = position.data[:],
+		velocity = velocity.data[:],
+		mass     = mass.data[:],
+		radius   = radius.data[:],
+		selected = selected.data[:],
 	}
 }
 

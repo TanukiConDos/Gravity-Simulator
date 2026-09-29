@@ -4,6 +4,7 @@ import physics "../Engine/physic"
 import ecs "../Engine/ecs"
 import foundation "../foundation"
 import "core:log"
+import "core:math"
 import "core:math/rand"
 import "core:slice"
 import "core:sync"
@@ -382,6 +383,19 @@ _failing_finish :: proc(
 	return false
 }
 
+// A solver hook that submits successfully; used to reach the finish contract.
+@(private)
+_ok_submit :: proc(user: rawptr, w: ^ecs.World, bodies: []u32, seconds: f64) -> bool {
+	return true
+}
+
+@(private)
+_finite3 :: proc(v: physics.Vec3) -> bool {
+	return !math.is_nan(v.x) && !math.is_inf(v.x) &&
+	       !math.is_nan(v.y) && !math.is_inf(v.y) &&
+	       !math.is_nan(v.z) && !math.is_inf(v.z)
+}
+
 @(test)
 test_gravity_solver_fallback :: proc(t: ^testing.T) {
 	w := ecs.world_create()
@@ -416,4 +430,149 @@ test_gravity_solver_fallback :: proc(t: ^testing.T) {
 		physics.physic_state(w).gravity_solver.submit == nil,
 		"a failed solver should be uninstalled",
 	)
+}
+
+// A hook with a submit but no finish can never be completed; physic must drop
+// it (rather than dereference a nil finish) and solve this tick on the CPU.
+@(test)
+test_gravity_solver_nil_finish_falls_back :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	object_b := physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	physics.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
+	physics.physic_set_gravity_solver(w, {submit = _ok_submit, finish = nil})
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
+
+	// Dropping the incomplete hook logs at error level, which the test runner
+	// would count as a failure; silence the logger around the run.
+	previous_logger := context.logger
+	context.logger = log.nil_logger()
+	ecs.scheduler_run(s, .PHYSICS, w, 16.0)
+	context.logger = previous_logger
+
+	testing.expect(
+		t,
+		physics.physic_state(w).gravity_solver.submit == nil,
+		"an unfinishable solver should be uninstalled",
+	)
+	acceleration := ecs.world_get(w, object_b, physics.Acceleration)
+	testing.expect(t, acceleration != nil)
+	testing.expect(
+		t,
+		acceleration.x != 0 || acceleration.y != 0 || acceleration.z != 0,
+		"CPU fallback should still solve gravity",
+	)
+}
+
+// A failed hooked finish leaves the CPU tree possibly stale; the octree
+// fallback must rebuild it to match the world instead of reusing it.
+@(test)
+test_octree_cpu_fallback_rebuilds_stale_tree :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1000, 10)
+	physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 100, 5)
+	physics.body_spawn(w, {-100, 0, 0}, {0, 0, 0}, 100, 5)
+
+	// A long rebuild interval keeps `_ensure_tree` from rebuilding between
+	// ticks, so only the fallback's own staleness check can refresh the tree.
+	physics.physic_init(
+		w,
+		foundation.Config{algorithm = .OCTREE, theta = 0.5, tree_rebuild_interval = 1000},
+	)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+	physics.physic_register_systems(s)
+	_ = ecs.scheduler_finalize(s)
+
+	// First tick builds the CPU tree for the three bodies.
+	ecs.scheduler_run(s, .PHYSICS, w, 0.016)
+	state := physics.physic_state(w)
+	testing.expect(t, state.tree != nil)
+	testing.expect_value(t, state.tree_body_count, 3)
+	rebuilds_before := state.rebuild_count
+
+	// Mutate the world so the existing tree is stale, then hook a solver whose
+	// finish fails. Submit without running `physic.begin`, which would rebuild
+	// the tree first and hide the fallback path.
+	physics.body_spawn(w, {0, 100, 0}, {0, 0, 0}, 100, 5)
+	physics.physic_set_gravity_solver(
+		w,
+		{submit = _ok_submit, finish = _failing_finish, finish_at_collision = true},
+	)
+
+	previous_logger := context.logger
+	context.logger = log.nil_logger()
+	physics.physic_system_gravity(w, 0.016)
+	physics.physic_finish_gravity(w)
+	context.logger = previous_logger
+
+	testing.expect(
+		t,
+		physics.physic_state(w).gravity_solver.submit == nil,
+		"failed solver should be uninstalled",
+	)
+	testing.expect_value(t, state.tree_body_count, 4)
+	testing.expect_value(t, state.tree_revision, w.revision)
+	testing.expect_value(t, state.rebuild_count, rebuilds_before + 1)
+	testing.expect_value(t, len(state.tree.order), 4)
+}
+
+// Massless bodies must not turn gravity or the collision resolve into 0/0.
+@(test)
+test_zero_mass_interactions_stay_finite :: proc(t: ^testing.T) {
+	algorithms := []foundation.Algorithm{.BRUTE_FORCE, .OCTREE}
+	for algorithm in algorithms {
+		w := ecs.world_create()
+		// Two massless overlapping bodies exercise the collision resolve's
+		// total-mass divisor; the third is massless too, so gravity's
+		// force/obj_mass divisor sees zero. Positive masses keep the tree and
+		// the other interactions meaningful.
+		physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 0, 10)
+		physics.body_spawn(w, {5, 0, 0}, {0, 0, 0}, 0, 10)
+		physics.body_spawn(w, {100, 0, 0}, {0, 0, 0}, 1000, 5)
+		physics.body_spawn(w, {-100, 0, 0}, {0, 0, 0}, 100, 5)
+
+		physics.physic_init(w, foundation.Config{algorithm = algorithm, theta = 0.5})
+		s := ecs.scheduler_create()
+		physics.physic_register_systems(s)
+		_ = ecs.scheduler_finalize(s)
+
+		// Skipping a zero-mass interaction logs once at warn level.
+		previous_logger := context.logger
+		context.logger = log.nil_logger()
+		for _ in 0 ..< 5 {
+			ecs.scheduler_run(s, .PHYSICS, w, 0.016)
+		}
+		context.logger = previous_logger
+
+		view := physics.body_view(w)
+		for idx in view.bodies {
+			p := physics.Vec3(view.position[idx])
+			v := physics.Vec3(view.velocity[idx])
+			testing.expectf(
+				t,
+				_finite3(p),
+				"algorithm=%v body %d position is not finite: %v",
+				algorithm,
+				idx,
+				p,
+			)
+			testing.expectf(
+				t,
+				_finite3(v),
+				"algorithm=%v body %d velocity is not finite: %v",
+				algorithm,
+				idx,
+				v,
+			)
+		}
+		ecs.scheduler_destroy(s)
+		ecs.world_destroy(w)
+	}
 }

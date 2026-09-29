@@ -1,6 +1,7 @@
 package physic
 
 import found "../../foundation"
+import "core:log"
 import "core:math"
 import "core:mem"
 import "core:sync"
@@ -14,6 +15,37 @@ GRAVITY_CONSTANT :: 6.67430e-11
 MAX_DEPTH_CAP :: 48
 DEFAULT_MAX_DEPTH :: MAX_DEPTH_CAP
 DEFAULT_MIN_HALF_SIZE :: 1e-4
+
+// Size of the explicit depth-first stacks used by every traversal in this file
+// (`_calc_force`, `_calc_force_collect`, `_stats_walk`, `_collect_nearby`). The
+// tree is built with `depth <= MAX_DEPTH_CAP` and at most 8 children per node,
+// so a traversal can hold at most `(MAX_DEPTH_CAP + 1) * 8` entries; the
+// assertion below keeps this bound in sync with `MAX_DEPTH_CAP`.
+TRAVERSAL_STACK_SIZE :: 4096
+#assert(TRAVERSAL_STACK_SIZE >= (MAX_DEPTH_CAP + 1) * 8)
+
+// Reported (once) when a traversal stack fills or a query result buffer is too
+// small. Dropping nodes or candidates silently would compute wrong forces or
+// miss contacts, so it is a hard error: logged always, asserted in debug.
+@(private)
+_traversal_overflow_reported: u32
+
+@(private)
+_report_traversal_overflow :: proc(context_name: string) {
+	expected := u32(0)
+	if _, swapped := sync.atomic_compare_exchange_strong(
+		&_traversal_overflow_reported,
+		expected,
+		u32(1),
+	); swapped {
+		log.errorf(
+			"[PHYSIC] octree traversal overflow in %s: the %d-entry stack (or result buffer) is full, so nodes/candidates were dropped and the forces/contacts for this tick are wrong",
+			context_name,
+			TRAVERSAL_STACK_SIZE,
+		)
+	}
+	assert(false, "octree traversal overflow: results would be incomplete")
+}
 
 OctTreeNode :: struct {
 	center:      Vec3,
@@ -298,7 +330,7 @@ octtree_calc_force :: proc(self: ^OctTree, index: u32, dt: f32) {
 _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 	// Every slot read was written first, so skip zero-initialization: this array
 	// is 16 KB and was being memset per body.
-	stack: [4096]u32 = ---
+	stack: [TRAVERSAL_STACK_SIZE]u32 = ---
 	stack_count := 1
 	stack[0] = 0
 	view := &t.view
@@ -343,6 +375,8 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 			if stack_count < len(stack) {
 				stack[stack_count] = node.children[ci]
 				stack_count += 1
+			} else {
+				_report_traversal_overflow("_calc_force")
 			}
 		}
 	}
@@ -370,6 +404,11 @@ _cell_intersects_sphere :: proc(node: ^OctTreeNode, pos: Vec3, radius: f32) -> b
 	return dx * dx + dy * dy + dz * dz <= radius * radius
 }
 
+// Pushes a non-leaf node's children onto the traversal stack. The caller sizes
+// the stack at `TRAVERSAL_STACK_SIZE` (4096), which the `#assert` at the top of
+// this file proves is at least `(MAX_DEPTH_CAP + 1) * 8`; a full stack would
+// drop nodes and silently compute wrong forces, so it is reported as a hard
+// error instead.
 _push_children :: proc(
 	node: ^OctTreeNode,
 	stack: []_ForceVisit,
@@ -380,6 +419,8 @@ _push_children :: proc(
 		if count^ < len(stack) {
 			stack[count^] = {node = node.children[ci], gravity_done = gravity_done}
 			count^ += 1
+		} else {
+			_report_traversal_overflow("_push_children")
 		}
 	}
 }
@@ -392,7 +433,7 @@ _calc_force_collect :: proc(
 	contacts: ^[dynamic]Contact,
 	mutex: ^sync.Mutex,
 ) {
-	stack: [4096]_ForceVisit = ---
+	stack: [TRAVERSAL_STACK_SIZE]_ForceVisit = ---
 	stack[0] = {node = 0, gravity_done = false}
 	stack_count := 1
 
@@ -504,7 +545,7 @@ octtree_stats :: proc(self: ^OctTree, index: u32, stats: ^SolveStats) {
 
 @(private)
 _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
-	stack: [4096]u32 = ---
+	stack: [TRAVERSAL_STACK_SIZE]u32 = ---
 	stack_count := 1
 	stack[0] = 0
 	view := &t.view
@@ -544,6 +585,8 @@ _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
 			if stack_count < len(stack) {
 				stack[stack_count] = node.children[ci]
 				stack_count += 1
+			} else {
+				_report_traversal_overflow("_stats_walk")
 			}
 		}
 	}
@@ -558,6 +601,13 @@ _apply_gravity :: proc(
 	other_pos: Vec3,
 	dt: f32,
 ) {
+	// The force is divided by the accelerated body's mass below; a massless
+	// body would produce 0/0 = NaN. It cannot be accelerated by gravity, so
+	// skip the interaction (and every other body is unaffected).
+	if obj_mass == 0 {
+		_warn_zero_mass_once("gravity")
+		return
+	}
 	dir := other_pos - obj_pos
 	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 	if dist_sq < 0.001 {dist_sq = 0.001}
@@ -567,7 +617,11 @@ _apply_gravity :: proc(
 	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + acc * dt)
 }
 
-// Appends the entity indices inside `radius` of `pos` into `result`.
+// Appends the entity indices inside `radius` of `pos` into `result` and sets
+// `count` to how many were written. `result` must be large enough for every body
+// the query can return (the callers size it to the body count); a full result
+// buffer or a full traversal stack is reported as a hard error rather than
+// silently dropping candidates (see `_report_traversal_overflow`).
 octtree_collect_nearby :: proc(
 	self: ^OctTree,
 	pos: Vec3,
@@ -588,7 +642,7 @@ _collect_nearby :: proc(
 	count: ^int,
 ) {
 	// See _calc_force: entries are written before they are read.
-	stack: [4096]u32 = ---
+	stack: [TRAVERSAL_STACK_SIZE]u32 = ---
 	stack_count := 1
 	stack[0] = 0
 
@@ -609,6 +663,8 @@ _collect_nearby :: proc(
 				if count^ < len(result) {
 					result[count^] = t.order[i]
 					count^ += 1
+				} else {
+					_report_traversal_overflow("_collect_nearby")
 				}
 			}
 			continue
@@ -617,6 +673,8 @@ _collect_nearby :: proc(
 			if stack_count < len(stack) {
 				stack[stack_count] = node.children[ci]
 				stack_count += 1
+			} else {
+				_report_traversal_overflow("_collect_nearby")
 			}
 		}
 	}

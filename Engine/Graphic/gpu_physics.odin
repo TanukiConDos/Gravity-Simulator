@@ -32,6 +32,46 @@ GPU_GRAVITY_BRUTE_SHADER :: "Engine/Graphic/shader/physics_brute.spv"
 @(private)
 GPU_GRAVITY_BRUTE_WORKGROUP :: 256
 
+// The render view is vended as one of RENDER_VIEW_SETS device snapshots: a solve
+// fills a FREE set while the renderer still reads another. Ownership moves
+// through the state machine below; the solver only writes a set it acquired and
+// only acquires one whose reader has completed, so no buffer is ever overwritten
+// in flight.
+RENDER_VIEW_SETS :: 3
+
+// Render_Set_State is the per-set ownership state. Only the owning side performs
+// the transition: the solver FREE -> WRITING -> PUBLISHED, the renderer
+// PUBLISHED -> READING -> FREE. The solver also frees its previous PUBLISHED set
+// back to FREE when the renderer did not claim it.
+Render_Set_State :: enum(u32) {
+	FREE,
+	WRITING,
+	PUBLISHED,
+	READING,
+}
+
+// Gpu_Render_Set is one snapshot of the render columns. The host staging is
+// shared between sets, so only the device buffers live here.
+@(private)
+Gpu_Render_Set :: struct {
+	bodies_device:   Buffer,
+	radii_device:    Buffer,
+	selected_device: Buffer,
+	live_device:     Buffer,
+	// Ownership state (atomic Render_Set_State).
+	state:           u32,
+	// Frame timeline value whose completion frees this set: the frame that last
+	// read it signals `release_value` on the renderer's frame timeline. The
+	// solver reads the counter to avoid writing buffers a frame still reads.
+	release_value:   u64,
+	// How the set was described when it was published: the solve timeline value
+	// that wrote its buffers and the live body count. Both are stored before the
+	// state turns PUBLISHED, so a successful claim always reads a complete
+	// description.
+	published_value: u64,
+	published_count: u32,
+}
+
 // Both records are vectors so they map to the shader's `vec4` with no padding.
 @(private)
 Gpu_Body_Record :: [4]f32 // position.xyz, mass
@@ -58,30 +98,34 @@ Gpu_Gravity :: struct {
 	// Shared by both modes and sized for the body capacity. The brute backend
 	// packs them densely; the tree backend indexes them by entity index.
 	capacity:          int,
+	// Host staging shared by both modes and the tree build. `bodies_device` and
+	// `radii_device` are the GPU tree build's working copies; the solve and the
+	// renderer read the published render set below instead.
 	bodies_host:       Buffer,
 	bodies_device:     Buffer,
+	radii_device:      Buffer,
 	velocities_host:   Buffer,
 	velocities_device: Buffer,
-	// Render view (M5). `bodies` is entity-indexed in tree mode and slot-packed
-	// in brute mode; the rest is entity-indexed and `live` maps the draw slot to
-	// the entity. The renderer reads them after waiting on the published
-	// timeline value, so they are created CONCURRENT (compute writes, graphics
-	// reads).
-	radii_host:      Buffer,
-	radii_device:    Buffer,
-	selected_host:   Buffer,
-	selected_device: Buffer,
-	live_host:       Buffer,
-	live_device:     Buffer,
-	render_ready:    bool,
-	render_mode:     u32,
-	render_count:    u32, // atomic
-	render_value:    u64, // atomic
-	// Reverse dependency: the submission waits on the renderer's frame timeline
-	// so a solve never overwrites columns a frame is still reading. Set by the
-	// renderer ("consumer"); zero in headless contexts.
-	consumer_semaphore: vulkan.Semaphore,
-	consumer_value:     u64, // atomic
+	// Render columns staged on the host, then uploaded into the active render
+	// set below. `bodies` is entity-indexed in tree mode and slot-packed in
+	// brute mode; the rest is entity-indexed and `live` maps the draw slot to
+	// the entity.
+	radii_host:    Buffer,
+	selected_host: Buffer,
+	live_host:     Buffer,
+	// Published render-view snapshots. The renderer claims the PUBLISHED set and
+	// reads it after waiting on the solve value; the solver only writes a set it
+	// owns. Both queues touch the buffers, so they are created CONCURRENT.
+	render_sets: [RENDER_VIEW_SETS]Gpu_Render_Set,
+	render_ready: bool,
+	render_mode:  u32,
+	// Index of the last set the solver published; solver-private, -1 when none.
+	// Used to free the previous PUBLISHED set unless the renderer claimed it.
+	published_set: int,
+	// The renderer's frame timeline. The vending protocol reads its counter to
+	// tell whether the frame named by a set's `release_value` has completed; zero
+	// in headless contexts (benches, tests), where sets are always reusable.
+	frame_semaphore: vulkan.Semaphore,
 	// Submission in flight between `submit` and `finish`.
 	pending:       bool,
 	pending_value: u64,
@@ -160,7 +204,9 @@ gpu_gravity_info :: proc(self: ^Gpu_Gravity) -> Compute_Info {
 
 // Gpu_Render_View is the renderer's read-only view of the solver state. `value`
 // is the timeline value (on `semaphore`) whose completion makes the buffers
-// safe to read; nothing may read them before it has been waited on.
+// safe to read; nothing may read them before it has been waited on. The buffers
+// are the concrete handles of the claimed set (`set`), which stays READING until
+// the renderer releases it.
 Gpu_Render_View :: struct {
 	bodies:    vulkan.Buffer,
 	radii:     vulkan.Buffer,
@@ -170,43 +216,147 @@ Gpu_Render_View :: struct {
 	count:     int,
 	// Entity/slot budget the buffers were sized for; descriptor ranges use it.
 	capacity:  int,
+	set:       u32, // render-view set the buffers belong to
 	value:     u64,
 	semaphore: vulkan.Semaphore,
 }
 
-// gpu_gravity_set_frame_sync tells the solver which frame value its next
-// submission must wait for. The renderer calls it after submitting each frame;
-// the semantics are "frames up to this value have finished reading the render
-// view".
-gpu_gravity_set_frame_sync :: proc(self: ^Gpu_Gravity, semaphore: vulkan.Semaphore, value: u64) {
+// gpu_gravity_set_frame_timeline gives the solver the renderer's frame timeline.
+// The vending protocol reads its counter to know when the frame that last read a
+// set has completed. A headless solver has none.
+gpu_gravity_set_frame_timeline :: proc(self: ^Gpu_Gravity, semaphore: vulkan.Semaphore) {
 	if self == nil {return}
-	self.consumer_semaphore = semaphore
-	sync.atomic_store(&self.consumer_value, value)
+	self.frame_semaphore = semaphore
 }
 
-// gpu_gravity_render_view publishes the solver's buffers to the renderer thread.
-// `ok` is false until a solve completed, and the (count, value) pair is read
-// with a seqlock retry so it always describes a single submission.
+// gpu_gravity_solve_timeline is the timeline every solve signals (the renderer
+// waits on it before reading a view). Exposed so a headless test can stand in a
+// frame timeline and exercise the vending protocol.
+gpu_gravity_solve_timeline :: proc(self: ^Gpu_Gravity) -> vulkan.Semaphore {
+	if self == nil {return 0}
+	return self.compute.timeline.semaphore
+}
+
+// gpu_gravity_render_view claims the PUBLISHED set for the renderer: CAS
+// PUBLISHED -> READING and return a view naming that set's buffers and the solve
+// value that wrote them. `ok` is false while no complete view is published (or
+// another thread won the claim); the caller keeps whatever it already holds.
+//
+// Every set carries its own solve value and count, written before the state
+// turns PUBLISHED, so a successful claim always describes one complete
+// submission.
 gpu_gravity_render_view :: proc(self: ^Gpu_Gravity) -> (view: Gpu_Render_View, ok: bool) {
 	if self == nil || !self.render_ready {return {}, false}
-	for _ in 0 ..< 4 {
-		value := sync.atomic_load(&self.render_value)
-		count := int(sync.atomic_load(&self.render_count))
-		if value != sync.atomic_load(&self.render_value) {continue}
-		if value == 0 || count <= 0 {return {}, false}
+	for i in 0 ..< RENDER_VIEW_SETS {
+		set := &self.render_sets[i]
+		expected := u32(Render_Set_State.PUBLISHED)
+		_, claimed := sync.atomic_compare_exchange_strong(
+			&set.state,
+			expected,
+			u32(Render_Set_State.READING),
+		)
+		if !claimed {continue}
 		return Gpu_Render_View {
-			bodies = self.bodies_device.buffer,
-			radii = self.radii_device.buffer,
-			selected = self.selected_device.buffer,
-			live = self.live_device.buffer,
+			bodies = set.bodies_device.buffer,
+			radii = set.radii_device.buffer,
+			selected = set.selected_device.buffer,
+			live = set.live_device.buffer,
 			mode = self.render_mode,
-			count = count,
+			count = int(sync.atomic_load(&set.published_count)),
 			capacity = self.capacity,
-			value = value,
+			set = u32(i),
+			value = sync.atomic_load(&set.published_value),
 			semaphore = self.compute.timeline.semaphore,
 		}, true
 	}
 	return {}, false
+}
+
+// gpu_gravity_release_render_view hands a claimed set back once the frame that
+// read it has been submitted. `frame_value` is the value that frame signals on
+// the frame timeline; the solver will not acquire the set until that frame
+// completes. The release value is stored before the state turns FREE (release
+// ordering) so a solver that observes FREE also observes the value.
+gpu_gravity_release_render_view :: proc(self: ^Gpu_Gravity, view: Gpu_Render_View, frame_value: u64) {
+	if self == nil {return}
+	if int(view.set) < 0 || int(view.set) >= RENDER_VIEW_SETS {return}
+	set := &self.render_sets[view.set]
+	when ODIN_DEBUG {
+		assert(
+			sync.atomic_load(&set.state) == u32(Render_Set_State.READING),
+			"released a render set the caller does not hold",
+		)
+	}
+	sync.atomic_store(&set.release_value, frame_value)
+	sync.atomic_store(&set.state, u32(Render_Set_State.FREE))
+}
+
+// gpu_gravity_render_set_state is a diagnostic: the vending state of one set.
+gpu_gravity_render_set_state :: proc(self: ^Gpu_Gravity, index: int) -> Render_Set_State {
+	assert(index >= 0 && index < RENDER_VIEW_SETS, "render set index out of range")
+	return Render_Set_State(sync.atomic_load(&self.render_sets[index].state))
+}
+
+// _render_set_released reports whether the frame that last read a set has
+// completed, so the solver may write it. A set that was never handed to a
+// renderer (release_value == 0), or a headless solver with no frame timeline, is
+// always reusable.
+@(private)
+_render_set_released :: proc(self: ^Gpu_Gravity, set: ^Gpu_Render_Set) -> bool {
+	release := sync.atomic_load(&set.release_value)
+	if release == 0 || self.frame_semaphore == 0 {return true}
+	return semaphore_counter(self.compute.gpu.device, self.frame_semaphore) >= release
+}
+
+// _render_set_acquire claims a FREE set whose reader has completed. Returns -1
+// when every set is held or still being read; the caller then skips publishing
+// the render view rather than blocking the physics thread.
+@(private)
+_render_set_acquire :: proc(self: ^Gpu_Gravity) -> int {
+	for i in 0 ..< RENDER_VIEW_SETS {
+		set := &self.render_sets[i]
+		if !_render_set_released(self, set) {continue}
+		expected := u32(Render_Set_State.FREE)
+		_, ok := sync.atomic_compare_exchange_strong(
+			&set.state,
+			expected,
+			u32(Render_Set_State.WRITING),
+		)
+		if !ok {continue}
+		// The assertion proves the write guard: a set is only taken once the
+		// frame named by its release value has completed. The value cannot change
+		// while the set is FREE, so the pre-check and this check agree.
+		when ODIN_DEBUG {
+			assert(
+				_render_set_released(self, set),
+				"acquired a render set whose release value is unsignalled",
+			)
+		}
+		return i
+	}
+	return -1
+}
+
+// _render_set_publish makes a written set visible to the renderer and frees the
+// set the solver published before it, unless the renderer claimed that one
+// (READING sets are left alone; the renderer releases them itself).
+@(private)
+_render_set_publish :: proc(self: ^Gpu_Gravity, set_index: int, count: int, value: u64) {
+	set := &self.render_sets[set_index]
+	sync.atomic_store(&set.published_count, u32(count))
+	sync.atomic_store(&set.published_value, value)
+	sync.atomic_store(&set.state, u32(Render_Set_State.PUBLISHED))
+
+	old := self.published_set
+	self.published_set = set_index
+	if old >= 0 && old != set_index {
+		expected := u32(Render_Set_State.PUBLISHED)
+		sync.atomic_compare_exchange_strong(
+			&self.render_sets[old].state,
+			expected,
+			u32(Render_Set_State.FREE),
+		)
+	}
 }
 
 // gpu_gravity_backend wraps the solver for `physic.physic_set_gravity_solver`.
@@ -254,6 +404,7 @@ _gpu_gravity_open :: proc(self: ^Gpu_Gravity) -> bool {
 	pipeline := pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
 	if !push_descriptors_validate(&self.push, pipeline) {return false}
 	if self.mode == .OCTREE && !_gpu_tree_build_open(self) {return false}
+	self.published_set = -1
 
 	committed = true
 	return true
@@ -270,19 +421,26 @@ _gpu_gravity_close :: proc(self: ^Gpu_Gravity) {
 _gpu_gravity_release_buffers :: proc(self: ^Gpu_Gravity) {
 	buffer_destroy(&self.bodies_host)
 	buffer_destroy(&self.bodies_device)
+	buffer_destroy(&self.radii_device)
 	buffer_destroy(&self.velocities_host)
 	buffer_destroy(&self.velocities_device)
 	buffer_destroy(&self.radii_host)
-	buffer_destroy(&self.radii_device)
 	buffer_destroy(&self.selected_host)
-	buffer_destroy(&self.selected_device)
 	buffer_destroy(&self.live_host)
-	buffer_destroy(&self.live_device)
+	for &set in self.render_sets {
+		buffer_destroy(&set.bodies_device)
+		buffer_destroy(&set.radii_device)
+		buffer_destroy(&set.selected_device)
+		buffer_destroy(&set.live_device)
+		sync.atomic_store(&set.state, u32(Render_Set_State.FREE))
+		sync.atomic_store(&set.release_value, u64(0))
+		sync.atomic_store(&set.published_value, u64(0))
+		sync.atomic_store(&set.published_count, u32(0))
+	}
 	_gpu_tree_release(self)
 	self.capacity = 0
 	self.render_ready = false
-	sync.atomic_store(&self.render_count, u32(0))
-	sync.atomic_store(&self.render_value, u64(0))
+	self.published_set = -1
 }
 
 // _gpu_gravity_reserve grows the buffers to a power-of-two body count. The init
@@ -299,8 +457,9 @@ _gpu_gravity_reserve :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	capacity = power
 	_gpu_gravity_release_buffers(self)
 
-	// The render view is read by the graphics queue: share those buffers across
-	// the two families (CONCURRENT). Everything else stays EXCLUSIVE.
+	// The render sets are written by compute and read by the graphics queue, so
+	// they are shared across the two families (CONCURRENT). Everything else
+	// stays EXCLUSIVE.
 	families: [2]u32
 	sharing: []u32
 	if !self.compute.owns_device {
@@ -323,6 +482,13 @@ _gpu_gravity_reserve :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 		.DeviceLocal,
 		sharing,
 	) or_return
+	self.radii_device = buffer_init_shared(
+		self.compute.gpu,
+		scalar_bytes,
+		{.STORAGE_BUFFER, .TRANSFER_DST},
+		.DeviceLocal,
+		sharing,
+	) or_return
 	// The host velocity buffer is both the upload source and the readback
 	// destination, so it needs both transfer usages.
 	self.velocities_host = buffer_init(
@@ -338,29 +504,40 @@ _gpu_gravity_reserve :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 		.DeviceLocal,
 	) or_return
 	self.radii_host = buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.radii_device = buffer_init_shared(
-		self.compute.gpu,
-		scalar_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
-		sharing,
-	) or_return
 	self.selected_host = buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.selected_device = buffer_init_shared(
-		self.compute.gpu,
-		scalar_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
-		sharing,
-	) or_return
 	self.live_host = buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.live_device = buffer_init_shared(
-		self.compute.gpu,
-		scalar_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
-		sharing,
-	) or_return
+	// One snapshot of the render columns per set, all shared across the two
+	// queue families. Every set must be destroyed on release.
+	for &set in self.render_sets {
+		set.bodies_device = buffer_init_shared(
+			self.compute.gpu,
+			body_bytes,
+			{.STORAGE_BUFFER, .TRANSFER_DST},
+			.DeviceLocal,
+			sharing,
+		) or_return
+		set.radii_device = buffer_init_shared(
+			self.compute.gpu,
+			scalar_bytes,
+			{.STORAGE_BUFFER, .TRANSFER_DST},
+			.DeviceLocal,
+			sharing,
+		) or_return
+		set.selected_device = buffer_init_shared(
+			self.compute.gpu,
+			scalar_bytes,
+			{.STORAGE_BUFFER, .TRANSFER_DST},
+			.DeviceLocal,
+			sharing,
+		) or_return
+		set.live_device = buffer_init_shared(
+			self.compute.gpu,
+			scalar_bytes,
+			{.STORAGE_BUFFER, .TRANSFER_DST},
+			.DeviceLocal,
+			sharing,
+		) or_return
+	}
 	if self.mode == .OCTREE && !_gpu_tree_reserve(self, capacity) {return false}
 	self.capacity = capacity
 	self.render_mode = self.mode == .OCTREE ? 0 : 1
@@ -479,12 +656,19 @@ _gpu_brute_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, seco
 
 	pipeline := pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
 	cmd, slot := compute_begin(&self.compute)
+	// Acquire a set for the render view; when none is free, still run the solve
+	// (velocities/contacts) against the backend's working copy and skip the
+	// render view this tick rather than block.
+	set_index := _render_set_acquire(self)
+	solve_bodies := set_index >= 0 ? &self.render_sets[set_index].bodies_device : &self.bodies_device
 	body_bytes := vulkan.DeviceSize(count * size_of(Gpu_Body_Record))
 	velocity_bytes := vulkan.DeviceSize(count * size_of(Gpu_Velocity_Record))
 	pool_bytes := vulkan.DeviceSize((int(max_entity) + 1) * size_of(u32))
 	live_bytes := vulkan.DeviceSize(count * size_of(u32))
 
-	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, body_bytes)
+	// The solve reads the set the renderer will read (or the working copy when the
+	// view is skipped).
+	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, solve_bodies, body_bytes)
 	_gpu_upload(
 		cmd,
 		self.compute.gpu,
@@ -493,14 +677,17 @@ _gpu_brute_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, seco
 		velocity_bytes,
 		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE},
 	)
-	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &self.selected_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.live_host, &self.live_device, live_bytes)
+	if set_index >= 0 {
+		set := &self.render_sets[set_index]
+		_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &set.radii_device, pool_bytes)
+		_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &set.selected_device, pool_bytes)
+		_gpu_upload(cmd, self.compute.gpu, &self.live_host, &set.live_device, live_bytes)
+	}
 
 	pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Force_Push{body_count = u32(count), dt = f32(seconds)}
 	pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Force_Push))
-	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), self.bodies_device.buffer, 0, body_bytes)
+	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), solve_bodies.buffer, 0, body_bytes)
 	push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), self.velocities_device.buffer, 0, velocity_bytes)
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
 
@@ -529,17 +716,11 @@ _gpu_brute_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, seco
 		{.HOST_READ},
 	)
 
-	self.pending_value = compute_submit(
-		&self.compute,
-		slot,
-		self.consumer_semaphore,
-		sync.atomic_load(&self.consumer_value),
-	)
+	self.pending_value = compute_submit(&self.compute, slot)
 	self.pending = true
-	// Publish for the renderer: the count first, then the value that makes it
-	// (and the columns above) safe to read.
-	sync.atomic_store(&self.render_count, u32(count))
-	sync.atomic_store(&self.render_value, self.pending_value)
+	if set_index >= 0 {
+		_render_set_publish(self, set_index, count, self.pending_value)
+	}
 	return true
 }
 

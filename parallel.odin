@@ -14,7 +14,6 @@ SimulationContext :: struct {
 	window:     ^graphic.Window,
 	frame_time: f32,
 	tick_time:  f32,
-	delta_time: f32,
 	exit:       bool,
 }
 
@@ -96,7 +95,6 @@ _graphics_thread :: proc(th: ^thread.Thread) {
 	for !sync.atomic_load(&ctx.exit) {
 		now := time.tick_now()
 		delta := f32(time.duration_seconds(time.tick_diff(last_frame, now)))
-		sync.atomic_store(&ctx.delta_time, delta)
 		last_frame = now
 
 		frame_start := time.tick_now()

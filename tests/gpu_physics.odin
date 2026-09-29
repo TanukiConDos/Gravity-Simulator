@@ -338,3 +338,75 @@ test_gpu_tree_build_matches_cpu :: proc(t: ^testing.T) {
 		}
 	}
 }
+
+// Runs one hooked solve to completion; the backend publishes a render view.
+@(private)
+_gpu_solve_once :: proc(w: ^ecs.World, dt: f32) {
+	physics.physic_system_begin(w, dt)
+	physics.physic_system_gravity(w, dt)
+	physics.physic_finish_gravity(w)
+}
+
+// The render-view vending protocol: the solver only writes a set whose previous
+// reader has completed, and skips publishing entirely (without blocking) when no
+// set is free. The solve timeline stands in as the frame timeline so released
+// values gate on real completion.
+@(test)
+test_gpu_render_set_vending :: proc(t: ^testing.T) {
+	solver, created := graphic.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
+	if !created {return}
+	defer graphic.gpu_gravity_destroy(solver)
+	graphic.gpu_gravity_set_frame_timeline(solver, graphic.gpu_gravity_solve_timeline(solver))
+
+	w := _gpu_world(64, graphic.gpu_gravity_backend(solver))
+	defer ecs.world_destroy(w)
+
+	dt := f32(1.0)
+	used: [graphic.RENDER_VIEW_SETS]bool
+	// Each solve publishes one set; claim it and release it with a frame value
+	// that only the third solve reaches, so the next solve must take a new set.
+	for i in 0 ..< graphic.RENDER_VIEW_SETS {
+		_gpu_solve_once(w, dt)
+		view, ok := graphic.gpu_gravity_render_view(solver)
+		if !testing.expectf(t, ok, "solve %d did not publish a view", i) {return}
+		testing.expectf(t, !used[view.set], "solve %d reused unsignalled set %d", i, view.set)
+		used[view.set] = true
+		// All three offsets land on the same value, V2 + 1.
+		offset := u64(graphic.RENDER_VIEW_SETS - i)
+		graphic.gpu_gravity_release_render_view(solver, view, view.value + offset)
+	}
+	for u, i in used {
+		testing.expectf(t, u, "set %d was never published", i)
+	}
+
+	// The next solve finds every set unsignalled: it must run (velocities change)
+	// but not write any set or publish a view.
+	vel_before := physics.Vec3(physics.body_view(w).velocity[0])
+	_gpu_solve_once(w, dt)
+	vel_after := physics.Vec3(physics.body_view(w).velocity[0])
+	testing.expectf(
+		t,
+		vel_before != vel_after,
+		"skipped solve did not apply its velocities",
+	)
+	if _, ok := graphic.gpu_gravity_render_view(solver); ok {
+		testing.expect(t, false, "solver published a view while every set was unsignalled")
+	}
+	for i in 0 ..< graphic.RENDER_VIEW_SETS {
+		state := graphic.gpu_gravity_render_set_state(solver, i)
+		testing.expectf(
+			t,
+			state == .FREE,
+			"set %d was written while unsignalled (state %v)",
+			i,
+			state,
+		)
+	}
+
+	// That solve advanced the timeline past the releases, so the sets are
+	// reusable and the next solve publishes again.
+	_gpu_solve_once(w, dt)
+	if _, ok := graphic.gpu_gravity_render_view(solver); !testing.expect(t, ok, "sets were not reusable after their frames completed") {
+		return
+	}
+}

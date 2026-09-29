@@ -38,9 +38,10 @@ views safe to hold across a system and across the two threads:
   the index space for the whole run. Pools created after the call are sized
   automatically.
 - `world_freeze(w)` marks the registries read-only. After this point all pools and
-  resources must already exist: `world_pool`/`world_resource` log an error (and
-  assert in debug) if asked for a new type, since creating one would race with the
-  other thread. Spawning past the reserved capacity returns `ENTITY_NONE` and
+  resources must already exist: `world_pool`/`world_resource` log an error and
+  return `nil` for a new type (the typed accessors such as `physic_state` and
+  `body_view` assert on the `nil` in debug), because creating one would race with
+  the other thread. Spawning past the reserved capacity returns `ENTITY_NONE` and
   logs; writing a component past capacity is a no-op + warning.
 
 The app reserves from `config.json` (`num_objects` or the scene file), spawns, and
@@ -81,6 +82,13 @@ mutates the camera from the keyboard, and `graphic.render` runs the frame
 through the renderer resource. A graphics system returns `false` only on a fatal
 error; the scheduler aborts the phase and the graphics thread shuts the app down.
 
+GLFW is not thread-safe, so the `RENDER` phase performs no window queries. The
+**main** thread pumps events and then calls `window_pump`, which queries GLFW and
+publishes an atomic input/window snapshot (key bitmask, mouse button, normalised
+cursor, framebuffer size) on `Window`. `graphic.input` consumes that snapshot to
+move the camera and to turn a left-click edge into a `Pick_Request`, and the
+swapchain reads the snapshot's cached framebuffer size when it is recreated.
+
 The frame itself is data-driven. `Engine/Graphic/frame_graph.json` declares the
 resources (imported or transient) and the passes (`inputs`/`outputs`, `bindings`,
 `optional`). `frame_graph.odin` loads it, resolves pipelines, builds the
@@ -95,8 +103,9 @@ The main pass writes both the swapchain color and, as a second output (MRT), a
 mouse press the optional `pick_copy` pass records a one-pixel copy of that ID into
 the frame command buffer (no separate draw and no extra submission), so the result
 is read once the frame's fence signals. The resolved index is handed to the
-physics thread through the atomic `Selection_State`; `physic.select` applies it to
-`Selected`, and the next snapshot publishes the flags.
+physics thread through the atomic `Selection_State`; `physic.select` consumes it
+with an atomic exchange (so a pick stored between a load and a clear is never
+lost), applies it to `Selected`, and the next snapshot publishes the flags.
 
 ## Scheduler
 
@@ -107,9 +116,10 @@ already-registered system, every edge points backwards: the graph is acyclic by
 construction.
 
 `scheduler_finalize` resolves each phase into an execution graph. It takes the
-explicit `after` edges, adds access-conflict edges between `.ANY` systems
-(writer vs anything, added forward along a deterministic topological order), and
-stores each node's successors and dependency count:
+explicit `after` edges, adds access-conflict edges for **every** conflicting
+pair (writer vs anything) regardless of affinity — added forward along a
+deterministic topological order — and stores each node's successors and
+dependency count:
 
 - `.CALLER` (default) systems are pinned to the phase thread. They are the safe
   choice for anything that mutates structure, calls `parallel_for` or touches the
@@ -119,6 +129,12 @@ stores each node's successors and dependency count:
   one outside the owner phase (`PHYSICS`-only), because it would run concurrently
   with the physics thread.
 
+Access declarations serialise across affinities: a `.CALLER` writer and an
+`.ANY` reader of the same `typeid` get a dependency edge, so they cannot run
+concurrently (the caller inline on the phase thread while the reader sits on the
+pool). `.CALLER` systems that declare nothing are unaffected, since an empty
+access never conflicts.
+
 `scheduler_run` drives one phase to completion: a system becomes **ready** when
 all of its predecessors have finished. Ready `.CALLER` systems run inline on the
 phase thread; ready `.ANY` systems are submitted to the shared job pool
@@ -127,11 +143,12 @@ runner, which dispatches the newly ready work. The phase finishes when the
 remaining count reaches zero.
 
 A failure sets the phase's failed flag; no further work is released, in-flight
-systems finish, and `scheduler_run` reports false. A debug build keeps `.ANY`
-systems on the phase thread (same graph, serial execution) so validation and
-determinism are easy to reason about. Deferred structural changes are still
-applied by the owner (`world_flush`), never by the scheduler: a phase may run on
-a non-owning thread.
+systems finish, and `scheduler_run` reports false. A stall — systems remain, but
+none is ready and none is in flight — is treated the same way, so an incomplete
+phase is never reported as success. A debug build keeps `.ANY` systems on the
+phase thread (same graph, serial execution) so validation and determinism are
+easy to reason about. Deferred structural changes are still applied by the owner
+(`world_flush`), never by the scheduler: a phase may run on a non-owning thread.
 
 ## Threading
 
@@ -146,7 +163,10 @@ thread copies the published view into a free buffer and atomically publishes it,
 and the graphics thread claims the latest published buffer, copies it and
 releases it. The writer never blocks and the reader always sees a complete
 version; if the reader is behind, intermediate ticks are skipped and rendering
-keeps the last complete frame. The graphics thread never touches the pools.
+keeps the last complete frame. The graphics thread never touches the pools — the
+one debug check that needs the body columns (the direct-render instance
+verification under `ODIN_DEBUG`) reads the published snapshot through the same
+triple buffer, never `body_view`.
 
 `foundation` exposes one help-first job pool shared by the physics solver
 (`parallel_for`) and the scheduler's ready `.ANY` systems. Workers and any thread

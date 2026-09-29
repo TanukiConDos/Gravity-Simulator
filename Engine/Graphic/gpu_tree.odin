@@ -3,7 +3,6 @@ package graphic
 import phys "../physic"
 import ecs "../ecs"
 import "core:log"
-import "core:sync"
 import "vendor:vulkan"
 
 // GPU Barnes-Hut backend: the tree is built on the GPU (`tree_build.comp`, see
@@ -90,6 +89,10 @@ Gpu_Tree :: struct {
 	contacts_host:   Buffer,
 	node_capacity:   int,
 	pair_capacity:   int,
+	// Highest pair count already warned about this reserve. The list is bounded
+	// by `pair_capacity`; warning on each new high-water in the upper half makes
+	// the cliff visible without spamming the log every tick.
+	pair_warn_level: int,
 	// Metrics of the last successful build and the live body count it covers.
 	info:            phys.Tree_Info,
 	live_count:      int,
@@ -99,13 +102,16 @@ Gpu_Tree :: struct {
 
 // _gpu_tree_reserve sizes the tree buffers from the body capacity. The node
 // capacity matches the CPU arena bound (`count * 8 + 1024`), so any tree physic
-// can build over that many bodies fits.
+// can build over that many bodies fits. The contact list is a fixed
+// `max(count * 16 + 1024, 1024)` pairs; a dense cluster can outgrow it, which
+// `_gpu_tree_finish` turns into a CPU fallback rather than a partial resolve.
 @(private)
 _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 	node_capacity := capacity * 8 + 1024
 	pair_capacity := max(capacity * 16 + 1024, 1024)
 	self.tree.node_capacity = node_capacity
 	self.tree.pair_capacity = pair_capacity
+	self.tree.pair_warn_level = 0
 
 	order_bytes := vulkan.DeviceSize(capacity * size_of(u32))
 	contact_bytes := vulkan.DeviceSize(GPU_CONTACT_HEADER_SIZE + pair_capacity * size_of(Gpu_Contact_Pair))
@@ -143,6 +149,7 @@ _gpu_tree_release :: proc(self: ^Gpu_Gravity) {
 	_gpu_tree_build_release(self)
 	self.tree.node_capacity = 0
 	self.tree.pair_capacity = 0
+	self.tree.pair_warn_level = 0
 	self.tree.live_count = 0
 	self.tree.valid = false
 }
@@ -227,7 +234,22 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	velocity_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Velocity_Record))
 	pool_bytes := vulkan.DeviceSize(copy_entries * size_of(u32))
 	live_bytes := vulkan.DeviceSize(count * size_of(u32))
-	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, body_bytes)
+	// Acquire a set for the render view; when none is free, still run the solve
+	// against the backend's working copy (the tree build's) and skip the render
+	// view this tick rather than block. The traversal reads the set the renderer
+	// will read, so its upload lives in the same submission.
+	set_index := _render_set_acquire(self)
+	solve_bodies: ^Buffer
+	solve_radii: ^Buffer
+	if set_index >= 0 {
+		set := &self.render_sets[set_index]
+		solve_bodies = &set.bodies_device
+		solve_radii = &set.radii_device
+	} else {
+		solve_bodies = &self.bodies_device
+		solve_radii = &self.radii_device
+	}
+	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, solve_bodies, body_bytes)
 	_gpu_upload(
 		cmd,
 		self.compute.gpu,
@@ -236,9 +258,12 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		velocity_bytes,
 		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE},
 	)
-	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &self.selected_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.live_host, &self.live_device, live_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, solve_radii, pool_bytes)
+	if set_index >= 0 {
+		set := &self.render_sets[set_index]
+		_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &set.selected_device, pool_bytes)
+		_gpu_upload(cmd, self.compute.gpu, &self.live_host, &set.live_device, live_bytes)
+	}
 
 	pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Tree_Push {
@@ -251,8 +276,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Tree_Push))
 	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), tree.build.state_device.buffer, tree.build.nodes_offset, tree.build.nodes_bytes)
 	push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), tree.order_device.buffer, 0, tree.order_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), self.bodies_device.buffer, 0, self.bodies_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), self.radii_device.buffer, 0, self.radii_device.size)
+	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), solve_bodies.buffer, 0, solve_bodies.size)
+	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), solve_radii.buffer, 0, solve_radii.size)
 	push_descriptors_bind_buffer(&self.push, 0, 4, u32(slot), self.velocities_device.buffer, 0, self.velocities_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 5, u32(slot), tree.contacts_device.buffer, 0, tree.contacts_device.size)
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
@@ -313,17 +338,11 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		{.HOST_READ},
 	)
 
-	self.pending_value = compute_submit(
-		&self.compute,
-		slot,
-		self.consumer_semaphore,
-		sync.atomic_load(&self.consumer_value),
-	)
+	self.pending_value = compute_submit(&self.compute, slot)
 	self.pending = true
-	// Publish for the renderer: the count first, then the value that makes it
-	// (and the columns above) safe to read.
-	sync.atomic_store(&self.render_count, u32(count))
-	sync.atomic_store(&self.render_value, self.pending_value)
+	if set_index >= 0 {
+		_render_set_publish(self, set_index, count, self.pending_value)
+	}
 	return true
 }
 
@@ -368,10 +387,11 @@ _gpu_tree_read_pairs :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	return true
 }
 
-// _gpu_tree_finish waits for the dispatch and applies its results. A contact
-// list overflow fails before the pools are touched, so the caller can re-run
-// the CPU tree: scattering the GPU velocities first would double-apply the
-// gravity update when the CPU solve writes them again.
+// _gpu_tree_finish waits for the dispatch and applies its results. The contact
+// list is a fixed capacity: above half of it a warning names the count and the
+// slot budget, and past it the solve fails before the pools are touched, so the
+// caller can re-run the CPU tree. Scattering the GPU velocities first would
+// double-apply the gravity update when the CPU solve writes them again.
 @(private)
 _gpu_tree_finish :: proc(
 	self: ^Gpu_Gravity,
@@ -380,13 +400,27 @@ _gpu_tree_finish :: proc(
 	contacts: ^[dynamic]phys.Contact,
 ) -> bool {
 	captured := int((cast(^u32)self.tree.contacts_host.mapped)^)
-	if captured > self.tree.pair_capacity {
+	capacity := self.tree.pair_capacity
+	if captured > capacity {
 		log.errorf(
-			"[GPU PHYSICS] Contact list overflow (%d > %d); falling back to the CPU octree",
+			"[GPU PHYSICS] Contact list overflow: %d pairs for %d bodies exceed the %d-slot capacity; falling back to the CPU octree",
 			captured,
-			self.tree.pair_capacity,
+			len(bodies),
+			capacity,
 		)
 		return false
+	}
+	// Warn as the list climbs into the upper half, once per new high-water, so a
+	// dense cluster shows the cliff before it is hit without logging every tick.
+	if captured * 2 > capacity && captured > self.tree.pair_warn_level {
+		self.tree.pair_warn_level = captured
+		log.warnf(
+			"[GPU PHYSICS] Contact list at %d/%d slots (%d%%) for %d bodies; the fixed capacity falls back to the CPU octree when exceeded",
+			captured,
+			capacity,
+			captured * 100 / capacity,
+			len(bodies),
+		)
 	}
 	if captured > 0 && !_gpu_tree_read_pairs(self, captured) {return false}
 

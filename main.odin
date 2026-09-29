@@ -82,13 +82,15 @@ _parse_object :: proc(text: string, pos: ^int) -> _Scene_Body {
 		case "mass":
 			obj.mass = _parse_number(text, pos)
 		case "position":
-			arr := _parse_array(text, pos)
-			if len(arr) >= 3 {obj.position = {f32(arr[0]), f32(arr[1]), f32(arr[2])}}
+			buf: [8]f64
+			n := _parse_array(text, pos, buf[:])
+			if n >= 3 {obj.position = {f32(buf[0]), f32(buf[1]), f32(buf[2])}}
 		case "radius":
 			obj.radius = f32(_parse_number(text, pos))
 		case "velocity":
-			arr := _parse_array(text, pos)
-			if len(arr) >= 3 {obj.velocity = {f32(arr[0]), f32(arr[1]), f32(arr[2])}}
+			buf: [8]f64
+			n := _parse_array(text, pos, buf[:])
+			if n >= 3 {obj.velocity = {f32(buf[0]), f32(buf[1]), f32(buf[2])}}
 		case:
 			_skip_value(text, pos)
 		}
@@ -116,15 +118,22 @@ _parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, po
 	if !parse_ok {log.warnf("[SCENE] Malformed number in scene file: %q", text[start:pos^])}
 	return val}
 @(private)
-_parse_array :: proc(text: string, pos: ^int) -> [dynamic]f64 {arr := make([dynamic]f64)
+// Parses a JSON number array into `out` and returns how many values were
+// present. The caller supplies a stack buffer so the parser allocates nothing;
+// only the first three components are consumed, and any extra values are counted
+// but dropped (with a warning) so the cursor still advances past them.
+_parse_array :: proc(text: string, pos: ^int, out: []f64) -> int {count := 0
 	_skip_whitespace(text, pos)
-	if pos^ >= len(text) || text[pos^] != '[' {return arr}
+	if pos^ >= len(text) || text[pos^] != '[' {return 0}
 	pos^ += 1
 	for {_skip_whitespace(text, pos); if pos^ >= len(text) {break}; if text[pos^] == ']' {pos^ += 1
 			break}
 		if text[pos^] == ',' {pos^ += 1; continue}
-		append(&arr, _parse_number(text, pos))}
-	return arr}
+		value := _parse_number(text, pos)
+		if count < len(out) {out[count] = value}
+		count += 1}
+	if count > len(out) {log.warnf("[SCENE] array has %d values; keeping the first %d", count, len(out))}
+	return count}
 @(private)
 _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text, pos); if pos^ >=
 	   len(text) {return}
@@ -215,6 +224,7 @@ main :: proc() {
 	log.infof("Gravity Simulator - Odin Edition")
 
 	config := foundation.config_load("./config.json")
+	defer foundation.config_destroy()
 
 	// Start tracing before the worker pool so that, at exit, parallel_destroy
 	// runs first (LIFO defers) and the workers can release their buffers while
@@ -286,6 +296,13 @@ main :: proc() {
 		{
 			foundation.profile_scope("main.wait_events")
 			graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
+		}
+
+		{
+			// GLFW is only touched on this thread: refresh the input/window
+			// snapshot the render phase consumes.
+			foundation.profile_scope("main.pump")
+			graphic.window_pump(window)
 		}
 
 		{

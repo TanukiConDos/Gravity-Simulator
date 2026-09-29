@@ -82,7 +82,7 @@ buffer := buffer_init(gpu, size, usage, kind) or_return   // (T, bool)
 The package exposes only handles and their lifecycle/draw procedures:
 
 - Public: `Window` + `window_init/destroy/should_close/poll_events` /
-  `wait_events_timeout`; `Renderer` + `renderer_init/destroy/draw_frame`.
+  `wait_events_timeout/pump`; `Renderer` + `renderer_init/destroy/draw_frame`.
 - Everything else is marked `@(private)`. Odin's `@(private)` is package-scoped:
   visible across the package's files, hidden from importers.
 
@@ -95,6 +95,20 @@ renderer up through a `Renderer_Ref` world resource and calls
 aborts the phase and the graphics thread shuts down. `main` owns the renderer and
 calls `renderer_destroy`, which clears the ref. The renderer still keeps a world
 back-reference for its frame-graph callbacks (pick request, selection).
+
+## Input and the main thread
+
+GLFW is not thread-safe, and its input/framebuffer queries must run on the thread
+that processes events. The **main** thread owns the window: it blocks in
+`window_wait_events_timeout`, then calls `window_pump`, which queries GLFW for
+the key bitmask, the left-button state, the normalised cursor position and the
+framebuffer size, and publishes them as an atomic snapshot on `Window`. The
+`RENDER` phase never calls GLFW: `graphic.input` reads the snapshot to move and
+rotate the camera and to turn a left-click edge into a `Pick_Request`, and
+`_renderer_recreate_if_possible`/`_choose_swap_extent` take the cached
+framebuffer size from the snapshot instead of asking GLFW. Input latency is
+bounded by the event-wait timeout, the same effective polling rate as a direct
+query.
 
 ## Vulkan usage
 
@@ -126,8 +140,10 @@ is safe to record again once its previous timeline value completed.
   else. `Push_Binding_Spec.external` bindings own no buffer; the caller supplies
   one per submission with `push_descriptors_bind_buffer`.
 - Compute work is not part of `frame_graph.json`: it is submitted by the compute
-  side and ordered with the timeline semaphore. The frame graph only needs to
-  wait on timeline values once a render pass consumes GPU-produced buffers.
+  side and ordered with the timeline semaphore. When a render pass consumes
+  GPU-produced buffers (M5's instance pack, recorded before the graph's passes),
+  the wait lives in the frame submission, not inside the graph: the graph stays a
+  render-pass scheduler.
 - `gpu_physics.odin` is the first consumer: the `Gpu_Gravity` backend packs body
   SSBOs, dispatches `physics_brute.comp` (all-pairs) or `physics_tree.comp`
   (Barnes-Hut over the tree `tree_build.comp` builds on the GPU, `gpu_tree.odin`

@@ -1,17 +1,17 @@
 package graphic
 
 import ecs "../ecs"
-import "vendor:glfw"
 
 @(private)
 MOVE_SPEED   :: 500.0
 @(private)
 ROTATE_SPEED :: 1.0
 
-// Set on the graphics thread by the input system on a left-button press and
-// consumed by renderer_draw_frame in the same thread, so it needs no locking.
-// `u`/`v` are normalised window coordinates; the renderer maps them to
-// framebuffer pixels, which keeps window scaling out of this code.
+// Set by the input system on a left-button press edge and consumed by
+// renderer_draw_frame in the same phase, so it needs no locking. `u`/`v` are
+// normalised window coordinates taken from the main-thread input snapshot; the
+// renderer maps them to framebuffer pixels, which keeps window scaling out of
+// this code.
 @(private)
 Pick_Request :: struct {
 	requested: bool,
@@ -20,50 +20,47 @@ Pick_Request :: struct {
 	v:         f32,
 }
 
-// RENDER-phase system: updates the Camera resource from the keyboard. It runs on
-// the graphics thread, which is also where the window events are polled.
+// RENDER-phase system: updates the Camera resource from the keyboard and turns
+// left-click edges into pick requests. The graphics thread never calls GLFW; it
+// reads the snapshot the main thread publishes in `window_pump`.
 @(private)
 input_system :: proc(w: ^ecs.World, delta_seconds: f32) -> bool {
 	ref := ecs.world_resource(w, Window_Ref)
 	if ref.window == nil {return true}
 	cam := ecs.world_resource(w, Camera)
-	input_poll(ref.window, cam, delta_seconds)
-	_input_pick(w, ref.window)
+	input := window_input_snapshot(ref.window)
+	input_poll(input, cam, delta_seconds)
+	_input_pick(w, input)
 	return true
 }
 
 // Edge-triggered: a pick is requested only on the press, so the readback never
 // stalls the graphics thread for every frame the button is held.
 @(private)
-_input_pick :: proc(w: ^ecs.World, window: ^Window) {
+_input_pick :: proc(w: ^ecs.World, input: Input_State) {
 	req := ecs.world_resource(w, Pick_Request)
-	down := glfw.GetMouseButton(window.handle, glfw.MOUSE_BUTTON_LEFT) == glfw.PRESS
-	if down && !req.prev_down {
-		xpos, ypos := glfw.GetCursorPos(window.handle)
-		width, height := glfw.GetWindowSize(window.handle)
-		if width > 0 && height > 0 {
-			req.u = clamp(f32(xpos) / f32(width), 0, 1)
-			req.v = clamp(f32(ypos) / f32(height), 0, 1)
-			req.requested = true
-		}
+	if input.mouse_down && !req.prev_down && input.fb_valid {
+		req.u = input.cursor_u
+		req.v = input.cursor_v
+		req.requested = true
 	}
-	req.prev_down = down
+	req.prev_down = input.mouse_down
 }
 
 @(private)
-input_poll :: proc(w: ^Window, cam: ^Camera, delta_seconds: f32) {
+input_poll :: proc(input: Input_State, cam: ^Camera, delta_seconds: f32) {
 	move := delta_seconds * MOVE_SPEED
 	rotate := delta_seconds * ROTATE_SPEED
 
-	if glfw.GetKey(w.handle, glfw.KEY_W) == glfw.PRESS {camera_move_forward(cam, move)}
-	if glfw.GetKey(w.handle, glfw.KEY_S) == glfw.PRESS {camera_move_backward(cam, move)}
-	if glfw.GetKey(w.handle, glfw.KEY_A) == glfw.PRESS {camera_move_left(cam, move)}
-	if glfw.GetKey(w.handle, glfw.KEY_D) == glfw.PRESS {camera_move_right(cam, move)}
-	if glfw.GetKey(w.handle, glfw.KEY_Q) == glfw.PRESS {camera_move_down(cam, move)}
-	if glfw.GetKey(w.handle, glfw.KEY_E) == glfw.PRESS {camera_move_up(cam, move)}
+	if (input.keys & INPUT_KEY_W) != 0 {camera_move_forward(cam, move)}
+	if (input.keys & INPUT_KEY_S) != 0 {camera_move_backward(cam, move)}
+	if (input.keys & INPUT_KEY_A) != 0 {camera_move_left(cam, move)}
+	if (input.keys & INPUT_KEY_D) != 0 {camera_move_right(cam, move)}
+	if (input.keys & INPUT_KEY_Q) != 0 {camera_move_down(cam, move)}
+	if (input.keys & INPUT_KEY_E) != 0 {camera_move_up(cam, move)}
 
-	if glfw.GetKey(w.handle, glfw.KEY_UP) == glfw.PRESS {camera_rotate_pitch(cam, rotate)}
-	if glfw.GetKey(w.handle, glfw.KEY_DOWN) == glfw.PRESS {camera_rotate_pitch(cam, -rotate)}
-	if glfw.GetKey(w.handle, glfw.KEY_LEFT) == glfw.PRESS {camera_rotate_yaw(cam, -rotate)}
-	if glfw.GetKey(w.handle, glfw.KEY_RIGHT) == glfw.PRESS {camera_rotate_yaw(cam, rotate)}
+	if (input.keys & INPUT_KEY_UP) != 0 {camera_rotate_pitch(cam, rotate)}
+	if (input.keys & INPUT_KEY_DOWN) != 0 {camera_rotate_pitch(cam, -rotate)}
+	if (input.keys & INPUT_KEY_LEFT) != 0 {camera_rotate_yaw(cam, -rotate)}
+	if (input.keys & INPUT_KEY_RIGHT) != 0 {camera_rotate_yaw(cam, rotate)}
 }

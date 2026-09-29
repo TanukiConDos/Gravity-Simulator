@@ -213,15 +213,21 @@ snapshot_reserve :: proc(s: ^RenderSnapshot, capacity: int) {
 }
 
 physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
-	return ecs.world_resource(w, Physic_State, _state_destroy)
+	state := ecs.world_resource(w, Physic_State, _state_destroy)
+	assert(state != nil, "physic_state: resource missing (world frozen before physic_init?)")
+	return state
 }
 
 physic_snapshot :: proc(w: ^ecs.World) -> ^RenderSnapshot {
-	return ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	snapshot := ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	assert(snapshot != nil, "physic_snapshot: resource missing (world frozen before physic_init?)")
+	return snapshot
 }
 
 selection_state :: proc(w: ^ecs.World) -> ^Selection_State {
-	return ecs.world_resource(w, Selection_State)
+	state := ecs.world_resource(w, Selection_State)
+	assert(state != nil, "selection_state: resource missing (world frozen before setup?)")
+	return state
 }
 
 physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
@@ -314,9 +320,12 @@ physic_register_systems :: proc(s: ^ecs.Scheduler) {
 
 physic_system_begin :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	state := physic_state(w)
+	// Stamp the tick even when there is nothing to do: an emptied world must
+	// not leave a stale/zero `tick_start` behind, or the first cost measured
+	// after bodies return would span the whole idle period.
+	state.tick_start = time.tick_now()
 	bodies := ecs.world_pool(w, Body).dense[:]
 	if len(bodies) == 0 {return true}
-	state.tick_start = time.tick_now()
 
 	acc := ecs.world_pool(w, Acceleration).data
 	for idx in bodies {acc[idx] = Acceleration(Vec3{0, 0, 0})}
@@ -363,9 +372,20 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 
 // _submit_gravity starts one hooked solve. On failure the hook is dropped and
 // the caller runs the CPU solver for this tick; the backend must not have
-// touched the pools.
+// touched the pools. A hook with only one of the two callbacks can never be
+// completed (`_finish_gravity` would dereference a nil finish), so it is
+// rejected here exactly like a failed submit.
 @(private)
 _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seconds: f64) -> bool {
+	if state.gravity_solver.submit == nil || state.gravity_solver.finish == nil {
+		log.errorf(
+			"[PHYSIC] Gravity solver is incomplete (submit=%v finish=%v); falling back to the CPU solver",
+			state.gravity_solver.submit != nil,
+			state.gravity_solver.finish != nil,
+		)
+		state.gravity_solver = {}
+		return false
+	}
 	if state.gravity_solver.submit(state.gravity_solver.user, w, bodies, seconds) {
 		state.gravity_pending = true
 		state.gravity_seconds = seconds
@@ -384,6 +404,16 @@ _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seco
 @(private)
 _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	state.gravity_pending = false
+	// Defensive: `_submit_gravity` refuses a nil finish, so this only triggers
+	// if a caller installs a half-specified hook by hand. Keep the CPU fallback
+	// instead of dereferencing it.
+	if state.gravity_solver.finish == nil {
+		log.errorf("[PHYSIC] Gravity solver has no finish callback; falling back to the CPU solver")
+		state.gravity_solver = {}
+		clear(&state.collision_contacts)
+		_gravity_cpu_fallback(state, w, bodies)
+		return
+	}
 	if state.gravity_solver.finish(
 		state.gravity_solver.user,
 		w,
@@ -395,6 +425,14 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	log.errorf("[PHYSIC] Gravity solver failed; falling back to the CPU solver")
 	state.gravity_solver = {}
 	clear(&state.collision_contacts)
+	_gravity_cpu_fallback(state, w, bodies)
+}
+
+// _gravity_cpu_fallback re-solves the current tick with the CPU backend after a
+// hooked solve was rejected or failed. The backend must not have touched the
+// pools, so this produces the results the hook would have.
+@(private)
+_gravity_cpu_fallback :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	switch state.algorithm {
 	case .BRUTE_FORCE:
 		// The finish usually happens after this tick's collision pass when the
@@ -406,18 +444,29 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	}
 }
 
-// _octree_cpu_solve runs the CPU octree solve and builds the CPU tree on demand.
-// The lazy build happens when a GPU backend fails after physic stopped building
-// the CPU tree; it is the fallback path, so paying for a cold build is fine.
+// _octree_cpu_solve runs the CPU octree solve and builds or refreshes the CPU
+// tree. The lazy build happens when a GPU backend fails after physic stopped
+// building the CPU tree, but it is also the normal CPU path. A tree that does
+// not match the world (nil, different body count, or a different world
+// revision) is rebuilt with the same staleness predicate as `_ensure_tree`, so
+// the fallback can never reuse a tree built for a different body set.
 @(private)
 _octree_cpu_solve :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seconds: f64) {
 	state.tree_on_gpu = false
-	if state.tree == nil {
-		view := body_view(w)
-		state.tree = octtree_create_ex(view, state.theta, state.max_depth, state.min_half)
+	view := body_view(w)
+	have := state.tree != nil
+	stale := !have || state.tree_body_count != len(bodies) || state.tree_revision != w.revision
+	if stale {
+		found.profile_scope("octree.build")
+		if state.tree != nil {
+			octtree_rebuild_ex(state.tree, view, state.theta, state.max_depth, state.min_half)
+		} else {
+			state.tree = octtree_create_ex(view, state.theta, state.max_depth, state.min_half)
+		}
 		state.tree_info = _tree_info(state.tree)
-		state.tree_body_count = len(bodies)
-		state.tree_revision = w.revision
+		_tree_build_bookkeeping(state, w, view, bodies)
+	} else {
+		state.tree.view = view
 	}
 	state.tree.theta = state.theta
 	_octree_solve(state, bodies, seconds)
@@ -479,12 +528,13 @@ physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 
 // Applies a pick result handed over by the graphics thread. Runs on the physics
 // thread, which owns the Selected pool; an out-of-range index is treated as a
-// miss and simply clears the selection.
+// miss and simply clears the selection. The pick is consumed with an atomic
+// exchange, so a newer pick stored between a load and a store can never be
+// dropped.
 physic_system_select :: proc(w: ^ecs.World, _: f32) -> bool {
 	sel := selection_state(w)
-	picked := sync.atomic_load(&sel.picked)
+	picked := sync.atomic_exchange(&sel.picked, SELECTION_NONE)
 	if picked == SELECTION_NONE {return true}
-	sync.atomic_store(&sel.picked, SELECTION_NONE)
 
 	found.profile_scope_args("physic.select", "picked=%d", {picked})
 	view := body_view(w)
@@ -817,6 +867,31 @@ physic_snapshot_read :: proc(
 	return snapshot.last_count
 }
 
+// Zero-mass bodies cannot be accelerated: the gravity update divides the pair
+// force by the accelerated body's mass, so a zero divisor yields NaN. Two
+// massless bodies also cannot be separated by the collision resolve, which
+// divides the overlap by the pair's total mass. Both cases skip the
+// interaction; the first one is reported so a bad scene is visible without
+// spamming a log line per pair per tick. `_apply_gravity` runs on parallel
+// workers, hence the atomic.
+@(private)
+_zero_mass_warned: u32
+
+@(private)
+_warn_zero_mass_once :: proc(context_name: string) {
+	expected := u32(0)
+	if _, swapped := sync.atomic_compare_exchange_strong(
+		&_zero_mass_warned,
+		expected,
+		u32(1),
+	); swapped {
+		log.warnf(
+			"[PHYSIC] zero-mass body skipped in %s instead of dividing by zero",
+			context_name,
+		)
+	}
+}
+
 _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
 	pos := ecs.world_pool(w, Position).data
 	vel := ecs.world_pool(w, Velocity).data
@@ -859,6 +934,11 @@ _brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
 			normal := dir / dist
 			overlap := radius_sum - dist
 			total_mass := f32(f64(mass[a]) + f64(mass[b]))
+			if total_mass == 0 {
+				// Two massless bodies: the weighted separation is 0/0.
+				_warn_zero_mass_once("collision")
+				continue
+			}
 			pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
 			pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
 		}
@@ -938,6 +1018,11 @@ _collision_resolve :: proc(state: ^Physic_State, w: ^ecs.World) {
 		normal := dir / dist
 		overlap := radius_sum - dist
 		total_mass := f32(f64(mass[a]) + f64(mass[b]))
+		if total_mass == 0 {
+			// Two massless bodies: the weighted separation is 0/0.
+			_warn_zero_mass_once("collision")
+			continue
+		}
 		pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
 		pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
 	}
