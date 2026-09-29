@@ -558,6 +558,13 @@ _apply_gravity :: proc(
 	other_pos: Vec3,
 	dt: f32,
 ) {
+	// The force is divided by the accelerated body's mass below; a massless
+	// body would produce 0/0 = NaN. It cannot be accelerated by gravity, so
+	// skip the interaction (and every other body is unaffected).
+	if obj_mass == 0 {
+		_warn_zero_mass_once("gravity")
+		return
+	}
 	dir := other_pos - obj_pos
 	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 	if dist_sq < 0.001 {dist_sq = 0.001}
