@@ -81,6 +81,13 @@ mutates the camera from the keyboard, and `graphic.render` runs the frame
 through the renderer resource. A graphics system returns `false` only on a fatal
 error; the scheduler aborts the phase and the graphics thread shuts the app down.
 
+GLFW is not thread-safe, so the `RENDER` phase performs no window queries. The
+**main** thread pumps events and then calls `window_pump`, which queries GLFW and
+publishes an atomic input/window snapshot (key bitmask, mouse button, normalised
+cursor, framebuffer size) on `Window`. `graphic.input` consumes that snapshot to
+move the camera and to turn a left-click edge into a `Pick_Request`, and the
+swapchain reads the snapshot's cached framebuffer size when it is recreated.
+
 The frame itself is data-driven. `Engine/Graphic/frame_graph.json` declares the
 resources (imported or transient) and the passes (`inputs`/`outputs`, `bindings`,
 `optional`). `frame_graph.odin` loads it, resolves pipelines, builds the

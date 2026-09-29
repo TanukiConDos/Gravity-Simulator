@@ -340,7 +340,9 @@ _choose_swap_present_mode :: proc(modes: [dynamic]vulkan.PresentModeKHR) -> vulk
 @(private)
 _choose_swap_extent :: proc(window: ^Window, caps: vulkan.SurfaceCapabilitiesKHR) -> vulkan.Extent2D {
 	if caps.currentExtent.width != max(u32) {return caps.currentExtent}
-	w, h := window_get_framebuffer_size(window)
+	// The framebuffer size is cached by the main thread (GLFW is not queried
+	// here); the caller only reaches this path when that size is valid.
+	w, h := window_framebuffer_size(window)
 	extent := vulkan.Extent2D{width = u32(w), height = u32(h)}
 	extent.width = clamp(extent.width, caps.minImageExtent.width, caps.maxImageExtent.width)
 	extent.height = clamp(extent.height, caps.minImageExtent.height, caps.maxImageExtent.height)

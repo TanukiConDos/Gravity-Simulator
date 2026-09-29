@@ -217,11 +217,13 @@ _renderer_recreate_swapchain :: proc(self: ^Renderer) -> bool {
 }
 
 // Rebuilding a 0x0 swapchain is invalid. GLFW only updates the framebuffer size
-// while processing events on the main thread, so while minimized this backs off
-// and lets the next frame retry. Returns false only on a fatal error.
+// while processing events on the main thread, so this waits for the main-thread
+// snapshot to report a valid size (the graphics thread never queries GLFW) and
+// lets the next frame retry while minimized. Returns false only on a fatal
+// error.
 @(private)
 _renderer_recreate_if_possible :: proc(self: ^Renderer) -> bool {
-	if !window_update_size(self.window) {
+	if !window_framebuffer_valid(self.window) {
 		time.sleep(16 * time.Millisecond)
 		return true
 	}

@@ -289,6 +289,13 @@ main :: proc() {
 		}
 
 		{
+			// GLFW is only touched on this thread: refresh the input/window
+			// snapshot the render phase consumes.
+			foundation.profile_scope("main.pump")
+			graphic.window_pump(window)
+		}
+
+		{
 			foundation.profile_scope("main.tick")
 			if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
 				last_log = time.tick_now()

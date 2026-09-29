@@ -82,7 +82,7 @@ buffer := buffer_init(gpu, size, usage, kind) or_return   // (T, bool)
 The package exposes only handles and their lifecycle/draw procedures:
 
 - Public: `Window` + `window_init/destroy/should_close/poll_events` /
-  `wait_events_timeout`; `Renderer` + `renderer_init/destroy/draw_frame`.
+  `wait_events_timeout/pump`; `Renderer` + `renderer_init/destroy/draw_frame`.
 - Everything else is marked `@(private)`. Odin's `@(private)` is package-scoped:
   visible across the package's files, hidden from importers.
 
@@ -95,6 +95,20 @@ renderer up through a `Renderer_Ref` world resource and calls
 aborts the phase and the graphics thread shuts down. `main` owns the renderer and
 calls `renderer_destroy`, which clears the ref. The renderer still keeps a world
 back-reference for its frame-graph callbacks (pick request, selection).
+
+## Input and the main thread
+
+GLFW is not thread-safe, and its input/framebuffer queries must run on the thread
+that processes events. The **main** thread owns the window: it blocks in
+`window_wait_events_timeout`, then calls `window_pump`, which queries GLFW for
+the key bitmask, the left-button state, the normalised cursor position and the
+framebuffer size, and publishes them as an atomic snapshot on `Window`. The
+`RENDER` phase never calls GLFW: `graphic.input` reads the snapshot to move and
+rotate the camera and to turn a left-click edge into a `Pick_Request`, and
+`_renderer_recreate_if_possible`/`_choose_swap_extent` take the cached
+framebuffer size from the snapshot instead of asking GLFW. Input latency is
+bounded by the event-wait timeout, the same effective polling rate as a direct
+query.
 
 ## Vulkan usage
 
