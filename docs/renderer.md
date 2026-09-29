@@ -140,8 +140,10 @@ is safe to record again once its previous timeline value completed.
   else. `Push_Binding_Spec.external` bindings own no buffer; the caller supplies
   one per submission with `push_descriptors_bind_buffer`.
 - Compute work is not part of `frame_graph.json`: it is submitted by the compute
-  side and ordered with the timeline semaphore. The frame graph only needs to
-  wait on timeline values once a render pass consumes GPU-produced buffers.
+  side and ordered with the timeline semaphore. When a render pass consumes
+  GPU-produced buffers (M5's instance pack, recorded before the graph's passes),
+  the wait lives in the frame submission, not inside the graph: the graph stays a
+  render-pass scheduler.
 - `gpu_physics.odin` is the first consumer: the `Gpu_Gravity` backend packs body
   SSBOs, dispatches `physics_brute.comp` (all-pairs) or `physics_tree.comp`
   (Barnes-Hut over the tree `tree_build.comp` builds on the GPU, `gpu_tree.odin`

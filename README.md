@@ -22,6 +22,8 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 - **time**: Multiplicador de tiempo. Relación entre el tiempo de la simulación y el tiempo real. Por ejemplo, con el valor en 1000 un segundo en la vida real son 1000 segundos en la simulación.
 - **filename**: Nombre del fichero JSON a cargar (en la carpeta scenes) cuando el modo de creación es `"FILE"`.
 - **algorithm**: Algoritmo usado tanto para calcular la gravedad (solver) como para detectar y resolver las colisiones. Puede ser `"BRUTE_FORCE"` u `"OCTREE"`.
+- **gravity_backend**: Quién ejecuta el cálculo de la gravedad: `"CPU"` (solver propio) o `"GPU"` (backend de cómputo sobre el dispositivo del renderizador; si falla, vuelve al CPU). Con `"BRUTE_FORCE"` la GPU ejecuta el kernel de todos contra todos; con `"OCTREE"` construye y recorre el árbol en la GPU.
+- **theta**: Ángulo de apertura de Barnes-Hut (por defecto `0.5`). Cuanto mayor es, más rápido pero menos preciso es el cálculo de la gravedad.
 - **tree_rebuild_interval**: Intervalo (en segundos de simulación) entre reconstrucciones del octree. Un valor de `0` reconstruye el árbol en cada tick.
 - **max_depth**: Límite de profundidad del octree (por defecto 48). El árbol natural para N cuerpos suele quedarse cerca de `log8(N)`, por lo que valores de 8–16 ya acotan el caso patológico sin coste apreciable.
 - **min_half_size**: Tamaño mínimo de celda hoja del octree (por defecto `0.0001`).

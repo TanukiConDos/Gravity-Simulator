@@ -38,9 +38,10 @@ views safe to hold across a system and across the two threads:
   the index space for the whole run. Pools created after the call are sized
   automatically.
 - `world_freeze(w)` marks the registries read-only. After this point all pools and
-  resources must already exist: `world_pool`/`world_resource` log an error (and
-  assert in debug) if asked for a new type, since creating one would race with the
-  other thread. Spawning past the reserved capacity returns `ENTITY_NONE` and
+  resources must already exist: `world_pool`/`world_resource` log an error and
+  return `nil` for a new type (the typed accessors such as `physic_state` and
+  `body_view` assert on the `nil` in debug), because creating one would race with
+  the other thread. Spawning past the reserved capacity returns `ENTITY_NONE` and
   logs; writing a component past capacity is a no-op + warning.
 
 The app reserves from `config.json` (`num_objects` or the scene file), spawns, and
