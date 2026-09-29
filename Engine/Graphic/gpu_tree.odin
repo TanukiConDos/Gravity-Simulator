@@ -89,6 +89,10 @@ Gpu_Tree :: struct {
 	contacts_host:   Buffer,
 	node_capacity:   int,
 	pair_capacity:   int,
+	// Highest pair count already warned about this reserve. The list is bounded
+	// by `pair_capacity`; warning on each new high-water in the upper half makes
+	// the cliff visible without spamming the log every tick.
+	pair_warn_level: int,
 	// Metrics of the last successful build and the live body count it covers.
 	info:            phys.Tree_Info,
 	live_count:      int,
@@ -98,13 +102,16 @@ Gpu_Tree :: struct {
 
 // _gpu_tree_reserve sizes the tree buffers from the body capacity. The node
 // capacity matches the CPU arena bound (`count * 8 + 1024`), so any tree physic
-// can build over that many bodies fits.
+// can build over that many bodies fits. The contact list is a fixed
+// `max(count * 16 + 1024, 1024)` pairs; a dense cluster can outgrow it, which
+// `_gpu_tree_finish` turns into a CPU fallback rather than a partial resolve.
 @(private)
 _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 	node_capacity := capacity * 8 + 1024
 	pair_capacity := max(capacity * 16 + 1024, 1024)
 	self.tree.node_capacity = node_capacity
 	self.tree.pair_capacity = pair_capacity
+	self.tree.pair_warn_level = 0
 
 	order_bytes := vulkan.DeviceSize(capacity * size_of(u32))
 	contact_bytes := vulkan.DeviceSize(GPU_CONTACT_HEADER_SIZE + pair_capacity * size_of(Gpu_Contact_Pair))
@@ -142,6 +149,7 @@ _gpu_tree_release :: proc(self: ^Gpu_Gravity) {
 	_gpu_tree_build_release(self)
 	self.tree.node_capacity = 0
 	self.tree.pair_capacity = 0
+	self.tree.pair_warn_level = 0
 	self.tree.live_count = 0
 	self.tree.valid = false
 }
@@ -379,10 +387,11 @@ _gpu_tree_read_pairs :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	return true
 }
 
-// _gpu_tree_finish waits for the dispatch and applies its results. A contact
-// list overflow fails before the pools are touched, so the caller can re-run
-// the CPU tree: scattering the GPU velocities first would double-apply the
-// gravity update when the CPU solve writes them again.
+// _gpu_tree_finish waits for the dispatch and applies its results. The contact
+// list is a fixed capacity: above half of it a warning names the count and the
+// slot budget, and past it the solve fails before the pools are touched, so the
+// caller can re-run the CPU tree. Scattering the GPU velocities first would
+// double-apply the gravity update when the CPU solve writes them again.
 @(private)
 _gpu_tree_finish :: proc(
 	self: ^Gpu_Gravity,
@@ -391,13 +400,27 @@ _gpu_tree_finish :: proc(
 	contacts: ^[dynamic]phys.Contact,
 ) -> bool {
 	captured := int((cast(^u32)self.tree.contacts_host.mapped)^)
-	if captured > self.tree.pair_capacity {
+	capacity := self.tree.pair_capacity
+	if captured > capacity {
 		log.errorf(
-			"[GPU PHYSICS] Contact list overflow (%d > %d); falling back to the CPU octree",
+			"[GPU PHYSICS] Contact list overflow: %d pairs for %d bodies exceed the %d-slot capacity; falling back to the CPU octree",
 			captured,
-			self.tree.pair_capacity,
+			len(bodies),
+			capacity,
 		)
 		return false
+	}
+	// Warn as the list climbs into the upper half, once per new high-water, so a
+	// dense cluster shows the cliff before it is hit without logging every tick.
+	if captured * 2 > capacity && captured > self.tree.pair_warn_level {
+		self.tree.pair_warn_level = captured
+		log.warnf(
+			"[GPU PHYSICS] Contact list at %d/%d slots (%d%%) for %d bodies; the fixed capacity falls back to the CPU octree when exceeded",
+			captured,
+			capacity,
+			captured * 100 / capacity,
+			len(bodies),
+		)
 	}
 	if captured > 0 && !_gpu_tree_read_pairs(self, captured) {return false}
 

@@ -38,9 +38,10 @@ and applies its results only when a consumer needs them.
      `physic.integrate` finishes before the position update.
 
 A failed `submit` (over capacity, no tree) falls back to the CPU solver in the
-same tick, exactly like a failing hook in M1. A failed `finish` (contact-list
-overflow, device loss) is detected before the pools are touched, so `physic`
-uninstalls the hook and re-runs the CPU solver for that tick.
+same tick, exactly like a failing hook in M1. A failed `finish` (device loss, or
+the Barnes-Hut contact list exceeding its fixed capacity) is detected before the
+pools are touched, so `physic` uninstalls the hook and re-runs the CPU solver for
+that tick.
 
 ## Backends
 
@@ -81,9 +82,14 @@ CPU brute-force softening (`r² >= 1e-6`).
    atomic contact list; the CPU sorts them into `collision_contacts`, so
    `_collision_resolve` is unchanged. The kernel applies `vel += acc * dt` in
    place;
-4. contacts are bounded by a pre-allocated capacity; an overflow fails the solve
-   before the pools are written, so the CPU solver takes over instead of
-   resolving a partial list.
+4. contacts are bounded by a pre-allocated capacity of
+   `max(capacity * 16 + 1024, 1024)` pairs, where `capacity` is the reserved body
+   budget. The buffer is fixed for the run (runtime growth would touch the
+   non-thread-safe allocator off the main thread). As a solve's pair count
+   crosses half the capacity, `finish` logs a high-water warning naming the
+   count, the slots and the body count, so the cliff is visible before it is hit.
+   Past the capacity the solve fails *before* the pools are written and the CPU
+   solver takes over, instead of resolving a partial contact list.
 
 Buffer capacity is pre-reserved before the simulation threads start; runtime
 growth would touch the (not thread-safe) device allocator and is only safe from
@@ -249,6 +255,14 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   (the renderer, when it draws GPU-produced state) wait on a value in
   `vkQueueSubmit2`. Binary semaphores stay where the window system requires
   them: swapchain acquire and present.
+- **One submission at a time per compute context, whichever thread calls.**
+  A context's slot ring and timeline counter are plain fields, so `compute_begin`
+  takes a mutex and the matching `compute_submit` releases it; a slot reservation
+  and its timeline advance become one atomic step. Submission is still *not*
+  pinned to one thread: `physic.integrate` is `.ANY`, so the scheduler may run a
+  solver's `finish` (and its second readback submission) on a job worker while
+  another thread enters the context. Before this, safety relied on the graph
+  serialising the systems that call it.
 - **The hook is submit/finish, not one blocking call.** The pool writes happen in
   `finish`; nothing between `submit` and `finish` depends on them, so the wait
   lands at the first consumer instead of at the dispatch. The ring's slots stay

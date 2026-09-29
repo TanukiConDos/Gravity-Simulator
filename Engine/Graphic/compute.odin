@@ -2,6 +2,7 @@ package graphic
 
 import "core:log"
 import "core:slice"
+import "core:sync"
 import "core:time"
 import "vendor:vulkan"
 
@@ -11,9 +12,15 @@ import "vendor:vulkan"
 // compute work. Every submission goes through the timeline: a slot is safe to
 // record again once its previous value completed on the device.
 //
-// Only one thread submits to a context; the timeline's `value` is not atomic.
-// A second context is cheap (it shares nothing), so one thread per context is
-// the intended model.
+// One thread submits **at a time**: `next_slot` and the timeline's `value` are
+// plain fields, not atomics, so `compute_begin` takes `submit_mutex` and
+// `compute_submit` releases it, keeping a slot reservation and its timeline
+// advance together. Submission is *not* pinned to one thread: the physics
+// scheduler may run a solver's `finish` on a job worker (`physic.integrate` is
+// `.ANY`), so the lock also serialises that worker's readback submission against
+// the next `submit`. A second context is cheap (it shares nothing), so a context
+// per independent producer remains the model; the mutex only makes concurrent
+// entry to *one* context correct.
 
 // The bench probe shader; also the smallest end-to-end compute path.
 @(private)
@@ -30,6 +37,10 @@ Compute :: struct {
 	timeline:     Timeline,
 	slots:        [COMPUTE_SLOTS]Compute_Slot,
 	next_slot:    u32,
+	// Held from `compute_begin` until `compute_submit`: it makes the
+	// slot reservation and the timeline advance one atomic step, so no two
+	// (possibly worker-thread) submissions can interleave them.
+	submit_mutex: sync.Mutex,
 }
 
 @(private)
@@ -248,8 +259,12 @@ _median :: proc(values: []f64) -> f64 {
 
 // compute_begin waits for the chosen slot's previous submission and opens its
 // command buffer. Re-recording is only valid once that submission completed.
+// It takes `submit_mutex`, released by the matching `compute_submit`, so the
+// slot choice and the timeline advance are one atomic step even when the caller
+// is a job worker.
 @(private)
 compute_begin :: proc(self: ^Compute) -> (cmd: vulkan.CommandBuffer, slot: int) {
+	sync.mutex_lock(&self.submit_mutex)
 	slot = int(self.next_slot)
 	self.next_slot = (self.next_slot + 1) % COMPUTE_SLOTS
 	s := &self.slots[slot]
@@ -265,7 +280,7 @@ compute_begin :: proc(self: ^Compute) -> (cmd: vulkan.CommandBuffer, slot: int) 
 // compute_submit closes and submits the slot, returning the timeline value that
 // signals its completion. The optional (semaphore, value) pair adds a wait, which
 // the solver uses to keep its render columns stable while the renderer reads
-// them.
+// them. It releases the `submit_mutex` taken by `compute_begin`.
 @(private)
 compute_submit :: proc(
 	self: ^Compute,
@@ -310,6 +325,7 @@ compute_submit :: proc(
 	}
 	vk_assert(vulkan.QueueSubmit2(self.gpu.compute_queue, 1, &submit_info, 0), "vkQueueSubmit2(compute)")
 	s.value = value
+	sync.mutex_unlock(&self.submit_mutex)
 	return value
 }
 
