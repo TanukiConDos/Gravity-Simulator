@@ -138,9 +138,8 @@ The solver publishes a *render view* for the renderer thread:
   instance order, the draw count and the pick IDs stay the same as the snapshot
   path (`view.bodies` order). `mode` says whether `bodies` is entity-indexed
   (octree) or packed by slot (brute force).
-- The timeline `value` whose completion makes the buffers safe to read, and the
-  `count` of live bodies. The pair is published after each solve and read with a
-  seqlock retry, so it always describes one submission.
+- The solve timeline `value` whose completion makes the buffers safe to read, and
+  the `count` of live bodies.
 
 `shader/instance_pack.comp` runs on the graphics queue at the start of the
 frame, before the render pass begins (compute may not be recorded inside one):
@@ -148,12 +147,32 @@ one invocation per instance reads position, radius and selection and writes the
 per-frame instance record. The main pipeline is untouched, and the frame
 submission waits on the solver's timeline before any of it runs.
 
-The reverse dependency matters too: a solve uploads new body columns every tick,
-so it must not overwrite them while a frame is reading. Each frame therefore
-signals a *frame timeline* (`vkQueueSubmit2` signal) and the solver's next
-submission waits on the latest published frame value, so the two queues take
-turns on the shared columns instead of racing. When the solver has no renderer
-(headless bench, tests) the wait is zero.
+A single set of buffers cannot be made safe with a "latest value" check: a solve
+can resolve its view to solve `T` and then submit solve `T+1` before the frame
+that reads `T` publishes its value, overwriting the buffers in flight. The view
+is therefore **vended**, not shared. The solver owns `RENDER_VIEW_SETS` (3)
+device snapshots and a per-set state machine:
+
+- Solver, per solve: acquire a set that is `FREE` **and** whose reader has
+  completed — the frame timeline's counter is at least the set's
+  `release_value` (`vkGetSemaphoreCounterValue`, no host block) — by a
+  `FREE -> WRITING` CAS. Upload the columns into that set and dispatch against
+  it, then publish (`published_value`/`published_count`, then state
+  `PUBLISHED`) and free the previously published set unless the renderer claimed
+  it (`PUBLISHED -> FREE`; a `READING` set is left to the renderer). When no set
+  is usable the solve still runs against the backend's working copy and simply
+  skips the render view; physics never blocks.
+- Renderer, per frame: claim the published set (`PUBLISHED -> READING`), pack the
+  instances from it and submit the frame waiting on its solve value. The set
+  stays `READING` for the frames that read it; when a newer view is claimed the
+  previous set is released by storing `release_value[set] = frame_value` **before**
+  releasing `READING -> FREE` (release/acquire ordering), so the solver will not
+  acquire it until the frame that read it has completed. Each set carries its own
+  solve value and count, written before `PUBLISHED`, so a claim always describes
+  one complete submission.
+
+Headless contexts (bench, tests) have no frame timeline: `release_value` stays
+zero and the sets cycle freely.
 
 Measured at 100k bodies: the per-frame instance work drops from 1.14 ms of CPU
 time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
@@ -289,11 +308,13 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   as a small readback, and leaves the tree in the traversal's buffers. The CPU
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
-- **M5 — direct rendering (done).** The solver publishes a render view and a
-  timeline value; the renderer packs the per-frame instance data from it with a
-  compute pass and the frame submission waits on that value. The solver's next
-  submission waits on the frame timeline, so neither side sees a buffer the
-  other is writing. The snapshot path remains for CPU backends.
+- **M5 — direct rendering (done).** The solver publishes a render view as one of
+  three vended device snapshots; the renderer claims the published set, packs the
+  per-frame instance data from it with a compute pass, and the frame submission
+  waits on that set's solve value. A set is only written once the frame that last
+  read it has completed (per-set `release_value` on the frame timeline), so
+  neither side ever sees a buffer the other is writing. The snapshot path remains
+  for CPU backends.
 
 ## Bench
 

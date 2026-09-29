@@ -51,11 +51,22 @@ timeline_next :: proc(self: ^Timeline) -> u64 {
 	return self.value
 }
 
+// timeline_value reads the timeline's current counter without blocking.
 @(private)
 timeline_value :: proc(self: ^Timeline) -> u64 {
+	return semaphore_counter(self.device, self.semaphore)
+}
+
+// semaphore_counter reads a timeline semaphore's current value without waiting.
+// The render-view vending protocol uses it to tell whether the frame that last
+// read a render set has completed. A zero handle means "no timeline" and reads
+// as zero.
+@(private)
+semaphore_counter :: proc(device: vulkan.Device, semaphore: vulkan.Semaphore) -> u64 {
+	if semaphore == 0 {return 0}
 	value: u64
 	vk_assert(
-		vulkan.GetSemaphoreCounterValue(self.device, self.semaphore, &value),
+		vulkan.GetSemaphoreCounterValue(device, semaphore, &value),
 		"vkGetSemaphoreCounterValue",
 	)
 	return value

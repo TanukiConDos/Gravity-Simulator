@@ -30,7 +30,10 @@ Renderer :: struct {
 	direct_push:     Push_Descriptors,
 	direct_valid:    bool,
 	direct_view:     Gpu_Render_View,
-	direct_set:      u32,
+	// Frame value the currently held set was last read at. When a newer view is
+	// claimed, the previous set is released with this value so the solver waits
+	// for that frame before reusing it.
+	direct_release_value: u64,
 	direct_logged:   bool,
 	direct_verified: bool,
 	direct_count:    int,
@@ -144,7 +147,9 @@ renderer_destroy :: proc(self: ^Renderer) {
 renderer_set_gravity_source :: proc(self: ^Renderer, solver: ^Gpu_Gravity) {
 	self.gravity_source = solver
 	if solver != nil {
-		gpu_gravity_set_frame_sync(solver, self.frame_timeline.semaphore, 0)
+		// The solver reads this timeline's counter to tell when a vended set's
+		// reader has completed.
+		gpu_gravity_set_frame_timeline(solver, self.frame_timeline.semaphore)
 	}
 }
 
@@ -487,13 +492,15 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	found.profile_mark("graphics.acquired", "frame=%d image=%d", {frame, image_idx})
 
 	// Resolve the direct-rendering view once for this frame; the draw and the
-	// submit both need it.
-	self.direct_valid = false
+	// submit both need it. A view stays READING until a newer one is claimed, so
+	// the solver cannot overwrite what this frame reads even across frames.
 	if view, ok := gpu_gravity_render_view(self.gravity_source); ok {
+		if self.direct_valid {
+			// Hand the set we were holding back now that a newer one is claimed.
+			// `direct_release_value` is the frame that last read it.
+			gpu_gravity_release_render_view(self.gravity_source, self.direct_view, self.direct_release_value)
+		}
 		self.direct_view = view
-		// The view names the published set whose device buffers are bound below;
-		// no other set may be read until this frame has finished with it.
-		self.direct_set = view.set
 		self.direct_valid = true
 		if !self.direct_logged {
 			self.direct_logged = true
@@ -550,12 +557,14 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 			frame_value,
 		)
 	}
-	if submit_result == .SUCCESS && self.gravity_source != nil {
-		gpu_gravity_set_frame_sync(self.gravity_source, self.frame_timeline.semaphore, frame_value)
-	}
 	if submit_result != .SUCCESS {
 		log.errorf("[VULKAN] Failed to submit frame!")
 		return false
+	}
+	// The frame that just read the held set keeps it busy until it completes; on
+	// the next claim the set is released with this value so the solver waits.
+	if self.direct_valid && self.gravity_source != nil {
+		self.direct_release_value = frame_value
 	}
 
 	present_result: vulkan.Result
