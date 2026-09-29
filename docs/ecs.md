@@ -102,8 +102,9 @@ The main pass writes both the swapchain color and, as a second output (MRT), a
 mouse press the optional `pick_copy` pass records a one-pixel copy of that ID into
 the frame command buffer (no separate draw and no extra submission), so the result
 is read once the frame's fence signals. The resolved index is handed to the
-physics thread through the atomic `Selection_State`; `physic.select` applies it to
-`Selected`, and the next snapshot publishes the flags.
+physics thread through the atomic `Selection_State`; `physic.select` consumes it
+with an atomic exchange (so a pick stored between a load and a clear is never
+lost), applies it to `Selected`, and the next snapshot publishes the flags.
 
 ## Scheduler
 
@@ -161,7 +162,10 @@ thread copies the published view into a free buffer and atomically publishes it,
 and the graphics thread claims the latest published buffer, copies it and
 releases it. The writer never blocks and the reader always sees a complete
 version; if the reader is behind, intermediate ticks are skipped and rendering
-keeps the last complete frame. The graphics thread never touches the pools.
+keeps the last complete frame. The graphics thread never touches the pools — the
+one debug check that needs the body columns (the direct-render instance
+verification under `ODIN_DEBUG`) reads the published snapshot through the same
+triple buffer, never `body_view`.
 
 `foundation` exposes one help-first job pool shared by the physics solver
 (`parallel_for`) and the scheduler's ready `.ANY` systems. Workers and any thread

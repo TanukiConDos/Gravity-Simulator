@@ -528,12 +528,13 @@ physic_system_integrate :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 
 // Applies a pick result handed over by the graphics thread. Runs on the physics
 // thread, which owns the Selected pool; an out-of-range index is treated as a
-// miss and simply clears the selection.
+// miss and simply clears the selection. The pick is consumed with an atomic
+// exchange, so a newer pick stored between a load and a store can never be
+// dropped.
 physic_system_select :: proc(w: ^ecs.World, _: f32) -> bool {
 	sel := selection_state(w)
-	picked := sync.atomic_load(&sel.picked)
+	picked := sync.atomic_exchange(&sel.picked, SELECTION_NONE)
 	if picked == SELECTION_NONE {return true}
-	sync.atomic_store(&sel.picked, SELECTION_NONE)
 
 	found.profile_scope_args("physic.select", "picked=%d", {picked})
 	view := body_view(w)

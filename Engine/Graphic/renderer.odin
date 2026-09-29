@@ -315,8 +315,18 @@ _renderer_draw_main :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u
 
 // _renderer_verify_direct is a one-shot debug check that the pack shader indexed
 // the live bodies correctly. The previous frame that used this slot has
-// completed (the fence above), so its instance data is readable, and the radius
-// and selection flag are static per body.
+// completed (the fence above), so its instance data is readable.
+//
+// It runs on the graphics thread, which must not read the simulation pools: the
+// physics thread writes `Selected` (and `Position`) concurrently. The reference
+// is therefore the published `RenderSnapshot` — the renderer's own handoff —
+// claimed through the same triple buffer the non-direct path uses. The solver's
+// render view and the snapshot are published at different points in the tick
+// (the view is uploaded before `physic.integrate`, the snapshot after), so
+// positions are only checked for finite, in-scale values; selection flags are
+// static between picks, so they are compared when both name the same body
+// count. The radius column is not part of the snapshot, so it is only checked
+// for a sane value.
 @(private)
 _renderer_verify_direct :: proc(self: ^Renderer, frame: u32) {
 	when ODIN_DEBUG {
@@ -324,26 +334,42 @@ _renderer_verify_direct :: proc(self: ^Renderer, frame: u32) {
 		count := min(self.direct_view.count, self.instances.capacity)
 		instances := cast([^]InstanceData)self.instances.buffers[frame].mapped
 		if count == 0 || instances == nil {return}
-		view := phys.body_view(self.world)
+		self.direct_verified = true
+
+		snapshot := phys.physic_snapshot(self.world)
+		max_count := min(len(self.positions), count)
+		ref_count := phys.physic_snapshot_read(
+			snapshot,
+			raw_data(self.positions),
+			raw_data(self.selected),
+			max_count,
+		)
+
 		mismatches := 0
 		sampled := min(count, 64)
 		for i in 0 ..< sampled {
-			entity := view.bodies[i]
-			want_radius := f32(view.radius[entity]) * INSTANCE_SCALE
-			diff := instances[i].radius - want_radius
-			if diff < 0 {diff = -diff}
-			if diff > want_radius * 0.001 {mismatches += 1}
-			want_selected := bool(view.selected[entity]) ? i32(1) : i32(0)
-			if instances[i].selected != want_selected {mismatches += 1}
 			// Positions come from the solver's last upload; they must at least
 			// be finite and in the scene's scale (instance units).
 			p := instances[i].position
 			if p.x != p.x || p.y != p.y || p.z != p.z {mismatches += 1}
 			if p.x * p.x + p.y * p.y + p.z * p.z > 1e12 {mismatches += 1}
+			r := instances[i].radius
+			if r != r || r <= 0 || r > 1e12 {mismatches += 1}
+			// Selection is static between picks, so the snapshot is a valid
+			// reference whenever it describes the same body count (the view may
+			// otherwise lag the snapshot by a tick).
+			if ref_count == count && i < ref_count {
+				want_selected := self.selected[i] > 0 ? i32(1) : i32(0)
+				if instances[i].selected != want_selected {mismatches += 1}
+			}
 		}
-		self.direct_verified = true
 		if mismatches == 0 {
-			log.infof("[RENDER] Direct instances verified: %d of %d sampled", sampled, count)
+			log.infof(
+				"[RENDER] Direct instances verified against the snapshot: %d of %d sampled (%d bodies)",
+				sampled,
+				count,
+				ref_count,
+			)
 		} else {
 			log.errorf("[RENDER] Direct instance mismatch: %d of %d sampled", mismatches, sampled)
 		}
