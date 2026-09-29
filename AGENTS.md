@@ -110,6 +110,7 @@ missing/invalid fields fall back to defaults).
 
 ## Deeper docs (read on demand)
 
+- `docs/architecture.md` — top-level map: packages, runtime threads, startup and tick/frame lifecycle, backend selection, cross-thread data flow.
 - `docs/ecs.md` — ECS core, physics/graphics as ECS, threading.
 - `docs/physics.md` — solver, collision fold, fixed timestep, adaptive tuning, app flow.
 - `docs/renderer.md` — reflection, ownership/error handling, visibility, Vulkan usage.

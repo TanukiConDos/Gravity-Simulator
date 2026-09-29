@@ -16,6 +16,122 @@ Hot-path traversal stacks (`_calc_force`, `_calc_force_collect`) skip zero-initi
 
 Each tick publishes body positions and selection flags into the `RenderSnapshot` resource; on the CPU backends the graphics thread reads that snapshot (a GPU backend instead hands the renderer the solver's device buffers, see `docs/gpu_physics.md`), never the simulation pools. The handoff is a triple buffer with atomic state per buffer (no mutex): the physics thread publishes the latest complete version and the graphics thread claims and releases it, skipping versions it does not need.
 
+## Tick pipeline
+
+One `PHYSICS` phase is one fixed step (`dt = (1/60) · time`). The systems run in
+the dependency order below; `physic.integrate` and `physic.select` share a wave
+because they touch disjoint columns.
+
+```mermaid
+flowchart TD
+    tick(["PHYSICS phase — dt = (1/60)·time"]) --> begin
+
+    subgraph begin["physic.begin"]
+        stamp["stamp tick_start"] --> zero["zero Acceleration"] --> ensure["OCTREE: ensure / rebuild tree"]
+    end
+
+    begin --> gravity
+
+    subgraph gravity["physic.gravity"]
+        gdir{"algorithm"}
+    end
+    gdir -->|"BRUTE_FORCE"| bf["GPU submit? else CPU all-pairs<br/>vel += acc·dt"]
+    gdir -->|"OCTREE"| ot["clear contacts<br/>GPU submit? else CPU traversal"]
+
+    bf --> collision
+    ot --> collision
+
+    subgraph collision["physic.collision"]
+        cdir{"algorithm"}
+    end
+    cdir -->|"BRUTE_FORCE"| bfc["CPU O(N²) pair resolve"]
+    cdir -->|"OCTREE"| otc["finish hooked solve (contacts)<br/>sort pairs → resolve"]
+
+    collision --> integrate["physic.integrate (.ANY)<br/>finish hooked solve<br/>pos += vel·dt"]
+    collision --> select["physic.select (.ANY)<br/>apply picked instance"]
+    integrate --> publish["physic.publish<br/>copy into RenderSnapshot"]
+    select --> publish
+    publish --> adapt["physic.adapt<br/>adaptive controller"]
+```
+
+The hooked-solve rule: `physic.gravity` submits without waiting; the first
+consumer calls `finish`. The octree fold sets `finish_at_collision`, so collision
+finishes it; the brute-force solve leaves it in flight across the collision pass
+and `physic.integrate` finishes it. A failed submit or finish uninstalls the hook
+and re-runs the CPU solver for that tick.
+
+## Octree (Barnes-Hut)
+
+The tree subdivides the body bounds into eight octants per level. A node stores
+its cell, the aggregate mass/center of mass and the range of body indices in the
+tree's own permuted `order` list. Leaves hold `obj_count <= 1` (or stop at
+`max_depth` / `min_half`).
+
+```mermaid
+flowchart TD
+    root["root node<br/>center, half_size<br/>mass, center_mass<br/>first_obj, obj_count"]
+    root --> o0["child 0"]
+    root --> o1["child 1"]
+    root --> dots["… up to 8 non-empty children"]
+    root --> o7["child 7"]
+    o0 --> leafA["leaf<br/>obj_count ≤ 1<br/>order[first_obj .. +count)"]
+    o1 --> nodeB["internal<br/>recurse"]
+
+    note["octant index = (x≥center.x ? 4 : 0)<br/>+ (y≥center.y ? 2 : 0)<br/>+ (z≥center.z ? 1 : 0)"]
+```
+
+The opening angle `theta` decides when a node is far enough to approximate by
+its center of mass: `(2 · half_size) / distance <= theta`.
+
+### Traversal with the collision fold
+
+`_calc_force_collect` is `_calc_force` plus contact collection. A node accepted
+by theta still has its children visited when its cell intersects the inflated
+collision sphere, and the subtree is marked `gravity_done` so gravity is applied
+exactly once — so `theta` can never hide a contact and gravity stays bit-identical
+to `_calc_force`.
+
+```mermaid
+flowchart TD
+    step(["start: push root, gravity_done = false"]) --> empty{"stack empty?"}
+    empty -->|"yes"| done(["done"])
+    empty -->|"no"| pop["pop (node, gravity_done)"]
+    pop --> leaf{"leaf?"}
+    leaf -->|"yes"| bodies["for each order[i] ≠ index:<br/>if !gravity_done apply gravity<br/>if other &gt; index and overlap → contact"]
+    leaf -->|"no"| gd{"gravity_done?"}
+    gd -->|"yes"| cell{"cell ∩ collision sphere?"}
+    gd -->|"no"| theta{"2·half / dist ≤ theta?"}
+    theta -->|"yes"| far["apply center_mass as far-field"] --> cell
+    theta -->|"no"| descend["push children, gravity_done = false"]
+    cell -->|"yes"| fold["mark gravity_done<br/>push children"]
+    cell -->|"no"| skip["skip subtree"]
+    bodies --> empty
+    descend --> empty
+    fold --> empty
+    skip --> empty
+```
+
+### Rebuild decision
+
+`physic.begin` decides whether the tree must be rebuilt (structural change,
+interval, or adaptive staleness). While a GPU `build_tree` hook is installed the
+build itself happens on the GPU and only the metrics come back.
+
+```mermaid
+flowchart TD
+    ensure(["physic.begin — OCTREE"]) --> matches{"tree exists and matches<br/>body count + world revision?"}
+    matches -->|"no"| stale
+    matches -->|"yes"| interval["accumulate dt<br/>or auto_adjust staleness:<br/>max_disp &gt; 0.5 · leaf_half"]
+    interval -->|"due"| stale["rebuild due"]
+    interval -->|"not due"| reuse["reuse tree<br/>refresh view + theta"]
+    stale --> build{"build_tree hook?"}
+    build -->|"yes (GPU)"| gpub["GPU tree build<br/>metrics readback"]
+    build -->|"no"| cpub["CPU octtree_create/rebuild"]
+    gpub -->|"fails"| cpub
+    gpub --> book["_tree_build_bookkeeping<br/>tree_info, rebuild_count, build_positions"]
+    cpub --> book
+```
+
 ## Adaptive tuning (`auto_adjust`)
 
 When `auto_adjust` is `true`, the physics system measures its own per-update cost (EMA-smoothed) and adjusts two values to keep cost near `(1000 / target_tickrate) * 0.85` ms (85% headroom so the fixed-step loop can keep up). `tick_start` is stamped at the start of every tick — including one with no bodies — so emptying and repopulating the world does not report the idle gap as a single enormous update:
@@ -24,6 +140,23 @@ When `auto_adjust` is `true`, the physics system measures its own per-update cos
 - **Rebuild interval** (motion/staleness-driven): the tree is rebuilt when the maximum object displacement since the last build exceeds `0.5 ×` the median leaf cell size. Fast-moving sims rebuild often; slow/static ones rarely. `tree_rebuild_interval` remains as an upper cap in sim-seconds. Keeping the tree fresh also keeps `theta` effective (aged trees degrade to ~constant traversal cost regardless of theta).
 
 Convergence is smoothed (EMA α=0.1, 20-update warmup, 2-consecutive-out-of-band confirmations, ±15% deadband). If the target is unreachable (e.g. too many objects), the knobs pin at their bounds and the sim simply runs as fast as the hardware allows.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Warmup
+    Warmup --> Measure: 20 updates
+    Measure --> Measure: ema within deadband<br/>reset above/below counters
+    Measure --> ConfirmAbove: ema &gt; target·1.15<br/>and 2 confirmations
+    Measure --> ConfirmBelow: ema &lt; target·0.85<br/>and 2 confirmations
+    ConfirmAbove --> Cooldown: theta = min(theta+0.03, theta_max)
+    ConfirmBelow --> Cooldown: theta = max(theta-0.03, theta_min)
+    Cooldown --> Measure: 5 updates
+```
+
+`theta` is the cost knob; the rebuild interval is the freshness knob (rebuild when
+the maximum body displacement since the build exceeds `0.5 ×` the median leaf
+cell size). A stale tree degrades traversal cost roughly independently of `theta`,
+so the rebuild stays close enough for `theta` to matter.
 
 ## App flow
 

@@ -43,6 +43,36 @@ the Barnes-Hut contact list exceeding its fixed capacity) is detected before the
 pools are touched, so `physic` uninstalls the hook and re-runs the CPU solver for
 that tick.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as physic.gravity
+    participant S as Gpu_Gravity.submit
+    participant Q as compute queue
+    participant C as physic.collision
+    participant I as physic.integrate
+    participant F as Gpu_Gravity.finish
+
+    G->>S: submit(bodies, dt)
+    S->>Q: pack + upload + dispatch + readback<br/>(non-blocking)
+    S-->>G: pending = true
+
+    alt octree backend (finish_at_collision = true)
+        C->>F: finish()
+        F->>Q: wait timeline value
+        F-->>C: scatter velocities, append contacts
+        C->>C: sort pairs → resolve
+    else brute-force backend (finish_at_collision = false)
+        Note over C: collision reads positions/masses only,<br/>so the solve stays in flight
+        C->>C: resolve CPU collision
+        I->>F: finish()
+        F->>Q: wait timeline value
+        F-->>I: scatter velocities
+    end
+
+    Note over S,F: submit or finish false → uninstall hook,<br/>run the CPU solver for this tick
+```
+
 ## Backends
 
 `Engine/Graphic/gpu_physics.odin` owns the backend (device attachment, staging,
@@ -134,6 +164,21 @@ per-body velocity error against the CPU tree is f32-level on average
 acceleration is dominated by a tight cluster inside one large node. The contact
 sets stay exact.
 
+```mermaid
+flowchart LR
+    init["init<br/>1 thread: zero the control block"] --> setup["setup<br/>per body: copy to order_a,<br/>reduce bounds + max radius"]
+    setup --> root["root<br/>derive root cell, enqueue it"]
+    root --> levels["level 0 … max_depth<br/>1 workgroup/cell:<br/>octant bins, children, scatter"]
+    levels --> com["com max_depth … 0<br/>bottom-up weighted mean"]
+    com --> order["order finalize<br/>copy winning parity → traversal buffer"]
+    order --> read["control readback (host)<br/>metrics + overflow flag"]
+    levels -.->|"per-level counts on device"| levels
+```
+
+The level and COM passes are dispatched indirectly from counts the previous pass
+wrote on the device, so an empty level costs a no-op command instead of a host
+readback per level. Only the control block comes back to the host.
+
 ## Direct rendering (M5)
 
 The renderer never reads the CPU snapshot while a GPU backend owns the world.
@@ -185,6 +230,31 @@ time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
 dispatch), and the solver's positions are one integration step behind the CPU
 snapshot - the renderer draws what the solve used. A CPU backend, or a GPU
 backend that failed and was uninstalled, keeps the snapshot path unchanged.
+
+```mermaid
+stateDiagram-v2
+    [*] --> FREE
+    FREE --> WRITING: solver acquire<br/>(CAS, reader done)
+    WRITING --> PUBLISHED: solver publish<br/>(published_value, published_count)
+    PUBLISHED --> READING: renderer claim<br/>(CAS)
+    READING --> FREE: renderer release<br/>(store release_value first)
+    PUBLISHED --> FREE: solver frees its<br/>previous, unclaimed set
+```
+
+```mermaid
+flowchart LR
+    pools[("physics pools")] -->|"pack + upload per solve"| sets[("render view sets ×3<br/>CONCURRENT buffers")]
+    sets -->|"claim → Gpu_Render_View"| pack["instance_pack.comp<br/>(graphics queue)"]
+    pack --> inst[("instance buffer")]
+    inst --> main["main pass draw"]
+    main --> frame["frame submit<br/>waits solve timeline value"]
+    sets -.->|"release with frame value"| sets
+```
+
+Solver-side ownership: only `FREE` sets whose reader has completed are written;
+`PUBLISHED → READING` is the renderer's claim, and the renderer stores the frame
+timeline value on the set before releasing it `READING → FREE`, so the solver
+cannot acquire a set an in-flight frame still reads.
 
 ## Measurements
 
@@ -329,6 +399,16 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   read it has completed (per-set `release_value` on the frame timeline), so
   neither side ever sees a buffer the other is writing. The snapshot path remains
   for CPU backends.
+
+```mermaid
+flowchart LR
+    M0["M0 plumbing<br/>compute context, reflection,<br/>timeline, push descriptors"] --> M1
+    M1["M1 GPU brute-force<br/>physics_brute.comp"] --> M2
+    M2["M2 GPU Barnes-Hut<br/>physics_tree.comp + fold"] --> M3
+    M3["M3 GPU integration<br/>vel += acc·dt in-kernel,<br/>submit/finish hook"] --> M4
+    M4["M4 GPU tree build<br/>tree_build.comp ×6"] --> M5
+    M5["M5 direct rendering<br/>vended render sets +<br/>instance_pack.comp"]
+```
 
 ## Bench
 

@@ -34,6 +34,17 @@ Los parámetros de la simulación se configuran editando a mano el archivo `conf
 
 Una vez iniciada, la simulación se ejecuta en tiempo real hasta que se cierra la ventana. Las estadísticas de rendimiento (frametime y ticktime) se muestran por consola una vez por segundo.
 
+## Documentación
+
+La documentación técnica está en `docs/` (en inglés) e incluye diagramas Mermaid que GitHub renderiza:
+
+- [`docs/architecture.md`](docs/architecture.md) — mapa del proyecto: paquetes, hilos, arranque, ciclo de tick/frame, selección de backend y transferencia de datos entre hilos.
+- [`docs/ecs.md`](docs/ecs.md) — almacenamiento de entidades/componentes, planificador de sistemas y modelo de hilos.
+- [`docs/physics.md`](docs/physics.md) — pipeline del tick, octree Barnes-Hut, *collision fold* y ajuste adaptativo.
+- [`docs/renderer.md`](docs/renderer.md) — renderizador Vulkan dirigido por datos, *frame graph*, *reflection* y *picking*.
+- [`docs/gpu_physics.md`](docs/gpu_physics.md) — contextos de cómputo, construcción del árbol en GPU y renderizado directo.
+- [`docs/benchmark.md`](docs/benchmark.md) — banco de pruebas, perfilado con spall y resultados medidos.
+
 ## Compilación desde código fuente
 1. **Requisitos previos:**
    - [Compilador de Odin](https://odin-lang.org/) (dev-2025-08 o posterior) en el PATH.

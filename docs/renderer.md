@@ -96,6 +96,72 @@ aborts the phase and the graphics thread shuts down. `main` owns the renderer an
 calls `renderer_destroy`, which clears the ref. The renderer still keeps a world
 back-reference for its frame-graph callbacks (pick request, selection).
 
+## Frame graph
+
+`Engine/Graphic/frame_graph.json` owns the frame's structure; the renderer binds
+each pass name to a recording proc (`_renderer_record_pass`). `frame_graph.odin`
+culls disabled/unused passes, topologically sorts the rest and emits the layout
+barriers from each resource's usage.
+
+```mermaid
+flowchart LR
+    camera["camera<br/>(uniform buffer)"] -->|"set 0"| main
+    main["pass: main<br/>pipeline main"] -->|"color"| swapchain["swapchain<br/>final: present_src"]
+    main -->|"MRT R32_UINT"| pick_id["pick_id<br/>(transient)"]
+    main -->|"depth"| depth["depth<br/>(external)"]
+    pick_id -->|"transfer_read"| pick_copy["pass: pick_copy<br/>optional, enabled on click"]
+    pick_copy -->|"transfer_write"| pick_readback["pick_readback<br/>(buffer)"]
+```
+
+## Frame flow
+
+```mermaid
+flowchart TD
+    draw(["renderer_draw_frame()"]) --> resize{"framebuffer_resized?"}
+    resize -->|"yes"| recreate["recreate swapchain<br/>(+ pipelines only if formats changed)"]
+    recreate --> done
+    resize -->|"no"| ready["resolve completed pick slots"]
+    ready --> wait["wait frame fence"] --> acquire["acquire next image"]
+    acquire --> outofdate{"OUT_OF_DATE?"}
+    outofdate -->|"yes"| recreate
+    outofdate -->|"no"| claim["claim GPU render view (M5)"]
+
+    claim --> direct{"direct_valid?"}
+    direct -->|"yes"| pack["instance_pack compute dispatch<br/>from solver buffers"]
+    direct -->|"no"| snap["physic_snapshot_read +<br/>instance_buffer_update_positions"]
+    pack --> fg
+    snap --> fg["frame_graph_execute<br/>main, + pick_copy when requested"]
+    fg --> submit["submit: wait solver timeline value,<br/>signal frame timeline"]
+    submit --> present["present"]
+    present --> next["current_frame++"] --> done(["return"])
+```
+
+## Picking
+
+The pick ID is the main pass's second color output (MRT, 1-based; zero means
+"nothing hit"). On a left-click edge the `pick_copy` transfer pass copies one
+pixel into a per-frame readback buffer; the resolved index crosses to the physics
+thread through the atomic `Selection_State`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as main thread
+    participant I as graphic.input
+    participant R as renderer (graphics thread)
+    participant FG as frame graph
+    participant P as physic.select (physics thread)
+
+    M->>I: Input_State snapshot (cursor u,v, mouse edge)
+    I->>R: Pick_Request{requested, u, v}
+    R->>FG: enable pick_copy, map (u,v) → pixel
+    FG->>FG: main writes 1-based instance id to pick_id
+    FG->>FG: pick_copy: image → pick_readback
+    Note over R: the copy rides the frame, resolved once its fence signals
+    R->>P: Selection_State.picked = id − 1 (atomic)
+    P->>P: atomic_exchange, apply to Selected
+```
+
 ## Input and the main thread
 
 GLFW is not thread-safe, and its input/framebuffer queries must run on the thread

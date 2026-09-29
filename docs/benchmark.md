@@ -8,6 +8,20 @@ odin run bench -o:speed -disable-assert -microarch:native          # all
 odin run bench -o:speed -disable-assert -microarch:native -- 100k  # one stage
 ```
 
+```mermaid
+flowchart TD
+    run(["odin run bench"]) --> arg{"stage argument"}
+    arg -->|"1k / 10k / 100k"| sweep["octree config grid<br/>(depth, theta, interval, workers)"]
+    arg -->|"contacts / interactions"| diag["diagnostics<br/>(candidate counts, force applications)"]
+    arg -->|"profile"| spall["one config → spall trace<br/>(warmup untraced, then 5 ticks)"]
+    arg -->|"gpu / gpu-force / gpu-tree / gpu-tick"| gpu["headless compute contexts<br/>CPU vs GPU + error check"]
+
+    sweep --> percfg["per config: N worlds, warmup ticks discarded,<br/>median ms/tick + mean/max relative error"]
+    percfg --> csv["bench/results/*.csv"]
+    diag --> csv
+    gpu --> csv
+```
+
 Per config it times the `PHYSICS` phase over `repeats` independent worlds,
 each with discarded warmup ticks, and reports the median ms/tick. Accuracy is
 the mean and max relative acceleration error of a fixed random query subset

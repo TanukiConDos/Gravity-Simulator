@@ -28,6 +28,92 @@ archetype graph: storage is a struct-of-arrays column per component, indexed by
 - `world_validate(w)` checks the registry and every pool's dense bijection; use it
   in tests and when debugging.
 
+## Data model
+
+```mermaid
+classDiagram
+    class Entity {
+        +u32 index
+        +u32 generation
+    }
+
+    class World {
+        +u32[] generations
+        +bool[] alive
+        +u32[] free
+        +int capacity
+        +bool frozen
+        +u64 revision
+        +pools
+        +resources
+        +Deferred[] deferred
+    }
+
+    class Pool {
+        +T[] data
+        +u32[] dense
+        +u32[] dense_pos
+    }
+
+    class Scheduler {
+        +System[] systems
+        +bool finalized
+        +jobs
+        +Phase_Schedule[2] schedule
+    }
+
+    class System {
+        +string name
+        +Phase phase
+        +proc run
+        +System_Handle[] after
+        +System_Access access
+        +Affinity affinity
+    }
+
+    class Phase_Schedule {
+        +System_Handle[] order
+        +successors
+        +int[] deps
+        +i32[] deps_left
+        +System_Handle[] ready
+        +i32 to_run
+        +i32 in_flight
+        +bool failed
+    }
+
+    World "1" o-- "n" Pool : pools keyed by typeid
+    World "1" o-- "n" Entity : registry by index
+    Scheduler "1" o-- "n" System
+    Scheduler "1" o-- "2" Phase_Schedule
+```
+
+`Pool` is indexed by `entity.index` for every component type, so the columns for
+one entity line up across all of its components without a lookup. `dense` holds
+the live indices (the iteration order) and `dense_pos` maps an index back to its
+slot for O(1) swap-removal.
+
+## Deferred structural changes
+
+Systems may queue despawns and component add/remove while iterating a view; the
+owner thread applies them at the end of the step.
+
+```mermaid
+flowchart TD
+    sys["system iterating a view<br/>(e.g. physic.collision)"] --> despawn["world_despawn(e)"]
+    sys --> set["world_defer_set(e, T)"]
+    sys --> rem["world_defer_remove(e, T)"]
+    despawn --> q[("world.deferred<br/>(owned copies, submission order)")]
+    set --> q
+    rem --> q
+    q --> flush["physics thread: world_flush()<br/>end of every step"]
+    flush --> apply["apply in order:<br/>despawn / world_set / world_remove"]
+    apply --> rev["bump world.revision<br/>(structural change only)"]
+    guard(["in_job_task()?"]) -.->|"true → rejected"| despawn
+    guard -.->|"true → rejected"| set
+    guard -.->|"true → rejected"| rem
+```
+
 ## Capacity and freezing
 
 Columns never relocate once the world is frozen, which is what makes borrowed
@@ -135,6 +221,30 @@ concurrently (the caller inline on the phase thread while the reader sits on the
 pool). `.CALLER` systems that declare nothing are unaffected, since an empty
 access never conflicts.
 
+The two phases as currently registered (edge = dependency; `.ANY` systems may be
+dispatched to the pool):
+
+```mermaid
+flowchart LR
+    subgraph PHYSICS["PHYSICS phase"]
+        begin["physic.begin"] --> gravity["physic.gravity"]
+        gravity --> collision["physic.collision"]
+        collision --> integrate["physic.integrate (.ANY)"]
+        collision --> select["physic.select (.ANY)"]
+        integrate --> publish["physic.publish"]
+        select --> publish
+        publish --> adapt["physic.adapt"]
+    end
+
+    subgraph RENDER["RENDER phase"]
+        input["graphic.input"] --> render["graphic.render"]
+    end
+```
+
+`physic.integrate` and `physic.select` touch disjoint columns and share a wave;
+their access declarations serialise them against conflicting systems across
+affinities.
+
 `scheduler_run` drives one phase to completion: a system becomes **ready** when
 all of its predecessors have finished. Ready `.CALLER` systems run inline on the
 phase thread; ready `.ANY` systems are submitted to the shared job pool
@@ -149,6 +259,21 @@ phase is never reported as success. A debug build keeps `.ANY` systems on the
 phase thread (same graph, serial execution) so validation and determinism are
 easy to reason about. Deferred structural changes are still applied by the owner
 (`world_flush`), never by the scheduler: a phase may run on a non-owning thread.
+
+```mermaid
+flowchart TD
+    start(["scheduler_run(phase, w, dt)"]) --> seed["deps_left = deps<br/>ready = nodes with 0 deps"]
+    seed --> loop{"to_run == 0<br/>and in_flight == 0?"}
+    loop -->|"yes"| done(["return !failed"])
+    loop -->|"no"| batch["take the ready batch"]
+    batch --> disp{"affinity"}
+    disp -->|".CALLER"| inline["run inline on phase thread"]
+    disp -->|".ANY"| pool["job_system_submit"]
+    inline --> comp["_node_complete:<br/>release successors, signal cond"]
+    pool --> comp
+    comp --> loop
+    loop -.->|"nothing ready, nothing in flight, work left"| stall["failed = true (stall)"]
+```
 
 ## Threading
 
@@ -167,6 +292,22 @@ keeps the last complete frame. The graphics thread never touches the pools — t
 one debug check that needs the body columns (the direct-render instance
 verification under `ODIN_DEBUG`) reads the published snapshot through the same
 triple buffer, never `body_view`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as physics thread
+    participant S as RenderSnapshot (3 buffers)
+    participant G as graphics thread
+
+    P->>S: CAS a FREE buffer → WRITING
+    P->>S: copy positions + selection, then state = PUBLISHED
+    P->>S: published = i, free the previous buffer (unless claimed)
+    G->>S: CAS published buffer PUBLISHED → READING
+    G->>S: copy into its own arrays
+    G->>S: state = FREE
+    Note over G: no newer version? keep last_count,<br/>re-upload what it already holds
+```
 
 `foundation` exposes one help-first job pool shared by the physics solver
 (`parallel_for`) and the scheduler's ready `.ANY` systems. Workers and any thread
