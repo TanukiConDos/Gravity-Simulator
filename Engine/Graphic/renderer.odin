@@ -30,6 +30,7 @@ Renderer :: struct {
 	direct_push:     Push_Descriptors,
 	direct_valid:    bool,
 	direct_view:     Gpu_Render_View,
+	direct_set:      u32,
 	direct_logged:   bool,
 	direct_verified: bool,
 	direct_count:    int,
@@ -345,13 +346,14 @@ _renderer_verify_direct :: proc(self: ^Renderer, frame: u32) {
 }
 
 // _renderer_pack_instances builds this frame's instance data on the GPU from the
-// solver's published buffers and returns the instance count. The frame
+// solver's published render set and returns the instance count. The frame
 // submission waits on the solver's timeline, so the buffers are complete here.
 @(private)
 _renderer_pack_instances :: proc(self: ^Renderer, cmd: vulkan.CommandBuffer, frame: u32) -> int {
 	view := &self.direct_view
 	count := min(view.count, self.instances.capacity)
 	if count <= 0 {return 0}
+	assert(view.set < RENDER_VIEW_SETS, "direct view names an invalid render set")
 
 	pipeline := pipeline_registry_get(&self.pipelines, self.direct_pipeline)
 	pipeline_bind_compute(pipeline, cmd)
@@ -489,13 +491,17 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	self.direct_valid = false
 	if view, ok := gpu_gravity_render_view(self.gravity_source); ok {
 		self.direct_view = view
+		// The view names the published set whose device buffers are bound below;
+		// no other set may be read until this frame has finished with it.
+		self.direct_set = view.set
 		self.direct_valid = true
 		if !self.direct_logged {
 			self.direct_logged = true
 			log.infof(
-				"[RENDER] Direct instances enabled: %d bodies (mode %d) from the GPU solver",
+				"[RENDER] Direct instances enabled: %d bodies (mode %d, set %d) from the GPU solver",
 				view.count,
 				view.mode,
+				view.set,
 			)
 		}
 	}

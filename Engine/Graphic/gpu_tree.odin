@@ -227,7 +227,11 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	velocity_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Velocity_Record))
 	pool_bytes := vulkan.DeviceSize(copy_entries * size_of(u32))
 	live_bytes := vulkan.DeviceSize(count * size_of(u32))
-	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, body_bytes)
+	// The traversal and the renderer both read the published set's columns (the
+	// tree build keeps its own working copies).
+	set_index := _gpu_render_set_index(self)
+	render_set := &self.render_sets[set_index]
+	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &render_set.bodies_device, body_bytes)
 	_gpu_upload(
 		cmd,
 		self.compute.gpu,
@@ -236,9 +240,9 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		velocity_bytes,
 		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE},
 	)
-	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &self.selected_device, pool_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.live_host, &self.live_device, live_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &render_set.radii_device, pool_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &render_set.selected_device, pool_bytes)
+	_gpu_upload(cmd, self.compute.gpu, &self.live_host, &render_set.live_device, live_bytes)
 
 	pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Tree_Push {
@@ -251,8 +255,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Tree_Push))
 	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), tree.build.state_device.buffer, tree.build.nodes_offset, tree.build.nodes_bytes)
 	push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), tree.order_device.buffer, 0, tree.order_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), self.bodies_device.buffer, 0, self.bodies_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), self.radii_device.buffer, 0, self.radii_device.size)
+	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), render_set.bodies_device.buffer, 0, render_set.bodies_device.size)
+	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), render_set.radii_device.buffer, 0, render_set.radii_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 4, u32(slot), self.velocities_device.buffer, 0, self.velocities_device.size)
 	push_descriptors_bind_buffer(&self.push, 0, 5, u32(slot), tree.contacts_device.buffer, 0, tree.contacts_device.size)
 	push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
@@ -320,9 +324,10 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		sync.atomic_load(&self.consumer_value),
 	)
 	self.pending = true
-	// Publish for the renderer: the count first, then the value that makes it
-	// (and the columns above) safe to read.
+	// Publish for the renderer: the count and set first, then the value that
+	// makes them (and the set's columns) safe to read.
 	sync.atomic_store(&self.render_count, u32(count))
+	sync.atomic_store(&self.render_set, u32(set_index))
 	sync.atomic_store(&self.render_value, self.pending_value)
 	return true
 }
