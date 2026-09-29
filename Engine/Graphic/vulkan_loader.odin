@@ -2,6 +2,7 @@ package graphic
 
 import "core:dynlib"
 import "core:log"
+import "core:sync"
 
 // Headless device creation needs vkGetInstanceProcAddr before any window
 // exists, so it cannot use GLFW's loader wrapper (which requires an initialized
@@ -14,8 +15,18 @@ _g_vulkan_loader: dynlib.Library
 @(private)
 _g_vk_get_instance_proc_addr: rawptr
 
+// Guards the lazy load below: two threads creating headless devices can enter
+// `_load_vulkan_loader` concurrently, and both the nil check and the global
+// writes must be serialised. Held across the whole check-and-load so a failed
+// attempt can be retried by the next caller.
+@(private)
+_g_vulkan_loader_mutex: sync.Mutex
+
 @(private)
 _load_vulkan_loader :: proc() -> (rawptr, bool) {
+	sync.lock(&_g_vulkan_loader_mutex)
+	defer sync.unlock(&_g_vulkan_loader_mutex)
+
 	if _g_vk_get_instance_proc_addr != nil {return _g_vk_get_instance_proc_addr, true}
 
 	names: []string

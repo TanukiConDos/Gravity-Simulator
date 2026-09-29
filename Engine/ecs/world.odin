@@ -127,9 +127,11 @@ world_pool :: proc(w: ^World, $T: typeid) -> ^Pool(T) {
 	}
 	if w.frozen {
 		// A new pool after freeze means the component was not registered during
-		// setup, so creating it here can race with the other thread.
-		assert(false, "world_pool: new pool requested after world_freeze")
+		// setup, so creating it here can race with the other thread. Refuse and
+		// return nil: callers either nil-check or assert (a missing pool is a
+		// setup bug, not a value to silently allocate).
 		log.errorf("[ECS] new pool %v requested after world_freeze", typeid_of(T))
+		return nil
 	}
 	p := new(Pool(T))
 	if w.capacity > 0 {pool_reserve(p, w.capacity)}
@@ -182,8 +184,11 @@ world_resource :: proc(
 		return cast(^T)entry.ptr
 	}
 	if w.frozen {
-		assert(false, "world_resource: new resource requested after world_freeze")
+		// Same rule as `world_pool`: never create a resource after freeze, or it
+		// could race with the other thread. Return nil so the caller fails
+		// cleanly (assert) instead of using an unsynchronised allocation.
 		log.errorf("[ECS] new resource %v requested after world_freeze", typeid_of(T))
+		return nil
 	}
 	r := new(T)
 	d := destroy

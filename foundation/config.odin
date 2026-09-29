@@ -62,6 +62,21 @@ config_get :: proc() -> ^Config {
 	return &_config
 }
 
+// The `filename` field may point at a heap clone when a config file supplied
+// one. Track that so teardown can free it without freeing the default literal.
+@(private)
+_config_filename_owned: bool
+
+// Releases configuration memory. Call once at process teardown (the config is a
+// singleton otherwise held for the whole run).
+config_destroy :: proc() {
+	if _config_filename_owned {
+		delete(_config.filename)
+		_config_filename_owned = false
+	}
+	_config.filename = "tierra.json"
+}
+
 config_load :: proc(path: string) -> ^Config {
 	data, ok := read_entire_file(path)
 	if !ok {
@@ -96,7 +111,9 @@ _apply_config :: proc(text: string) {
 		case "time":
 			_config.time = f32(_parse_number(text, &pos))
 		case "filename":
+			if _config_filename_owned {delete(_config.filename)}
 			_config.filename = strings.clone(_parse_string(text, &pos))
+			_config_filename_owned = true
 		case "algorithm":
 			algo := _parse_string(text, &pos)
 			if algo == "OCTREE" {_config.algorithm = .OCTREE} else if algo == "BRUTE_FORCE" {_config.algorithm = .BRUTE_FORCE}
@@ -134,7 +151,7 @@ _skip_whitespace :: proc(text: string, pos: ^int) {for pos^ < len(text) {switch 
 _parse_string :: proc(text: string, pos: ^int) -> string {_skip_whitespace(text, pos); if pos^>=len(text)||text[pos^]!='"' {return ""}; pos^+=1; start:=pos^; for pos^<len(text)&&text[pos^]!='"' {pos^+=1}; result:=text[start:pos^]; if pos^<len(text){pos^+=1}; return result}
 
 @(private)
-_parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, pos); start:=pos^; for pos^<len(text) {c:=text[pos^]; if (c>='0'&&c<='9')||c=='-'||c=='+'||c=='.'||c=='e'||c=='E' {pos^+=1} else {break}}; val,_:=strconv.parse_f64(text[start:pos^]); return val}
+_parse_number :: proc(text: string, pos: ^int) -> f64 {_skip_whitespace(text, pos); start:=pos^; for pos^<len(text) {c:=text[pos^]; if (c>='0'&&c<='9')||c=='-'||c=='+'||c=='.'||c=='e'||c=='E' {pos^+=1} else {break}}; val, ok:=strconv.parse_f64(text[start:pos^]); if !ok {log.warnf("[CONFIG] Malformed number %q; using 0", text[start:pos^])}; return val}
 
 @(private)
 _parse_bool :: proc(text: string, pos: ^int) -> bool {

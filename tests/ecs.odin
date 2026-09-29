@@ -21,6 +21,13 @@ Test_Probe :: struct {
 	value: int,
 }
 
+// A second singleton type for the freeze tests, so they do not share the
+// `g_probe_destroyed` counter with `test_ecs_resource` (tests run concurrently).
+@(private)
+Test_Singleton :: struct {
+	value: int,
+}
+
 @(private)
 g_probe_destroyed: int
 
@@ -693,6 +700,44 @@ test_ecs_reserve_freeze :: proc(t: ^testing.T) {
 	ecs.world_set(w, b, Test_Position{2, 0, 0})
 	testing.expect_value(t, ecs.world_get(w, b, Test_Position).x, f32(2))
 	testing.expect(t, ecs.world_validate(w))
+}
+
+// After freeze the registries are read-only: requesting a pool for a component
+// that was not registered during setup must yield nil rather than allocating a
+// pool that could race the other thread. Callers assert on the nil.
+@(test)
+test_ecs_pool_after_freeze_returns_nil :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+
+	ecs.world_reserve(w, 2)
+	_ = ecs.world_pool(w, Test_Position)
+	ecs.world_freeze(w)
+
+	prev := context.logger
+	context.logger = log.nil_logger()
+	missing := ecs.world_pool(w, Test_Velocity)
+	context.logger = prev
+	testing.expect(t, missing == nil, "new pool after freeze must be nil")
+
+	// A registered pool is still reachable (the frozen path only affects new ones).
+	testing.expect(t, ecs.world_pool(w, Test_Position) != nil)
+}
+
+@(test)
+test_ecs_resource_after_freeze_returns_nil :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+
+	_ = ecs.world_resource(w, Test_Singleton)
+	ecs.world_freeze(w)
+
+	prev := context.logger
+	context.logger = log.nil_logger()
+	missing := ecs.world_resource(w, Test_Position)
+	context.logger = prev
+	testing.expect(t, missing == nil, "new resource after freeze must be nil")
+	testing.expect(t, ecs.world_resource(w, Test_Singleton) != nil, "registered resource stays reachable")
 }
 
 @(test)

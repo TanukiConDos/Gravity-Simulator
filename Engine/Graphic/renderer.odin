@@ -456,6 +456,11 @@ _renderer_pick_resolve_ready :: proc(self: ^Renderer) {
 	}
 }
 
+// Draws one frame. `current_frame` names the in-flight slot and only advances
+// after a frame has been fully submitted and presented. The early returns here
+// (resize/recreate/out-of-date before submission) deliberately do not consume a
+// slot: no command buffer or fence was used for it, so the next call retries the
+// same slot with fresh swapchain state.
 renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	if sync.atomic_load(&self.window.framebuffer_resized) {
 		sync.atomic_store(&self.window.framebuffer_resized, false)

@@ -213,15 +213,21 @@ snapshot_reserve :: proc(s: ^RenderSnapshot, capacity: int) {
 }
 
 physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
-	return ecs.world_resource(w, Physic_State, _state_destroy)
+	state := ecs.world_resource(w, Physic_State, _state_destroy)
+	assert(state != nil, "physic_state: resource missing (world frozen before physic_init?)")
+	return state
 }
 
 physic_snapshot :: proc(w: ^ecs.World) -> ^RenderSnapshot {
-	return ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	snapshot := ecs.world_resource(w, RenderSnapshot, _snapshot_destroy)
+	assert(snapshot != nil, "physic_snapshot: resource missing (world frozen before physic_init?)")
+	return snapshot
 }
 
 selection_state :: proc(w: ^ecs.World) -> ^Selection_State {
-	return ecs.world_resource(w, Selection_State)
+	state := ecs.world_resource(w, Selection_State)
+	assert(state != nil, "selection_state: resource missing (world frozen before setup?)")
+	return state
 }
 
 physic_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
