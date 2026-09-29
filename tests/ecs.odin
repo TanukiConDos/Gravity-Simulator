@@ -333,6 +333,156 @@ test_ecs_scheduler_access_conflict_serializes :: proc(t: ^testing.T) {
 	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(y)], 1)
 }
 
+// A `.CALLER` writer and an `.ANY` reader of the same component conflicted in
+// the old graph only when both sides were `.ANY`, so the pair could run
+// concurrently (the caller inline, the reader on the pool). The forward edge
+// must be added for every affinity mix.
+@(test)
+test_ecs_scheduler_caller_any_conflict_edge :: proc(t: ^testing.T) {
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	w := ecs.scheduler_add(
+		s,
+		"caller.writer",
+		.PHYSICS,
+		_sys_serial_caller,
+		access = ecs.System_Access{writes = {typeid_of(Test_Position)}},
+		// affinity defaults to .CALLER
+	)
+	r := ecs.scheduler_add(
+		s,
+		"any.reader",
+		.PHYSICS,
+		_sys_serial_any,
+		access = ecs.System_Access{reads = {typeid_of(Test_Position)}},
+		affinity = .ANY,
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	testing.expect(t, _has_edge(s, w, r), "CALLER writer -> ANY reader edge exists")
+	testing.expect_value(t, s.schedule[.PHYSICS].deps[int(r)], 1)
+}
+
+@(private)
+g_serial_active: i32
+@(private)
+g_serial_overlap: i32
+@(private)
+g_serial_runs: i32
+
+// Widen the critical section so a missing edge would show up as an overlap;
+// reading an atomic keeps the loop from being optimised away.
+@(private)
+_serial_spin :: proc() {
+	for _ in 0 ..< 200_000 {_ = sync.atomic_load(&g_serial_active)}
+}
+
+@(private)
+_serial_enter :: proc() {
+	if sync.atomic_add(&g_serial_active, 1) != 0 {sync.atomic_store(&g_serial_overlap, 1)}
+}
+
+@(private)
+_serial_leave :: proc() {
+	sync.atomic_sub(&g_serial_active, 1)
+	sync.atomic_add(&g_serial_runs, 1)
+}
+
+@(private)
+_sys_serial_caller :: proc(w: ^ecs.World, dt: f32) -> bool {
+	_serial_enter()
+	_serial_spin()
+	_serial_leave()
+	return true
+}
+
+@(private)
+_sys_serial_any :: proc(w: ^ecs.World, dt: f32) -> bool {
+	_serial_enter()
+	_serial_spin()
+	_serial_leave()
+	return true
+}
+
+// Runtime counterpart to the edge test: run a conflicting `.CALLER`/`.ANY` pair
+// and assert they never share their critical section. The `.ANY` side is
+// registered first so, without the edge, it is submitted to the pool before the
+// `.CALLER` side runs inline — which is the race. A debug build keeps `.ANY` on
+// the phase thread, so the edge assertion is what has teeth there.
+@(test)
+test_ecs_scheduler_caller_any_never_overlap :: proc(t: ^testing.T) {
+	js: found.Job_System
+	found.job_system_init(&js, 4)
+	defer found.job_system_destroy(&js)
+
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create(&js)
+	defer ecs.scheduler_destroy(s)
+
+	any_sys := ecs.scheduler_add(
+		s,
+		"any.writer",
+		.PHYSICS,
+		_sys_serial_any,
+		access = ecs.System_Access{writes = {typeid_of(Test_Velocity)}},
+		affinity = .ANY,
+	)
+	caller_sys := ecs.scheduler_add(
+		s,
+		"caller.reader",
+		.PHYSICS,
+		_sys_serial_caller,
+		access = ecs.System_Access{reads = {typeid_of(Test_Velocity)}},
+	)
+
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	testing.expect(t, _has_edge(s, any_sys, caller_sys), "ANY writer -> CALLER reader edge")
+
+	sync.atomic_store(&g_serial_active, 0)
+	sync.atomic_store(&g_serial_overlap, 0)
+	sync.atomic_store(&g_serial_runs, 0)
+
+	testing.expect(t, ecs.scheduler_run(s, .PHYSICS, w, 0.016), "phase succeeds")
+	testing.expect_value(t, sync.atomic_load(&g_serial_overlap), i32(0))
+	testing.expect_value(t, sync.atomic_load(&g_serial_active), i32(0))
+	testing.expect_value(t, sync.atomic_load(&g_serial_runs), i32(2))
+}
+
+@(private)
+g_stall_runs: i32
+
+@(private)
+_sys_stall :: proc(w: ^ecs.World, dt: f32) -> bool {
+	sync.atomic_add(&g_stall_runs, 1)
+	return true
+}
+
+// A graph that can never make progress must fail the phase. Finalize rejects
+// cycles, so the stall path is defensive; force it by handing the only system a
+// dependency nothing can ever satisfy.
+@(test)
+test_ecs_scheduler_stall_fails :: proc(t: ^testing.T) {
+	w := ecs.world_create()
+	defer ecs.world_destroy(w)
+	s := ecs.scheduler_create()
+	defer ecs.scheduler_destroy(s)
+
+	a := ecs.scheduler_add(s, "stall.a", .PHYSICS, _sys_stall)
+	testing.expect(t, ecs.scheduler_finalize(s), "schedule resolves")
+	s.schedule[.PHYSICS].deps[int(a)] = 1
+
+	sync.atomic_store(&g_stall_runs, 0)
+	prev := context.logger
+	context.logger = log.nil_logger()
+	ok := ecs.scheduler_run(s, .PHYSICS, w, 0.016)
+	context.logger = prev
+
+	testing.expect(t, !ok, "a stalled graph fails the phase instead of succeeding")
+	testing.expect_value(t, sync.atomic_load(&g_stall_runs), i32(0))
+}
+
 @(test)
 test_ecs_scheduler_readers_share :: proc(t: ^testing.T) {
 	s := ecs.scheduler_create()

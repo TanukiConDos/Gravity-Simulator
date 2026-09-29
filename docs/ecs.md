@@ -107,9 +107,10 @@ already-registered system, every edge points backwards: the graph is acyclic by
 construction.
 
 `scheduler_finalize` resolves each phase into an execution graph. It takes the
-explicit `after` edges, adds access-conflict edges between `.ANY` systems
-(writer vs anything, added forward along a deterministic topological order), and
-stores each node's successors and dependency count:
+explicit `after` edges, adds access-conflict edges for **every** conflicting
+pair (writer vs anything) regardless of affinity — added forward along a
+deterministic topological order — and stores each node's successors and
+dependency count:
 
 - `.CALLER` (default) systems are pinned to the phase thread. They are the safe
   choice for anything that mutates structure, calls `parallel_for` or touches the
@@ -119,6 +120,12 @@ stores each node's successors and dependency count:
   one outside the owner phase (`PHYSICS`-only), because it would run concurrently
   with the physics thread.
 
+Access declarations serialise across affinities: a `.CALLER` writer and an
+`.ANY` reader of the same `typeid` get a dependency edge, so they cannot run
+concurrently (the caller inline on the phase thread while the reader sits on the
+pool). `.CALLER` systems that declare nothing are unaffected, since an empty
+access never conflicts.
+
 `scheduler_run` drives one phase to completion: a system becomes **ready** when
 all of its predecessors have finished. Ready `.CALLER` systems run inline on the
 phase thread; ready `.ANY` systems are submitted to the shared job pool
@@ -127,11 +134,12 @@ runner, which dispatches the newly ready work. The phase finishes when the
 remaining count reaches zero.
 
 A failure sets the phase's failed flag; no further work is released, in-flight
-systems finish, and `scheduler_run` reports false. A debug build keeps `.ANY`
-systems on the phase thread (same graph, serial execution) so validation and
-determinism are easy to reason about. Deferred structural changes are still
-applied by the owner (`world_flush`), never by the scheduler: a phase may run on
-a non-owning thread.
+systems finish, and `scheduler_run` reports false. A stall — systems remain, but
+none is ready and none is in flight — is treated the same way, so an incomplete
+phase is never reported as success. A debug build keeps `.ANY` systems on the
+phase thread (same graph, serial execution) so validation and determinism are
+easy to reason about. Deferred structural changes are still applied by the owner
+(`world_flush`), never by the scheduler: a phase may run on a non-owning thread.
 
 ## Threading
 

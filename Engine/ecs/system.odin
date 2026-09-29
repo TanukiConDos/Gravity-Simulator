@@ -37,9 +37,9 @@ Affinity :: enum {
 	ANY,
 }
 
-// Declared data access. It is used to serialise `.ANY` systems that touch the
-// same components (writer vs anything) by adding edges to the execution graph.
-// Callers are trusted to keep the declaration truthful.
+// Declared data access. It is used to serialise systems that touch the same
+// components (writer vs anything) by adding edges to the execution graph,
+// regardless of affinity. Callers are trusted to keep the declaration truthful.
 System_Access :: struct {
 	reads:  []typeid,
 	writes: []typeid,
@@ -209,9 +209,9 @@ scheduler_finalize :: proc(s: ^Scheduler) -> bool {
 }
 
 // Builds one phase's graph: explicit `after` edges plus access-conflict edges
-// between `.ANY` systems, then a deterministic topological order. Conflict
-// edges are added forward along that order, so it stays acyclic and the relative
-// order of conflicting systems is deterministic.
+// between every conflicting pair regardless of affinity, then a deterministic
+// topological order. Conflict edges are added forward along that order, so it
+// stays acyclic and the relative order of conflicting systems is deterministic.
 @(private)
 _build_schedule :: proc(s: ^Scheduler, phase: Phase) -> bool {
 	n := len(s.systems)
@@ -264,12 +264,16 @@ _build_schedule :: proc(s: ^Scheduler, phase: Phase) -> bool {
 		}
 	}
 
-	// Access-conflict edges between `.ANY` systems, pointing forward in `order`.
+	// Access-conflict edges, pointing forward in `order`. Every conflicting pair
+	// is serialised regardless of affinity: a ready `.CALLER` system runs inline
+	// while `.ANY` jobs run on the pool, so without this edge a conflicting
+	// `.CALLER`/`.ANY` pair could execute concurrently. `_conflicts` returns
+	// false for empty accesses, so `.CALLER` systems that declare nothing are
+	// unaffected.
 	for ii in 0 ..< len(order) {
 		for jj in ii + 1 ..< len(order) {
 			a := &s.systems[order[ii]]
 			b := &s.systems[order[jj]]
-			if a.affinity != .ANY || b.affinity != .ANY {continue}
 			if _conflicts(a, b) {
 				append(&sch.successors[order[ii]], System_Handle(order[jj]))
 			}
@@ -371,8 +375,11 @@ scheduler_run :: proc(s: ^Scheduler, phase: Phase, w: ^World, dt: f32) -> bool {
 				continue
 			}
 			if exec.to_run > 0 && exec.in_flight <= 0 {
-				// No runnable work and nothing in flight: the graph stalled.
+				// No runnable work and nothing in flight: the graph stalled. Mark
+				// the phase failed so an incomplete phase is never reported as
+				// success.
 				log.errorf("[ECS] scheduler: stalled with %d systems left", exec.to_run)
+				exec.failed = true
 				sync.mutex_unlock(&exec.mutex)
 				break
 			}
