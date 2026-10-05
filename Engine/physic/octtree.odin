@@ -65,6 +65,11 @@ OctTreeNode :: struct {
 OctTree :: struct {
 	nodes:             []OctTreeNode,
 	order:             []u32,
+	// Octant key (0..7) of the body at the same slot in `order`, cached by the
+	// partition's counting pass so the scatter pass reads an octant instead of
+	// re-gathering the body position. Kept in lockstep with `order` (swapped
+	// together), so node ranges still index `order` exactly as before.
+	keys:              []u8,
 	view:              Bodies,
 	theta:             f32,
 	max_depth:         int,
@@ -102,6 +107,7 @@ octtree_create_ex :: proc(view: Bodies, theta: f32, max_depth: int, min_half: f3
 	t.arena = found.arena_create(need)
 	t.nodes = _arena_slice(OctTreeNode, &t.arena, count * 8 + 1024)
 	t.order = _arena_slice(u32, &t.arena, count)
+	t.keys = _arena_slice(u8, &t.arena, count)
 
 	_octtree_build(t)
 	return t
@@ -127,12 +133,16 @@ octtree_rebuild_ex :: proc(self: ^OctTree, view: Bodies, theta: f32, max_depth: 
 	found.arena_reset(&self.arena)
 	self.nodes = _arena_slice(OctTreeNode, &self.arena, count * 8 + 1024)
 	self.order = _arena_slice(u32, &self.arena, count)
+	self.keys = _arena_slice(u8, &self.arena, count)
 
 	_octtree_build(self)
 }
 
 octtree_buffer_size :: proc(object_count: int) -> int {
-	return (object_count * 8 + 1024) * size_of(OctTreeNode) + object_count * size_of(u32) + 1024
+	return (object_count * 8 + 1024) * size_of(OctTreeNode) +
+	       object_count * size_of(u32) +
+	       object_count * size_of(u8) +
+	       1024
 }
 
 _octtree_build :: proc(t: ^OctTree) {
@@ -214,7 +224,7 @@ _build_octant :: proc(
 		return
 	}
 
-	ranges := _partition_bodies(t.order, start, count, center, t.view.position)
+	ranges := _partition_bodies(t.order, t.keys, start, count, center, t.view.position)
 
 	child_half := half * 0.5
 	child_count := 0
@@ -244,6 +254,7 @@ _build_octant :: proc(
 
 _partition_bodies :: proc(
 	buf: []u32,
+	keys: []u8,
 	start, count: int,
 	center: Vec3,
 	position: []Position,
@@ -251,7 +262,12 @@ _partition_bodies :: proc(
 	end := start + count
 	counts: [8]int
 	for i in start ..< end {
-		counts[_get_octant_index(Vec3(position[buf[i]]), center)] += 1
+		// Cache the octant in `keys[i]` while counting: the scatter pass below
+		// then permutes the cheap key instead of re-gathering `position[buf[i]]`
+		// (a random access into the position column) to recompute the same value.
+		oct := _get_octant_index(Vec3(position[buf[i]]), center)
+		keys[i] = u8(oct)
+		counts[oct] += 1
 	}
 
 	ranges: [8]ChildRange
@@ -272,13 +288,14 @@ _partition_bodies :: proc(
 		w := write_pos[k]
 		w_end := ranges[k].start + ranges[k].count
 		for w < w_end {
-			b := _get_octant_index(Vec3(position[buf[w]]), center)
+			b := int(keys[w])
 			if b == k {
 				w += 1
 				continue
 			}
 			t := write_pos[b]
 			buf[w], buf[t] = buf[t], buf[w]
+			keys[w], keys[t] = keys[t], keys[w]
 			write_pos[b] += 1
 		}
 	}
