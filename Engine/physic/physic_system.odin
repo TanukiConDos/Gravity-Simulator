@@ -169,7 +169,6 @@ Physic_State :: struct {
 	tree_body_count:     int,
 	tree_revision:       u64,
 	collision_contacts:  [dynamic]Contact,
-	collision_mutex:     sync.Mutex,
 	auto_adjust:         bool,
 	target_cost_ms:      f32,
 	theta_min:           f32,
