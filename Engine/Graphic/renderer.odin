@@ -153,6 +153,16 @@ renderer_set_gravity_source :: proc(self: ^Renderer, solver: ^Gpu_Gravity) {
 	}
 }
 
+// _renderer_gravity_backend_active mirrors physic's liveness signal. A backend
+// that fails mid-run is uninstalled on the physics thread, so the renderer must
+// stop drawing its (now stale) buffers and return to the snapshot path. The
+// lookup is one atomic load.
+@(private)
+_renderer_gravity_backend_active :: proc(self: ^Renderer) -> bool {
+	if self.world == nil {return false}
+	return phys.physic_gravity_backend_active(self.world)
+}
+
 // _renderer_init_direct creates the instance pack pipeline. It runs on the
 // graphics queue inside the frame command buffer, so it needs no compute
 // context of its own.
@@ -525,22 +535,36 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	// Resolve the direct-rendering view once for this frame; the draw and the
 	// submit both need it. A view stays READING until a newer one is claimed, so
 	// the solver cannot overwrite what this frame reads even across frames.
-	if view, ok := gpu_gravity_render_view(self.gravity_source); ok {
-		if self.direct_valid {
-			// Hand the set we were holding back now that a newer one is claimed.
-			// `direct_release_value` is the frame that last read it.
-			gpu_gravity_release_render_view(self.gravity_source, self.direct_view, self.direct_release_value)
-		}
-		self.direct_view = view
-		self.direct_valid = true
-		if !self.direct_logged {
-			self.direct_logged = true
-			log.infof(
-				"[RENDER] Direct instances enabled: %d bodies (mode %d, set %d) from the GPU solver",
-				view.count,
-				view.mode,
-				view.set,
-			)
+	//
+	// Sample the backend-active signal first. If physic dropped the hook on a
+	// mid-run failure, the held set is stale and must be released so the draw
+	// returns to the snapshot (physics has re-enabled publishing as part of the
+	// same uninstall).
+	backend_active := _renderer_gravity_backend_active(self)
+	if self.direct_valid && !backend_active {
+		gpu_gravity_release_render_view(self.gravity_source, self.direct_view, self.direct_release_value)
+		self.direct_valid = false
+		self.direct_logged = false
+		log.warnf("[RENDER] GPU gravity backend uninstalled; falling back to the snapshot path")
+	}
+	if backend_active {
+		if view, ok := gpu_gravity_render_view(self.gravity_source); ok {
+			if self.direct_valid {
+				// Hand the set we were holding back now that a newer one is claimed.
+				// `direct_release_value` is the frame that last read it.
+				gpu_gravity_release_render_view(self.gravity_source, self.direct_view, self.direct_release_value)
+			}
+			self.direct_view = view
+			self.direct_valid = true
+			if !self.direct_logged {
+				self.direct_logged = true
+				log.infof(
+					"[RENDER] Direct instances enabled: %d bodies (mode %d, set %d) from the GPU solver",
+					view.count,
+					view.mode,
+					view.set,
+				)
+			}
 		}
 	}
 

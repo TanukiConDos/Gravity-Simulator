@@ -134,6 +134,10 @@ Tree_Build_Proc :: proc(
 physic_set_gravity_solver :: proc(w: ^ecs.World, solver: Gravity_Solver) {
 	state := physic_state(w)
 	state.gravity_solver = solver
+	// Publish the liveness signal to the graphics thread. Only a solver that
+	// owns the solve (`submit`) makes the backend active; a tree-only hook never
+	// does, so the renderer keeps the snapshot.
+	sync.atomic_store(&state.gravity_backend_active, solver.submit != nil)
 }
 
 // Solver/adaptive state lives as a world resource; the physics systems fetch it
@@ -141,6 +145,11 @@ physic_set_gravity_solver :: proc(w: ^ecs.World, solver: Gravity_Solver) {
 Physic_State :: struct {
 	algorithm:           found.Algorithm,
 	gravity_solver:      Gravity_Solver,
+	// Atomic: true while a hooked backend owns the solve. The graphics thread
+	// loads it to decide whether it may keep drawing the backend's render views
+	// or must fall back to the snapshot; the physics thread stores it when the
+	// hook is installed and clears it wherever a failed hook is uninstalled.
+	gravity_backend_active: bool,
 	// A hooked backend's submission is in flight between `physic.gravity` and
 	// the first consumer (`physic.collision` or `physic.integrate`).
 	gravity_pending:     bool,
@@ -216,6 +225,16 @@ physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
 	state := ecs.world_resource(w, Physic_State, _state_destroy)
 	assert(state != nil, "physic_state: resource missing (world frozen before physic_init?)")
 	return state
+}
+
+// physic_gravity_backend_active reports whether a hooked gravity backend
+// currently owns the solve. Safe to call from either thread: it is one atomic
+// load, so the graphics thread can poll it without racing the physics thread.
+// The renderer uses it to return to the snapshot path after a mid-run backend
+// failure uninstalled the hook.
+physic_gravity_backend_active :: proc(w: ^ecs.World) -> bool {
+	state := physic_state(w)
+	return sync.atomic_load(&state.gravity_backend_active)
 }
 
 physic_snapshot :: proc(w: ^ecs.World) -> ^RenderSnapshot {
@@ -370,6 +389,16 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	return true
 }
 
+// _uninstall_gravity_solver drops the hook and clears the backend-active signal
+// together, so the graphics thread can never observe a stale "active" while the
+// solver is gone (and it cannot miss the clear when a failure path forgets one
+// of the two stores).
+@(private)
+_uninstall_gravity_solver :: proc(state: ^Physic_State) {
+	state.gravity_solver = {}
+	sync.atomic_store(&state.gravity_backend_active, false)
+}
+
 // _submit_gravity starts one hooked solve. On failure the hook is dropped and
 // the caller runs the CPU solver for this tick; the backend must not have
 // touched the pools. A hook with only one of the two callbacks can never be
@@ -383,7 +412,7 @@ _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seco
 			state.gravity_solver.submit != nil,
 			state.gravity_solver.finish != nil,
 		)
-		state.gravity_solver = {}
+		_uninstall_gravity_solver(state)
 		return false
 	}
 	if state.gravity_solver.submit(state.gravity_solver.user, w, bodies, seconds) {
@@ -392,7 +421,7 @@ _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seco
 		return true
 	}
 	log.errorf("[PHYSIC] Gravity solver failed to submit; falling back to the CPU solver")
-	state.gravity_solver = {}
+	_uninstall_gravity_solver(state)
 	return false
 }
 
@@ -409,7 +438,7 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	// instead of dereferencing it.
 	if state.gravity_solver.finish == nil {
 		log.errorf("[PHYSIC] Gravity solver has no finish callback; falling back to the CPU solver")
-		state.gravity_solver = {}
+		_uninstall_gravity_solver(state)
 		clear(&state.collision_contacts)
 		_gravity_cpu_fallback(state, w, bodies)
 		return
@@ -423,7 +452,7 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 		return
 	}
 	log.errorf("[PHYSIC] Gravity solver failed; falling back to the CPU solver")
-	state.gravity_solver = {}
+	_uninstall_gravity_solver(state)
 	clear(&state.collision_contacts)
 	_gravity_cpu_fallback(state, w, bodies)
 }
@@ -621,7 +650,7 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 				return nil
 			}
 			log.errorf("[PHYSIC] GPU tree build failed; falling back to the CPU solver")
-			state.gravity_solver = {}
+			_uninstall_gravity_solver(state)
 			state.tree_on_gpu = false
 		}
 		if state.tree != nil {
@@ -789,6 +818,15 @@ _snapshot_acquire_write :: proc(s: ^RenderSnapshot) -> int {
 
 // Copies the pool state into the next buffer and publishes it. Owner thread only.
 physic_snapshot_publish :: proc(w: ^ecs.World) {
+	when !ODIN_DEBUG {
+		// A healthy hooked backend owns the render path: the renderer draws the
+		// backend's buffers directly and never reads the snapshot, so the
+		// per-tick O(N) copy is dead work. Debug builds always publish because
+		// `_renderer_verify_direct` compares the direct instances against this
+		// snapshot as its reference. The flag clears when the hook is dropped,
+		// which re-enables publishing on the CPU fallback automatically.
+		if physic_gravity_backend_active(w) {return}
+	}
 	snapshot := physic_snapshot(w)
 	view := body_view(w)
 	count := len(view.bodies)
