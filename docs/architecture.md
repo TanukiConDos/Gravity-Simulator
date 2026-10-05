@@ -275,3 +275,4 @@ overwritten by solve `T+1` before the frame reading solve `T` completes; see
 | Vulkan wiring, frame graph, reflection, picking | [`renderer.md`](renderer.md) |
 | Compute context, GPU tree build, direct rendering | [`gpu_physics.md`](gpu_physics.md) |
 | Sweeps, spall traces, measured results | [`benchmark.md`](benchmark.md) |
+| Performance model, measured optimizations, open directions | [`performance.md`](performance.md) |

@@ -116,6 +116,7 @@ missing/invalid fields fall back to defaults).
 - `docs/renderer.md` — reflection, ownership/error handling, visibility, Vulkan usage.
 - `docs/gpu_physics.md` — compute context, timeline semaphores, GPU physics roadmap.
 - `docs/benchmark.md` — bench harness, spall profiling, measured results.
+- `docs/performance.md` — performance model, measured optimizations, open directions.
 
 ## Skills
 
