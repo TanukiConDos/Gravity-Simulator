@@ -1080,30 +1080,263 @@ _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
 	}
 }
 
-_brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
-	pos := ecs.world_pool(w, Position).data
-	radius := ecs.world_pool(w, Radius).data
-	mass := ecs.world_pool(w, Mass).data
+// A brute-collision candidate stores the two positions its bodies hold in the
+// dense `bodies` list, not entity indices. The serial loop resolved pairs in
+// `(ii, jj)` lexicographic order over that list and moved both bodies in place,
+// so the parallel path has to reproduce that order exactly to stay bit-identical.
+_BrutePair :: struct {
+	ii: u32,
+	jj: u32,
+}
+
+@(private)
+_brute_pair_less :: proc(x, y: _BrutePair) -> bool {
+	if x.ii != y.ii {return x.ii < y.ii}
+	return x.jj < y.jj
+}
+
+// The overlap predicate and the weighted separation are the serial loop's,
+// factored out so the broad phase, the replay's created-contact scan and the
+// fallback cannot drift apart.
+@(private)
+_brute_pairs_overlap :: #force_inline proc(
+	pos: []Position,
+	radius: []Radius,
+	a, b: u32,
+) -> bool {
+	dir := Vec3(pos[b]) - Vec3(pos[a])
+	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+	radius_sum := f32(radius[a]) + f32(radius[b])
+	return dist_sq < radius_sum * radius_sum && dist_sq > 0.000001
+}
+
+// One serial narrow-phase step. Returns true when it displaced the bodies; a
+// pair that has already separated, or that is massless, is not displaced (the
+// serial loop skipped exactly those pairs the same way).
+@(private)
+_brute_apply_pair :: proc(
+	pos: []Position,
+	radius: []Radius,
+	mass: []Mass,
+	a, b: u32,
+) -> bool {
+	dir := Vec3(pos[b]) - Vec3(pos[a])
+	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+	radius_sum := f32(radius[a]) + f32(radius[b])
+	if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {return false}
+	dist := math.sqrt_f32(dist_sq)
+	normal := dir / dist
+	overlap := radius_sum - dist
+	total_mass := f32(f64(mass[a]) + f64(mass[b]))
+	if total_mass == 0 {
+		// Two massless bodies: the weighted separation is 0/0.
+		_warn_zero_mass_once("collision")
+		return false
+	}
+	pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
+	pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
+	return true
+}
+
+// The original serial O(N^2) pass, kept verbatim as the reference the parallel
+// path must reproduce and as the fallback for a snapshot whose contact list is
+// large enough that the replay's per-resolve rescan would cost more than this.
+@(private)
+_brute_force_collision_serial :: proc(
+	pos: []Position,
+	radius: []Radius,
+	mass: []Mass,
+	bodies: []u32,
+) {
 	for ii in 0 ..< len(bodies) {
 		a := bodies[ii]
 		for jj in ii + 1 ..< len(bodies) {
-			b := bodies[jj]
-			dir := Vec3(pos[b]) - Vec3(pos[a])
-			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
-			radius_sum := f32(radius[a]) + f32(radius[b])
-			if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {continue}
-			dist := math.sqrt_f32(dist_sq)
-			normal := dir / dist
-			overlap := radius_sum - dist
-			total_mass := f32(f64(mass[a]) + f64(mass[b]))
-			if total_mass == 0 {
-				// Two massless bodies: the weighted separation is 0/0.
-				_warn_zero_mass_once("collision")
-				continue
-			}
-			pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
-			pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
+			_brute_apply_pair(pos, radius, mass, a, bodies[jj])
 		}
+	}
+}
+
+_BruteBroadData :: struct {
+	pos:        []Position,
+	radius:     []Radius,
+	bodies:     []u32,
+	n:          int,
+	chunk_size: int,
+	chunks:     [][dynamic]_BrutePair,
+}
+
+// One broad-phase work chunk: rows [start, end) of the serial loop, scanning
+// each row's `jj > ii` tail. A chunk is owned by one task, so its list needs no
+// lock; chunk order is fixed by the caller, so merging the lists in order
+// reproduces the serial pair order without a sort.
+@(private)
+_brute_broad_chunk :: proc(chunk_index: int, data: rawptr) {
+	ctx := cast(^_BruteBroadData)data
+	start := chunk_index * ctx.chunk_size
+	end := min(start + ctx.chunk_size, ctx.n)
+	pairs := &ctx.chunks[chunk_index]
+	for ii in start ..< end {
+		a := ctx.bodies[ii]
+		for jj in ii + 1 ..< ctx.n {
+			if _brute_pairs_overlap(ctx.pos, ctx.radius, a, ctx.bodies[jj]) {
+				append(pairs, _BrutePair{u32(ii), u32(jj)})
+			}
+		}
+	}
+}
+
+@(private)
+_brute_heap_push :: proc(heap: ^[dynamic]_BrutePair, p: _BrutePair) {
+	append(heap, p)
+	i := len(heap) - 1
+	for i > 0 {
+		parent := (i - 1) / 2
+		if !_brute_pair_less(heap[i], heap[parent]) {break}
+		heap[i], heap[parent] = heap[parent], heap[i]
+		i = parent
+	}
+}
+
+@(private)
+_brute_heap_pop :: proc(heap: ^[dynamic]_BrutePair) -> _BrutePair {
+	top := heap[0]
+	last := pop(heap)
+	n := len(heap)
+	if n > 0 {
+		heap[0] = last
+		i := 0
+		for {
+			l := 2 * i + 1
+			r := l + 1
+			small := i
+			if l < n && _brute_pair_less(heap[l], heap[small]) {small = l}
+			if r < n && _brute_pair_less(heap[r], heap[small]) {small = r}
+			if small == i {break}
+			heap[i], heap[small] = heap[small], heap[i]
+			i = small
+		}
+	}
+	return top
+}
+
+// Parallel brute-force collision. The broad phase scans every pair in parallel
+// and collects the contacts present in the snapshot; the narrow phase then
+// replays the serial loop in its exact `(ii, jj)` order. Because a resolve moves
+// both bodies, it can push one of them into a *new* overlap that the serial loop
+// goes on to resolve in the same row or a later one, so the replay rescans the
+// two moved bodies after every displacement and queues any newly overlapping
+// pair still ahead of the cursor. Testing the initial candidates and the created
+// ones at their own order with the same arithmetic keeps the post-tick positions
+// bit-identical to the serial loop regardless of how the broad phase was
+// scheduled.
+_brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
+	pos := ecs.world_pool(w, Position).data[:]
+	radius := ecs.world_pool(w, Radius).data[:]
+	mass := ecs.world_pool(w, Mass).data[:]
+	n := len(bodies)
+	if n < 2 {return}
+
+	worker_count := found.parallel_worker_count()
+	if worker_count <= 0 {worker_count = 1}
+	chunk_target := worker_count * found.PARALLEL_CHUNKS_PER_WORKER
+	if chunk_target > n {chunk_target = n}
+	if chunk_target < 1 {chunk_target = 1}
+	chunk_size := (n + chunk_target - 1) / chunk_target
+	if chunk_size < 1 {chunk_size = 1}
+	chunk_count := (n + chunk_size - 1) / chunk_size
+
+	broad := _BruteBroadData {
+		pos        = pos,
+		radius     = radius,
+		bodies     = bodies,
+		n          = n,
+		chunk_size = chunk_size,
+		chunks     = make([][dynamic]_BrutePair, chunk_count),
+	}
+	defer {
+		for k in 0 ..< chunk_count {delete(broad.chunks[k])}
+		delete(broad.chunks)
+	}
+	found.job_system_parallel_chunks(
+		found.default_job_system(),
+		_brute_broad_chunk,
+		&broad,
+		chunk_count,
+	)
+
+	total := 0
+	for k in 0 ..< chunk_count {total += len(broad.chunks[k])}
+	if total == 0 {
+		// No contact in the snapshot: the serial loop would test every pair and
+		// move nothing, so the tick is already done.
+		return
+	}
+	if total > n {
+		// Dense snapshot: the replay rescans after every resolve, so a contact
+		// list larger than the body count is cheaper to solve straight through.
+		// Nothing has moved yet, so the plain serial pass is still exact.
+		_brute_force_collision_serial(pos, radius, mass, bodies)
+		return
+	}
+
+	// Exact replay. `tested` makes repeated candidates idempotent: a pair can
+	// enter the heap from several scans, but the serial loop tested each pair
+	// once, so later copies are dropped.
+	heap := make([dynamic]_BrutePair, 0, total)
+	defer delete(heap)
+	for k in 0 ..< chunk_count {
+		for p in broad.chunks[k] {_brute_heap_push(&heap, p)}
+	}
+	tested := make(map[u64]bool, total * 2)
+	defer delete(tested)
+
+	// Undo snapshot for the safety valve, only paid when the snapshot has
+	// contacts.
+	initial := make([]Position, n)
+	defer delete(initial)
+	for k in 0 ..< n {initial[k] = pos[bodies[k]]}
+
+	// The replay may rescan after each of at most `total` initial contacts, but
+	// a displacement can cascade. Cap the rescans at half a serial pass worth of
+	// pair tests; past that the plain serial loop is both faster and known-good.
+	scan_budget := n * n / 2
+	scanned := 0
+	overflow := false
+	for len(heap) > 0 {
+		p := _brute_heap_pop(&heap)
+		key := (u64(p.ii) << 32) | u64(p.jj)
+		if tested[key] {continue}
+		tested[key] = true
+		if !_brute_apply_pair(pos, radius, mass, bodies[p.ii], bodies[p.jj]) {
+			continue
+		}
+
+		if scanned + 2 * n > scan_budget {
+			overflow = true
+			break
+		}
+		scanned += 2 * n
+		// Both bodies moved; look for contacts the displacement created, keeping
+		// only pairs the serial cursor has not passed yet.
+		moved := [2]u32{p.ii, p.jj}
+		for mi in moved {
+			m := bodies[mi]
+			for dc in 0 ..< n {
+				if u32(dc) == mi {continue}
+				oi, oj := u32(dc), mi
+				if mi < oi {oi, oj = mi, oi}
+				if oi < p.ii || (oi == p.ii && oj <= p.jj) {continue}
+				if tested[(u64(oi) << 32) | u64(oj)] {continue}
+				if _brute_pairs_overlap(pos, radius, m, bodies[dc]) {
+					_brute_heap_push(&heap, _BrutePair{oi, oj})
+				}
+			}
+		}
+	}
+
+	if overflow {
+		for k in 0 ..< n {pos[bodies[k]] = initial[k]}
+		_brute_force_collision_serial(pos, radius, mass, bodies)
 	}
 }
 

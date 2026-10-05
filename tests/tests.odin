@@ -136,6 +136,112 @@ test_octree_collision :: proc(t: ^testing.T) {
 	testing.expectf(t, after > 14.9 && after < 15.1, "expected ~15, got %v", after)
 }
 
+// PF7 scenes: the first and third are sparse enough that the parallel broad
+// phase's exact replay runs, the second is dense enough to trip its fallback.
+@(private)
+_BruteCollisionScene :: struct {
+	n:      int,
+	spread: f32,
+	rmin:   f32,
+	rmax:   f32,
+	seed:   u64,
+}
+
+// PF7: the parallel brute broad phase (and its created-contact replay) must
+// reproduce the serial O(N^2) pass bit-for-bit. The reference below is the
+// pre-change serial loop, run on private copies of the columns; the engine runs
+// the same scene with the parallel path and the post-tick positions must match
+// exactly. dt = 0 keeps gravity/integration out of the way, so only collision
+// moves anything.
+@(test)
+test_brute_collision_parallel_matches_serial :: proc(t: ^testing.T) {
+	foundation.parallel_init(4)
+	defer foundation.parallel_destroy()
+
+	scenes := []_BruteCollisionScene {
+		{n = 180, spread = 30, rmin = 1, rmax = 4, seed = 9001},
+		{n = 220, spread = 14, rmin = 1, rmax = 3, seed = 4242},
+		{n = 64, spread = 20, rmin = 1, rmax = 2, seed = 7},
+	}
+
+	for scene in scenes {
+		w := ecs.world_create()
+		defer ecs.world_destroy(w)
+		rand.reset_u64(scene.seed)
+		for _ in 0 ..< scene.n {
+			physics.body_spawn(
+				w,
+				{
+					rand.float32_range(-scene.spread, scene.spread),
+					rand.float32_range(-scene.spread, scene.spread),
+					rand.float32_range(-scene.spread, scene.spread),
+				},
+				{0, 0, 0},
+				f64(rand.float32_range(1, 5)),
+				rand.float32_range(scene.rmin, scene.rmax),
+			)
+		}
+
+		view := physics.body_view(w)
+		bodies := view.bodies
+
+		// Reference: the old serial loop on copies of the columns.
+		ref_pos := make([]physics.Position, len(view.position))
+		defer delete(ref_pos)
+		copy(ref_pos, view.position)
+		ref_radius := make([]physics.Radius, len(view.radius))
+		defer delete(ref_radius)
+		copy(ref_radius, view.radius)
+		ref_mass := make([]physics.Mass, len(view.mass))
+		defer delete(ref_mass)
+		copy(ref_mass, view.mass)
+
+		for ii in 0 ..< len(bodies) {
+			a := bodies[ii]
+			for jj in ii + 1 ..< len(bodies) {
+				b := bodies[jj]
+				dir := physics.Vec3(ref_pos[b]) - physics.Vec3(ref_pos[a])
+				dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+				radius_sum := f32(ref_radius[a]) + f32(ref_radius[b])
+				if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {continue}
+				dist := math.sqrt_f32(dist_sq)
+				normal := dir / dist
+				overlap := radius_sum - dist
+				total_mass := f32(f64(ref_mass[a]) + f64(ref_mass[b]))
+				if total_mass == 0 {continue}
+				ref_pos[a] = physics.Position(
+					physics.Vec3(ref_pos[a]) - normal * (overlap * f32(ref_mass[b]) / total_mass),
+				)
+				ref_pos[b] = physics.Position(
+					physics.Vec3(ref_pos[b]) + normal * (overlap * f32(ref_mass[a]) / total_mass),
+				)
+			}
+		}
+
+		physics.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
+		s := ecs.scheduler_create()
+		defer ecs.scheduler_destroy(s)
+		physics.physic_register_systems(s)
+		_ = ecs.scheduler_finalize(s)
+		ecs.scheduler_run(s, .PHYSICS, w, 0.0)
+
+		after := physics.body_view(w)
+		for e in bodies {
+			got := physics.Vec3(after.position[e])
+			want := physics.Vec3(ref_pos[e])
+			testing.expectf(
+				t,
+				got == want,
+				"scene seed=%v: body %d differs: %v vs %v",
+				scene.seed,
+				e,
+				got,
+				want,
+			)
+		}
+	}
+}
+
 @(test)
 test_octree_force_collect_equivalence :: proc(t: ^testing.T) {
 	w := ecs.world_create()
