@@ -2,9 +2,11 @@ package physic
 
 import found "../../foundation"
 import ecs "../ecs"
+import "base:intrinsics"
 import "core:log"
 import "core:math"
 import "core:mem"
+import "core:simd"
 import "core:slice"
 import "core:sync"
 import "core:time"
@@ -930,29 +932,151 @@ _warn_zero_mass_once :: proc(context_name: string) {
 	}
 }
 
+// Width of the brute-force SIMD inner step, in f32 lanes. Eight lanes is one
+// AVX2 register (one AVX-512 register on a `-microarch:native` build); on a
+// narrower target LLVM splits it into two SSE vectors, so the loop stays
+// correct, just less wide. The accumulation order is fixed by the tile walk
+// and the bisect reduction, so the result is deterministic.
+BRUTE_SIMD_LANES :: 8
+
+@(private)
+_brute_splat :: #force_inline proc(v: f32) -> #simd[BRUTE_SIMD_LANES]f32 {
+	return {v, v, v, v, v, v, v, v}
+}
+
+// The SoA columns are plain `[]f32`, so a vector load can land on any 4-byte
+// offset (the tile start moves with `i`). Load/store unaligned explicitly
+// instead of letting the `^#simd` deref imply the vector's natural alignment.
+@(private)
+_brute_load :: #force_inline proc(p: ^f32) -> #simd[BRUTE_SIMD_LANES]f32 {
+	return intrinsics.unaligned_load((^#simd[BRUTE_SIMD_LANES]f32)(p))
+}
+
+@(private)
+_brute_store :: #force_inline proc(p: ^f32, v: #simd[BRUTE_SIMD_LANES]f32) {
+	intrinsics.unaligned_store((^#simd[BRUTE_SIMD_LANES]f32)(p), v)
+}
+
+// Tiled, SIMD all-pairs gravity. The scalar reference read every column
+// through the entity index (`dir := pos[j] - pos[i]`), which forces the
+// inner loop to issue three separate AoS loads per pair. Here the body
+// columns are transposed once into a SoA scratch indexed by position in
+// `bodies`, so the inner step loads a whole vector of `j` with one
+// contiguous load and computes eight pairs per `sqrt`/divide.
+//
+// Numeric notes:
+//  - The scalar form already widened an f32 distance to f64 before the
+//    `sqrt`; eight f32 lanes use an f32 `sqrt` instead. The relative
+//    difference is ~1e-7 and is measured against the GPU parity gates.
+//  - The cancelled form `G*m_other / dist_sq` (as in the GPU kernels) is
+//    kept: the f64 `G*m1*m2` numerator would overflow f32, while this form
+//    fits. The accelerated body's mass cancels for positive masses.
+//  - Newton's third law keeps the kick/symmetry structure: body `i` gains
+//    the pair's pull and body `j` loses it, accumulated in place.
 _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
 	pos := ecs.world_pool(w, Position).data
 	vel := ecs.world_pool(w, Velocity).data
 	acc := ecs.world_pool(w, Acceleration).data
 	mass := ecs.world_pool(w, Mass).data
 	n := len(bodies)
-	for ii in 0 ..< n {
-		i := bodies[ii]
-		acc_i := Vec3(acc[i])
-		mass_i := f64(mass[i])
-		for jj in ii + 1 ..< n {
-			j := bodies[jj]
-			dir := Vec3(pos[j]) - Vec3(pos[i])
-			dist_sq := f64(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z)
-			if dist_sq < 1e-6 {dist_sq = 1e-6}
-			dir_norm := dir / f32(math.sqrt_f64(dist_sq))
+	if n < 2 {return}
 
-			g_over_dist_sq := f32(GRAVITY_CONSTANT / dist_sq)
-			acc_i += dir_norm * (g_over_dist_sq * f32(mass[j]))
-			acc[j] = Acceleration(Vec3(acc[j]) - dir_norm * (g_over_dist_sq * f32(mass_i)))
+	// Seven SoA columns: position (x, y, z), mass, and the running
+	// acceleration (x, y, z), each indexed by the position in `bodies`.
+	scratch := make([]f32, 7 * n)
+	defer delete(scratch)
+	sx := scratch[0 * n:1 * n]
+	sy := scratch[1 * n:2 * n]
+	sz := scratch[2 * n:3 * n]
+	sm := scratch[3 * n:4 * n]
+	ax := scratch[4 * n:5 * n]
+	ay := scratch[5 * n:6 * n]
+	az := scratch[6 * n:7 * n]
+
+	for k in 0 ..< n {
+		e := bodies[k]
+		p := Vec3(pos[e])
+		a := Vec3(acc[e])
+		sx[k] = p.x
+		sy[k] = p.y
+		sz[k] = p.z
+		sm[k] = f32(mass[e])
+		ax[k] = a.x
+		ay[k] = a.y
+		az[k] = a.z
+	}
+
+	dt := f32(seconds)
+	g_vec := _brute_splat(f32(GRAVITY_CONSTANT))
+	eps := _brute_splat(1e-6)
+	one := _brute_splat(1.0)
+	zero: #simd[BRUTE_SIMD_LANES]f32 = {0, 0, 0, 0, 0, 0, 0, 0}
+
+	for ii in 0 ..< n {
+		px := sx[ii]
+		py := sy[ii]
+		pz := sz[ii]
+		m_i := sm[ii]
+		m_i_vec := _brute_splat(m_i)
+		// One vector accumulator per component, reduced once per body instead
+		// of once per tile. The lanes hold different `j`, so the reduction
+		// mixes them; the bisect tree is fixed, hence deterministic.
+		avx := zero
+		avy := zero
+		avz := zero
+		jj := ii + 1
+		for ; jj + BRUTE_SIMD_LANES <= n; jj += BRUTE_SIMD_LANES {
+			dx := _brute_load(&sx[jj]) - _brute_splat(px)
+			dy := _brute_load(&sy[jj]) - _brute_splat(py)
+			dz := _brute_load(&sz[jj]) - _brute_splat(pz)
+			dist_sq := dx * dx + dy * dy + dz * dz
+			dist_sq = simd.max(dist_sq, eps)
+			g_over := g_vec / dist_sq
+			// acc = dir * (G / dist_sq) * m_other; inv folds the sqrt and the
+			// normalisation into the vector unit.
+			dir_scale := (one / simd.sqrt(dist_sq)) * g_over
+			bx := dx * dir_scale
+			by := dy * dir_scale
+			bz := dz * dir_scale
+			m_j := _brute_load(&sm[jj])
+			avx += bx * m_j
+			avy += by * m_j
+			avz += bz * m_j
+			_brute_store(&ax[jj], _brute_load(&ax[jj]) - bx * m_i_vec)
+			_brute_store(&ay[jj], _brute_load(&ay[jj]) - by * m_i_vec)
+			_brute_store(&az[jj], _brute_load(&az[jj]) - bz * m_i_vec)
 		}
-		acc[i] = Acceleration(acc_i)
-		vel[i] = Velocity(Vec3(vel[i]) + acc_i * f32(seconds))
+		acc_ix := ax[ii] + simd.reduce_add_bisect(avx)
+		acc_iy := ay[ii] + simd.reduce_add_bisect(avy)
+		acc_iz := az[ii] + simd.reduce_add_bisect(avz)
+		// Scalar tail for the last <BRUTE_SIMD_LANES bodies; same cancelled
+		// form so both paths agree.
+		for ; jj < n; jj += 1 {
+			dx := sx[jj] - px
+			dy := sy[jj] - py
+			dz := sz[jj] - pz
+			dist_sq := dx * dx + dy * dy + dz * dz
+			if dist_sq < 1e-6 {dist_sq = 1e-6}
+			dir_scale := (1.0 / math.sqrt_f32(dist_sq)) * (f32(GRAVITY_CONSTANT) / dist_sq)
+			bx := dx * dir_scale
+			by := dy * dir_scale
+			bz := dz * dir_scale
+			acc_ix += bx * sm[jj]
+			acc_iy += by * sm[jj]
+			acc_iz += bz * sm[jj]
+			ax[jj] -= bx * m_i
+			ay[jj] -= by * m_i
+			az[jj] -= bz * m_i
+		}
+		ax[ii] = acc_ix
+		ay[ii] = acc_iy
+		az[ii] = acc_iz
+		i := bodies[ii]
+		vel[i] = Velocity(Vec3(vel[i]) + Vec3{acc_ix, acc_iy, acc_iz} * dt)
+	}
+
+	for k in 0 ..< n {
+		acc[bodies[k]] = Acceleration(Vec3{ax[k], ay[k], az[k]})
 	}
 }
 
