@@ -953,34 +953,78 @@ _octree_solve :: proc(state: ^Physic_State, bodies: []u32, seconds: f64) {
 		"n=%d theta=%.2f max_r=%.4g workers=%d",
 		{len(bodies), tree.theta, tree.max_radius, found.parallel_worker_count()},
 	)
+	// One `[dynamic]Contact` per work chunk: a chunk is executed by exactly one
+	// task, so its list needs no lock, and the per-pair mutex contention that
+	// serialised dense-overlap scenes disappears. The lists are merged into the
+	// (cleared) `state.collision_contacts` after the solve; `_collision_resolve`
+	// still sorts the merged set, so determinism is unchanged.
+	//
+	// `job_system_parallel_chunks` takes the chunk list as the work unit and
+	// derives its own task grouping from it. Sizing the chunk count to
+	// `worker_count * PARALLEL_CHUNKS_PER_WORKER * PARALLEL_MIN_CHUNK` makes
+	// that grouping collapse to the same task granularity `parallel_for` used
+	// (see `job_system_parallel_chunks`), so sparse scenes keep their old
+	// balance while dense ones stop contending.
+	body_count := len(bodies)
+	worker_count := found.parallel_worker_count()
+	if worker_count <= 0 {worker_count = 1}
+	chunk_target :=
+		worker_count * found.PARALLEL_CHUNKS_PER_WORKER * found.PARALLEL_MIN_CHUNK
+	if chunk_target > body_count {chunk_target = body_count}
+	if chunk_target < 1 {chunk_target = 1}
+	chunk_size := (body_count + chunk_target - 1) / chunk_target
+	if chunk_size < 1 {chunk_size = 1}
+	chunk_count := (body_count + chunk_size - 1) / chunk_size
+	if chunk_count < 1 {chunk_count = 1}
+
 	data := _OctreeSolveData {
-		tree     = tree,
-		indices  = bodies,
-		dt       = f32(seconds),
-		contacts = &state.collision_contacts,
-		mutex    = &state.collision_mutex,
+		tree       = tree,
+		indices    = bodies,
+		dt         = f32(seconds),
+		chunks     = make([][dynamic]Contact, chunk_count),
+		chunk_size = chunk_size,
+		body_count = body_count,
 	}
-	found.parallel_for(_octree_solve_worker, &data, len(bodies))
+	defer {
+		for k in 0 ..< chunk_count {delete(data.chunks[k])}
+		delete(data.chunks)
+	}
+
+	found.job_system_parallel_chunks(
+		found.default_job_system(),
+		_octree_solve_chunk,
+		&data,
+		chunk_count,
+	)
+
+	total := 0
+	for k in 0 ..< chunk_count {total += len(data.chunks[k])}
+	reserve(&state.collision_contacts, total)
+	for k in 0 ..< chunk_count {
+		append(&state.collision_contacts, ..data.chunks[k][:])
+	}
 	found.profile_mark("octree.solved", "pairs=%d", {len(state.collision_contacts)})
 }
 
 _OctreeSolveData :: struct {
-	tree:     ^OctTree,
-	indices:  []u32,
-	dt:       f32,
-	contacts: ^[dynamic]Contact,
-	mutex:    ^sync.Mutex,
+	tree:       ^OctTree,
+	indices:    []u32,
+	dt:         f32,
+	chunks:     [][dynamic]Contact,
+	chunk_size: int,
+	body_count: int,
 }
 
-_octree_solve_worker :: proc(index: int, data: rawptr) {
+// Runs every body query in one work chunk, appending contacts to the chunk's
+// private list (nil mutex: this list is owned by this single task).
+_octree_solve_chunk :: proc(chunk_index: int, data: rawptr) {
 	ctx := cast(^_OctreeSolveData)data
-	octtree_calc_force_and_collect(
-		ctx.tree,
-		ctx.indices[index],
-		ctx.dt,
-		ctx.contacts,
-		ctx.mutex,
-	)
+	start := chunk_index * ctx.chunk_size
+	end := min(start + ctx.chunk_size, ctx.body_count)
+	contacts := &ctx.chunks[chunk_index]
+	for i in start ..< end {
+		_calc_force_collect(ctx.tree, ctx.indices[i], ctx.tree.theta, ctx.dt, contacts, nil)
+	}
 }
 
 // Overlapping pair collected during the gravity traversal.

@@ -472,9 +472,17 @@ _calc_force_collect :: proc(
 					dist_sq := dx * dx + dy * dy + dz * dz
 					radius_sum := f32(view.radius[index]) + f32(view.radius[other])
 					if dist_sq < radius_sum * radius_sum && dist_sq > 0.000001 {
-						sync.mutex_lock(mutex)
-						append(contacts, Contact{a = index, b = other})
-						sync.mutex_unlock(mutex)
+						// `mutex` is nil when the caller owns `contacts`
+						// outright (one list per work chunk, merged after the
+						// solve); a non-nil mutex keeps the shared-list API
+						// used by serial callers.
+						if mutex == nil {
+							append(contacts, Contact{a = index, b = other})
+						} else {
+							sync.mutex_lock(mutex)
+							append(contacts, Contact{a = index, b = other})
+							sync.mutex_unlock(mutex)
+						}
 					}
 				}
 			}
