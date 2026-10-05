@@ -336,6 +336,7 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
 	obj_mass := f64(view.mass[index])
+	theta_sq := theta * theta
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -362,10 +363,10 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {
 				_apply_gravity(view, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
 			}
 			continue
@@ -440,6 +441,7 @@ _calc_force_collect :: proc(
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
 	obj_mass := f64(view.mass[index])
+	theta_sq := theta * theta
 	collision_radius := f32(view.radius[index]) + t.max_radius
 
 	for stack_count > 0 {
@@ -489,10 +491,10 @@ _calc_force_collect :: proc(
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {
 				_apply_gravity(view, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
 			}
 			if _cell_intersects_sphere(node, obj_pos, collision_radius) {
@@ -550,6 +552,7 @@ _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
 	stack[0] = 0
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
+	theta_sq := theta * theta
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -572,10 +575,10 @@ _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {stats.node_accept += 1}
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {stats.node_accept += 1}
 			stats.nodes_culled += 1
 			continue
 		}
@@ -611,10 +614,11 @@ _apply_gravity :: proc(
 	dir := other_pos - obj_pos
 	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 	if dist_sq < 0.001 {dist_sq = 0.001}
-	dir_norm := dir / math.sqrt_f32(dist_sq)
-	force_mag := f32(GRAVITY_CONSTANT * obj_mass * other_mass / f64(dist_sq))
-	acc := dir_norm * (force_mag / f32(obj_mass))
-	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + acc * dt)
+	// acc = dir * G * other_mass / r^3. The accelerated body's mass cancels for
+	// positive masses, so this skips the normalize + divide and matches the GPU
+	// kernels' cancelled form (`physics_brute.comp`, `physics_tree.comp`).
+	scale := f32(GRAVITY_CONSTANT * other_mass) / (dist_sq * math.sqrt_f32(dist_sq))
+	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + dir * (scale * dt))
 }
 
 // Appends the entity indices inside `radius` of `pos` into `result` and sets
