@@ -2,9 +2,11 @@ package physic
 
 import found "../../foundation"
 import ecs "../ecs"
+import "base:intrinsics"
 import "core:log"
 import "core:math"
 import "core:mem"
+import "core:simd"
 import "core:slice"
 import "core:sync"
 import "core:time"
@@ -134,6 +136,10 @@ Tree_Build_Proc :: proc(
 physic_set_gravity_solver :: proc(w: ^ecs.World, solver: Gravity_Solver) {
 	state := physic_state(w)
 	state.gravity_solver = solver
+	// Publish the liveness signal to the graphics thread. Only a solver that
+	// owns the solve (`submit`) makes the backend active; a tree-only hook never
+	// does, so the renderer keeps the snapshot.
+	sync.atomic_store(&state.gravity_backend_active, solver.submit != nil)
 }
 
 // Solver/adaptive state lives as a world resource; the physics systems fetch it
@@ -141,6 +147,11 @@ physic_set_gravity_solver :: proc(w: ^ecs.World, solver: Gravity_Solver) {
 Physic_State :: struct {
 	algorithm:           found.Algorithm,
 	gravity_solver:      Gravity_Solver,
+	// Atomic: true while a hooked backend owns the solve. The graphics thread
+	// loads it to decide whether it may keep drawing the backend's render views
+	// or must fall back to the snapshot; the physics thread stores it when the
+	// hook is installed and clears it wherever a failed hook is uninstalled.
+	gravity_backend_active: bool,
 	// A hooked backend's submission is in flight between `physic.gravity` and
 	// the first consumer (`physic.collision` or `physic.integrate`).
 	gravity_pending:     bool,
@@ -158,7 +169,6 @@ Physic_State :: struct {
 	tree_body_count:     int,
 	tree_revision:       u64,
 	collision_contacts:  [dynamic]Contact,
-	collision_mutex:     sync.Mutex,
 	auto_adjust:         bool,
 	target_cost_ms:      f32,
 	theta_min:           f32,
@@ -216,6 +226,16 @@ physic_state :: proc(w: ^ecs.World) -> ^Physic_State {
 	state := ecs.world_resource(w, Physic_State, _state_destroy)
 	assert(state != nil, "physic_state: resource missing (world frozen before physic_init?)")
 	return state
+}
+
+// physic_gravity_backend_active reports whether a hooked gravity backend
+// currently owns the solve. Safe to call from either thread: it is one atomic
+// load, so the graphics thread can poll it without racing the physics thread.
+// The renderer uses it to return to the snapshot path after a mid-run backend
+// failure uninstalled the hook.
+physic_gravity_backend_active :: proc(w: ^ecs.World) -> bool {
+	state := physic_state(w)
+	return sync.atomic_load(&state.gravity_backend_active)
 }
 
 physic_snapshot :: proc(w: ^ecs.World) -> ^RenderSnapshot {
@@ -370,6 +390,16 @@ physic_system_gravity :: proc(w: ^ecs.World, delta_time: f32) -> bool {
 	return true
 }
 
+// _uninstall_gravity_solver drops the hook and clears the backend-active signal
+// together, so the graphics thread can never observe a stale "active" while the
+// solver is gone (and it cannot miss the clear when a failure path forgets one
+// of the two stores).
+@(private)
+_uninstall_gravity_solver :: proc(state: ^Physic_State) {
+	state.gravity_solver = {}
+	sync.atomic_store(&state.gravity_backend_active, false)
+}
+
 // _submit_gravity starts one hooked solve. On failure the hook is dropped and
 // the caller runs the CPU solver for this tick; the backend must not have
 // touched the pools. A hook with only one of the two callbacks can never be
@@ -383,7 +413,7 @@ _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seco
 			state.gravity_solver.submit != nil,
 			state.gravity_solver.finish != nil,
 		)
-		state.gravity_solver = {}
+		_uninstall_gravity_solver(state)
 		return false
 	}
 	if state.gravity_solver.submit(state.gravity_solver.user, w, bodies, seconds) {
@@ -392,7 +422,7 @@ _submit_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32, seco
 		return true
 	}
 	log.errorf("[PHYSIC] Gravity solver failed to submit; falling back to the CPU solver")
-	state.gravity_solver = {}
+	_uninstall_gravity_solver(state)
 	return false
 }
 
@@ -409,7 +439,7 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 	// instead of dereferencing it.
 	if state.gravity_solver.finish == nil {
 		log.errorf("[PHYSIC] Gravity solver has no finish callback; falling back to the CPU solver")
-		state.gravity_solver = {}
+		_uninstall_gravity_solver(state)
 		clear(&state.collision_contacts)
 		_gravity_cpu_fallback(state, w, bodies)
 		return
@@ -423,7 +453,7 @@ _finish_gravity :: proc(state: ^Physic_State, w: ^ecs.World, bodies: []u32) {
 		return
 	}
 	log.errorf("[PHYSIC] Gravity solver failed; falling back to the CPU solver")
-	state.gravity_solver = {}
+	_uninstall_gravity_solver(state)
 	clear(&state.collision_contacts)
 	_gravity_cpu_fallback(state, w, bodies)
 }
@@ -621,7 +651,7 @@ _ensure_tree :: proc(state: ^Physic_State, w: ^ecs.World, delta_time: f32) -> ^O
 				return nil
 			}
 			log.errorf("[PHYSIC] GPU tree build failed; falling back to the CPU solver")
-			state.gravity_solver = {}
+			_uninstall_gravity_solver(state)
 			state.tree_on_gpu = false
 		}
 		if state.tree != nil {
@@ -789,6 +819,15 @@ _snapshot_acquire_write :: proc(s: ^RenderSnapshot) -> int {
 
 // Copies the pool state into the next buffer and publishes it. Owner thread only.
 physic_snapshot_publish :: proc(w: ^ecs.World) {
+	when !ODIN_DEBUG {
+		// A healthy hooked backend owns the render path: the renderer draws the
+		// backend's buffers directly and never reads the snapshot, so the
+		// per-tick O(N) copy is dead work. Debug builds always publish because
+		// `_renderer_verify_direct` compares the direct instances against this
+		// snapshot as its reference. The flag clears when the hook is dropped,
+		// which re-enables publishing on the CPU fallback automatically.
+		if physic_gravity_backend_active(w) {return}
+	}
 	snapshot := physic_snapshot(w)
 	view := body_view(w)
 	count := len(view.bodies)
@@ -892,56 +931,411 @@ _warn_zero_mass_once :: proc(context_name: string) {
 	}
 }
 
+// Width of the brute-force SIMD inner step, in f32 lanes. Eight lanes is one
+// AVX2 register (one AVX-512 register on a `-microarch:native` build); on a
+// narrower target LLVM splits it into two SSE vectors, so the loop stays
+// correct, just less wide. The accumulation order is fixed by the tile walk
+// and the bisect reduction, so the result is deterministic.
+BRUTE_SIMD_LANES :: 8
+
+@(private)
+_brute_splat :: #force_inline proc(v: f32) -> #simd[BRUTE_SIMD_LANES]f32 {
+	return {v, v, v, v, v, v, v, v}
+}
+
+// The SoA columns are plain `[]f32`, so a vector load can land on any 4-byte
+// offset (the tile start moves with `i`). Load/store unaligned explicitly
+// instead of letting the `^#simd` deref imply the vector's natural alignment.
+@(private)
+_brute_load :: #force_inline proc(p: ^f32) -> #simd[BRUTE_SIMD_LANES]f32 {
+	return intrinsics.unaligned_load((^#simd[BRUTE_SIMD_LANES]f32)(p))
+}
+
+@(private)
+_brute_store :: #force_inline proc(p: ^f32, v: #simd[BRUTE_SIMD_LANES]f32) {
+	intrinsics.unaligned_store((^#simd[BRUTE_SIMD_LANES]f32)(p), v)
+}
+
+// Tiled, SIMD all-pairs gravity. The scalar reference read every column
+// through the entity index (`dir := pos[j] - pos[i]`), which forces the
+// inner loop to issue three separate AoS loads per pair. Here the body
+// columns are transposed once into a SoA scratch indexed by position in
+// `bodies`, so the inner step loads a whole vector of `j` with one
+// contiguous load and computes eight pairs per `sqrt`/divide.
+//
+// Numeric notes:
+//  - The scalar form already widened an f32 distance to f64 before the
+//    `sqrt`; eight f32 lanes use an f32 `sqrt` instead. The relative
+//    difference is ~1e-7 and is measured against the GPU parity gates.
+//  - The cancelled form `G*m_other / dist_sq` (as in the GPU kernels) is
+//    kept: the f64 `G*m1*m2` numerator would overflow f32, while this form
+//    fits. The accelerated body's mass cancels for positive masses.
+//  - Newton's third law keeps the kick/symmetry structure: body `i` gains
+//    the pair's pull and body `j` loses it, accumulated in place.
 _brute_force_solve :: proc(w: ^ecs.World, bodies: []u32, seconds: f64) {
 	pos := ecs.world_pool(w, Position).data
 	vel := ecs.world_pool(w, Velocity).data
 	acc := ecs.world_pool(w, Acceleration).data
 	mass := ecs.world_pool(w, Mass).data
 	n := len(bodies)
-	for ii in 0 ..< n {
-		i := bodies[ii]
-		acc_i := Vec3(acc[i])
-		mass_i := f64(mass[i])
-		for jj in ii + 1 ..< n {
-			j := bodies[jj]
-			dir := Vec3(pos[j]) - Vec3(pos[i])
-			dist_sq := f64(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z)
-			if dist_sq < 1e-6 {dist_sq = 1e-6}
-			dir_norm := dir / f32(math.sqrt_f64(dist_sq))
+	if n < 2 {return}
 
-			g_over_dist_sq := f32(GRAVITY_CONSTANT / dist_sq)
-			acc_i += dir_norm * (g_over_dist_sq * f32(mass[j]))
-			acc[j] = Acceleration(Vec3(acc[j]) - dir_norm * (g_over_dist_sq * f32(mass_i)))
+	// Seven SoA columns: position (x, y, z), mass, and the running
+	// acceleration (x, y, z), each indexed by the position in `bodies`.
+	scratch := make([]f32, 7 * n)
+	defer delete(scratch)
+	sx := scratch[0 * n:1 * n]
+	sy := scratch[1 * n:2 * n]
+	sz := scratch[2 * n:3 * n]
+	sm := scratch[3 * n:4 * n]
+	ax := scratch[4 * n:5 * n]
+	ay := scratch[5 * n:6 * n]
+	az := scratch[6 * n:7 * n]
+
+	for k in 0 ..< n {
+		e := bodies[k]
+		p := Vec3(pos[e])
+		a := Vec3(acc[e])
+		sx[k] = p.x
+		sy[k] = p.y
+		sz[k] = p.z
+		sm[k] = f32(mass[e])
+		ax[k] = a.x
+		ay[k] = a.y
+		az[k] = a.z
+	}
+
+	dt := f32(seconds)
+	g_vec := _brute_splat(f32(GRAVITY_CONSTANT))
+	eps := _brute_splat(1e-6)
+	one := _brute_splat(1.0)
+	zero: #simd[BRUTE_SIMD_LANES]f32 = {0, 0, 0, 0, 0, 0, 0, 0}
+
+	for ii in 0 ..< n {
+		px := sx[ii]
+		py := sy[ii]
+		pz := sz[ii]
+		m_i := sm[ii]
+		m_i_vec := _brute_splat(m_i)
+		// One vector accumulator per component, reduced once per body instead
+		// of once per tile. The lanes hold different `j`, so the reduction
+		// mixes them; the bisect tree is fixed, hence deterministic.
+		avx := zero
+		avy := zero
+		avz := zero
+		jj := ii + 1
+		for ; jj + BRUTE_SIMD_LANES <= n; jj += BRUTE_SIMD_LANES {
+			dx := _brute_load(&sx[jj]) - _brute_splat(px)
+			dy := _brute_load(&sy[jj]) - _brute_splat(py)
+			dz := _brute_load(&sz[jj]) - _brute_splat(pz)
+			dist_sq := dx * dx + dy * dy + dz * dz
+			dist_sq = simd.max(dist_sq, eps)
+			g_over := g_vec / dist_sq
+			// acc = dir * (G / dist_sq) * m_other; inv folds the sqrt and the
+			// normalisation into the vector unit.
+			dir_scale := (one / simd.sqrt(dist_sq)) * g_over
+			bx := dx * dir_scale
+			by := dy * dir_scale
+			bz := dz * dir_scale
+			m_j := _brute_load(&sm[jj])
+			avx += bx * m_j
+			avy += by * m_j
+			avz += bz * m_j
+			_brute_store(&ax[jj], _brute_load(&ax[jj]) - bx * m_i_vec)
+			_brute_store(&ay[jj], _brute_load(&ay[jj]) - by * m_i_vec)
+			_brute_store(&az[jj], _brute_load(&az[jj]) - bz * m_i_vec)
 		}
-		acc[i] = Acceleration(acc_i)
-		vel[i] = Velocity(Vec3(vel[i]) + acc_i * f32(seconds))
+		acc_ix := ax[ii] + simd.reduce_add_bisect(avx)
+		acc_iy := ay[ii] + simd.reduce_add_bisect(avy)
+		acc_iz := az[ii] + simd.reduce_add_bisect(avz)
+		// Scalar tail for the last <BRUTE_SIMD_LANES bodies; same cancelled
+		// form so both paths agree.
+		for ; jj < n; jj += 1 {
+			dx := sx[jj] - px
+			dy := sy[jj] - py
+			dz := sz[jj] - pz
+			dist_sq := dx * dx + dy * dy + dz * dz
+			if dist_sq < 1e-6 {dist_sq = 1e-6}
+			dir_scale := (1.0 / math.sqrt_f32(dist_sq)) * (f32(GRAVITY_CONSTANT) / dist_sq)
+			bx := dx * dir_scale
+			by := dy * dir_scale
+			bz := dz * dir_scale
+			acc_ix += bx * sm[jj]
+			acc_iy += by * sm[jj]
+			acc_iz += bz * sm[jj]
+			ax[jj] -= bx * m_i
+			ay[jj] -= by * m_i
+			az[jj] -= bz * m_i
+		}
+		ax[ii] = acc_ix
+		ay[ii] = acc_iy
+		az[ii] = acc_iz
+		i := bodies[ii]
+		vel[i] = Velocity(Vec3(vel[i]) + Vec3{acc_ix, acc_iy, acc_iz} * dt)
+	}
+
+	for k in 0 ..< n {
+		acc[bodies[k]] = Acceleration(Vec3{ax[k], ay[k], az[k]})
 	}
 }
 
-_brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
-	pos := ecs.world_pool(w, Position).data
-	radius := ecs.world_pool(w, Radius).data
-	mass := ecs.world_pool(w, Mass).data
+// A brute-collision candidate stores the two positions its bodies hold in the
+// dense `bodies` list, not entity indices. The serial loop resolved pairs in
+// `(ii, jj)` lexicographic order over that list and moved both bodies in place,
+// so the parallel path has to reproduce that order exactly to stay bit-identical.
+_BrutePair :: struct {
+	ii: u32,
+	jj: u32,
+}
+
+@(private)
+_brute_pair_less :: proc(x, y: _BrutePair) -> bool {
+	if x.ii != y.ii {return x.ii < y.ii}
+	return x.jj < y.jj
+}
+
+// The overlap predicate and the weighted separation are the serial loop's,
+// factored out so the broad phase, the replay's created-contact scan and the
+// fallback cannot drift apart.
+@(private)
+_brute_pairs_overlap :: #force_inline proc(
+	pos: []Position,
+	radius: []Radius,
+	a, b: u32,
+) -> bool {
+	dir := Vec3(pos[b]) - Vec3(pos[a])
+	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+	radius_sum := f32(radius[a]) + f32(radius[b])
+	return dist_sq < radius_sum * radius_sum && dist_sq > 0.000001
+}
+
+// One serial narrow-phase step. Returns true when it displaced the bodies; a
+// pair that has already separated, or that is massless, is not displaced (the
+// serial loop skipped exactly those pairs the same way).
+@(private)
+_brute_apply_pair :: proc(
+	pos: []Position,
+	radius: []Radius,
+	mass: []Mass,
+	a, b: u32,
+) -> bool {
+	dir := Vec3(pos[b]) - Vec3(pos[a])
+	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
+	radius_sum := f32(radius[a]) + f32(radius[b])
+	if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {return false}
+	dist := math.sqrt_f32(dist_sq)
+	normal := dir / dist
+	overlap := radius_sum - dist
+	total_mass := f32(f64(mass[a]) + f64(mass[b]))
+	if total_mass == 0 {
+		// Two massless bodies: the weighted separation is 0/0.
+		_warn_zero_mass_once("collision")
+		return false
+	}
+	pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
+	pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
+	return true
+}
+
+// The original serial O(N^2) pass, kept verbatim as the reference the parallel
+// path must reproduce and as the fallback for a snapshot whose contact list is
+// large enough that the replay's per-resolve rescan would cost more than this.
+@(private)
+_brute_force_collision_serial :: proc(
+	pos: []Position,
+	radius: []Radius,
+	mass: []Mass,
+	bodies: []u32,
+) {
 	for ii in 0 ..< len(bodies) {
 		a := bodies[ii]
 		for jj in ii + 1 ..< len(bodies) {
-			b := bodies[jj]
-			dir := Vec3(pos[b]) - Vec3(pos[a])
-			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
-			radius_sum := f32(radius[a]) + f32(radius[b])
-			if dist_sq >= radius_sum * radius_sum || dist_sq <= 0.000001 {continue}
-			dist := math.sqrt_f32(dist_sq)
-			normal := dir / dist
-			overlap := radius_sum - dist
-			total_mass := f32(f64(mass[a]) + f64(mass[b]))
-			if total_mass == 0 {
-				// Two massless bodies: the weighted separation is 0/0.
-				_warn_zero_mass_once("collision")
-				continue
-			}
-			pos[a] = Position(Vec3(pos[a]) - normal * (overlap * f32(mass[b]) / total_mass))
-			pos[b] = Position(Vec3(pos[b]) + normal * (overlap * f32(mass[a]) / total_mass))
+			_brute_apply_pair(pos, radius, mass, a, bodies[jj])
 		}
+	}
+}
+
+_BruteBroadData :: struct {
+	pos:        []Position,
+	radius:     []Radius,
+	bodies:     []u32,
+	n:          int,
+	chunk_size: int,
+	chunks:     [][dynamic]_BrutePair,
+}
+
+// One broad-phase work chunk: rows [start, end) of the serial loop, scanning
+// each row's `jj > ii` tail. A chunk is owned by one task, so its list needs no
+// lock; chunk order is fixed by the caller, so merging the lists in order
+// reproduces the serial pair order without a sort.
+@(private)
+_brute_broad_chunk :: proc(chunk_index: int, data: rawptr) {
+	ctx := cast(^_BruteBroadData)data
+	start := chunk_index * ctx.chunk_size
+	end := min(start + ctx.chunk_size, ctx.n)
+	pairs := &ctx.chunks[chunk_index]
+	for ii in start ..< end {
+		a := ctx.bodies[ii]
+		for jj in ii + 1 ..< ctx.n {
+			if _brute_pairs_overlap(ctx.pos, ctx.radius, a, ctx.bodies[jj]) {
+				append(pairs, _BrutePair{u32(ii), u32(jj)})
+			}
+		}
+	}
+}
+
+@(private)
+_brute_heap_push :: proc(heap: ^[dynamic]_BrutePair, p: _BrutePair) {
+	append(heap, p)
+	i := len(heap) - 1
+	for i > 0 {
+		parent := (i - 1) / 2
+		if !_brute_pair_less(heap[i], heap[parent]) {break}
+		heap[i], heap[parent] = heap[parent], heap[i]
+		i = parent
+	}
+}
+
+@(private)
+_brute_heap_pop :: proc(heap: ^[dynamic]_BrutePair) -> _BrutePair {
+	top := heap[0]
+	last := pop(heap)
+	n := len(heap)
+	if n > 0 {
+		heap[0] = last
+		i := 0
+		for {
+			l := 2 * i + 1
+			r := l + 1
+			small := i
+			if l < n && _brute_pair_less(heap[l], heap[small]) {small = l}
+			if r < n && _brute_pair_less(heap[r], heap[small]) {small = r}
+			if small == i {break}
+			heap[i], heap[small] = heap[small], heap[i]
+			i = small
+		}
+	}
+	return top
+}
+
+// Parallel brute-force collision. The broad phase scans every pair in parallel
+// and collects the contacts present in the snapshot; the narrow phase then
+// replays the serial loop in its exact `(ii, jj)` order. Because a resolve moves
+// both bodies, it can push one of them into a *new* overlap that the serial loop
+// goes on to resolve in the same row or a later one, so the replay rescans the
+// two moved bodies after every displacement and queues any newly overlapping
+// pair still ahead of the cursor. Testing the initial candidates and the created
+// ones at their own order with the same arithmetic keeps the post-tick positions
+// bit-identical to the serial loop regardless of how the broad phase was
+// scheduled.
+_brute_force_collision :: proc(w: ^ecs.World, bodies: []u32) {
+	pos := ecs.world_pool(w, Position).data[:]
+	radius := ecs.world_pool(w, Radius).data[:]
+	mass := ecs.world_pool(w, Mass).data[:]
+	n := len(bodies)
+	if n < 2 {return}
+
+	worker_count := found.parallel_worker_count()
+	if worker_count <= 0 {worker_count = 1}
+	chunk_target := worker_count * found.PARALLEL_CHUNKS_PER_WORKER
+	if chunk_target > n {chunk_target = n}
+	if chunk_target < 1 {chunk_target = 1}
+	chunk_size := (n + chunk_target - 1) / chunk_target
+	if chunk_size < 1 {chunk_size = 1}
+	chunk_count := (n + chunk_size - 1) / chunk_size
+
+	broad := _BruteBroadData {
+		pos        = pos,
+		radius     = radius,
+		bodies     = bodies,
+		n          = n,
+		chunk_size = chunk_size,
+		chunks     = make([][dynamic]_BrutePair, chunk_count),
+	}
+	defer {
+		for k in 0 ..< chunk_count {delete(broad.chunks[k])}
+		delete(broad.chunks)
+	}
+	found.job_system_parallel_chunks(
+		found.default_job_system(),
+		_brute_broad_chunk,
+		&broad,
+		chunk_count,
+	)
+
+	total := 0
+	for k in 0 ..< chunk_count {total += len(broad.chunks[k])}
+	if total == 0 {
+		// No contact in the snapshot: the serial loop would test every pair and
+		// move nothing, so the tick is already done.
+		return
+	}
+	if total > n {
+		// Dense snapshot: the replay rescans after every resolve, so a contact
+		// list larger than the body count is cheaper to solve straight through.
+		// Nothing has moved yet, so the plain serial pass is still exact.
+		_brute_force_collision_serial(pos, radius, mass, bodies)
+		return
+	}
+
+	// Exact replay. `tested` makes repeated candidates idempotent: a pair can
+	// enter the heap from several scans, but the serial loop tested each pair
+	// once, so later copies are dropped.
+	heap := make([dynamic]_BrutePair, 0, total)
+	defer delete(heap)
+	for k in 0 ..< chunk_count {
+		for p in broad.chunks[k] {_brute_heap_push(&heap, p)}
+	}
+	tested := make(map[u64]bool, total * 2)
+	defer delete(tested)
+
+	// Undo snapshot for the safety valve, only paid when the snapshot has
+	// contacts.
+	initial := make([]Position, n)
+	defer delete(initial)
+	for k in 0 ..< n {initial[k] = pos[bodies[k]]}
+
+	// The replay may rescan after each of at most `total` initial contacts, but
+	// a displacement can cascade. Cap the rescans at half a serial pass worth of
+	// pair tests; past that the plain serial loop is both faster and known-good.
+	scan_budget := n * n / 2
+	scanned := 0
+	overflow := false
+	for len(heap) > 0 {
+		p := _brute_heap_pop(&heap)
+		key := (u64(p.ii) << 32) | u64(p.jj)
+		if tested[key] {continue}
+		tested[key] = true
+		if !_brute_apply_pair(pos, radius, mass, bodies[p.ii], bodies[p.jj]) {
+			continue
+		}
+
+		if scanned + 2 * n > scan_budget {
+			overflow = true
+			break
+		}
+		scanned += 2 * n
+		// Both bodies moved; look for contacts the displacement created, keeping
+		// only pairs the serial cursor has not passed yet.
+		moved := [2]u32{p.ii, p.jj}
+		for mi in moved {
+			m := bodies[mi]
+			for dc in 0 ..< n {
+				if u32(dc) == mi {continue}
+				oi, oj := u32(dc), mi
+				if mi < oi {oi, oj = mi, oi}
+				if oi < p.ii || (oi == p.ii && oj <= p.jj) {continue}
+				if tested[(u64(oi) << 32) | u64(oj)] {continue}
+				if _brute_pairs_overlap(pos, radius, m, bodies[dc]) {
+					_brute_heap_push(&heap, _BrutePair{oi, oj})
+				}
+			}
+		}
+	}
+
+	if overflow {
+		for k in 0 ..< n {pos[bodies[k]] = initial[k]}
+		_brute_force_collision_serial(pos, radius, mass, bodies)
 	}
 }
 
@@ -953,34 +1347,78 @@ _octree_solve :: proc(state: ^Physic_State, bodies: []u32, seconds: f64) {
 		"n=%d theta=%.2f max_r=%.4g workers=%d",
 		{len(bodies), tree.theta, tree.max_radius, found.parallel_worker_count()},
 	)
+	// One `[dynamic]Contact` per work chunk: a chunk is executed by exactly one
+	// task, so its list needs no lock, and the per-pair mutex contention that
+	// serialised dense-overlap scenes disappears. The lists are merged into the
+	// (cleared) `state.collision_contacts` after the solve; `_collision_resolve`
+	// still sorts the merged set, so determinism is unchanged.
+	//
+	// `job_system_parallel_chunks` takes the chunk list as the work unit and
+	// derives its own task grouping from it. Sizing the chunk count to
+	// `worker_count * PARALLEL_CHUNKS_PER_WORKER * PARALLEL_MIN_CHUNK` makes
+	// that grouping collapse to the same task granularity `parallel_for` used
+	// (see `job_system_parallel_chunks`), so sparse scenes keep their old
+	// balance while dense ones stop contending.
+	body_count := len(bodies)
+	worker_count := found.parallel_worker_count()
+	if worker_count <= 0 {worker_count = 1}
+	chunk_target :=
+		worker_count * found.PARALLEL_CHUNKS_PER_WORKER * found.PARALLEL_MIN_CHUNK
+	if chunk_target > body_count {chunk_target = body_count}
+	if chunk_target < 1 {chunk_target = 1}
+	chunk_size := (body_count + chunk_target - 1) / chunk_target
+	if chunk_size < 1 {chunk_size = 1}
+	chunk_count := (body_count + chunk_size - 1) / chunk_size
+	if chunk_count < 1 {chunk_count = 1}
+
 	data := _OctreeSolveData {
-		tree     = tree,
-		indices  = bodies,
-		dt       = f32(seconds),
-		contacts = &state.collision_contacts,
-		mutex    = &state.collision_mutex,
+		tree       = tree,
+		indices    = bodies,
+		dt         = f32(seconds),
+		chunks     = make([][dynamic]Contact, chunk_count),
+		chunk_size = chunk_size,
+		body_count = body_count,
 	}
-	found.parallel_for(_octree_solve_worker, &data, len(bodies))
+	defer {
+		for k in 0 ..< chunk_count {delete(data.chunks[k])}
+		delete(data.chunks)
+	}
+
+	found.job_system_parallel_chunks(
+		found.default_job_system(),
+		_octree_solve_chunk,
+		&data,
+		chunk_count,
+	)
+
+	total := 0
+	for k in 0 ..< chunk_count {total += len(data.chunks[k])}
+	reserve(&state.collision_contacts, total)
+	for k in 0 ..< chunk_count {
+		append(&state.collision_contacts, ..data.chunks[k][:])
+	}
 	found.profile_mark("octree.solved", "pairs=%d", {len(state.collision_contacts)})
 }
 
 _OctreeSolveData :: struct {
-	tree:     ^OctTree,
-	indices:  []u32,
-	dt:       f32,
-	contacts: ^[dynamic]Contact,
-	mutex:    ^sync.Mutex,
+	tree:       ^OctTree,
+	indices:    []u32,
+	dt:         f32,
+	chunks:     [][dynamic]Contact,
+	chunk_size: int,
+	body_count: int,
 }
 
-_octree_solve_worker :: proc(index: int, data: rawptr) {
+// Runs every body query in one work chunk, appending contacts to the chunk's
+// private list (nil mutex: this list is owned by this single task).
+_octree_solve_chunk :: proc(chunk_index: int, data: rawptr) {
 	ctx := cast(^_OctreeSolveData)data
-	octtree_calc_force_and_collect(
-		ctx.tree,
-		ctx.indices[index],
-		ctx.dt,
-		ctx.contacts,
-		ctx.mutex,
-	)
+	start := chunk_index * ctx.chunk_size
+	end := min(start + ctx.chunk_size, ctx.body_count)
+	contacts := &ctx.chunks[chunk_index]
+	for i in start ..< end {
+		_calc_force_collect(ctx.tree, ctx.indices[i], ctx.tree.theta, ctx.dt, contacts, nil)
+	}
 }
 
 // Overlapping pair collected during the gravity traversal.

@@ -65,6 +65,11 @@ OctTreeNode :: struct {
 OctTree :: struct {
 	nodes:             []OctTreeNode,
 	order:             []u32,
+	// Octant key (0..7) of the body at the same slot in `order`, cached by the
+	// partition's counting pass so the scatter pass reads an octant instead of
+	// re-gathering the body position. Kept in lockstep with `order` (swapped
+	// together), so node ranges still index `order` exactly as before.
+	keys:              []u8,
 	view:              Bodies,
 	theta:             f32,
 	max_depth:         int,
@@ -102,6 +107,7 @@ octtree_create_ex :: proc(view: Bodies, theta: f32, max_depth: int, min_half: f3
 	t.arena = found.arena_create(need)
 	t.nodes = _arena_slice(OctTreeNode, &t.arena, count * 8 + 1024)
 	t.order = _arena_slice(u32, &t.arena, count)
+	t.keys = _arena_slice(u8, &t.arena, count)
 
 	_octtree_build(t)
 	return t
@@ -127,12 +133,16 @@ octtree_rebuild_ex :: proc(self: ^OctTree, view: Bodies, theta: f32, max_depth: 
 	found.arena_reset(&self.arena)
 	self.nodes = _arena_slice(OctTreeNode, &self.arena, count * 8 + 1024)
 	self.order = _arena_slice(u32, &self.arena, count)
+	self.keys = _arena_slice(u8, &self.arena, count)
 
 	_octtree_build(self)
 }
 
 octtree_buffer_size :: proc(object_count: int) -> int {
-	return (object_count * 8 + 1024) * size_of(OctTreeNode) + object_count * size_of(u32) + 1024
+	return (object_count * 8 + 1024) * size_of(OctTreeNode) +
+	       object_count * size_of(u32) +
+	       object_count * size_of(u8) +
+	       1024
 }
 
 _octtree_build :: proc(t: ^OctTree) {
@@ -214,7 +224,7 @@ _build_octant :: proc(
 		return
 	}
 
-	ranges := _partition_bodies(t.order, start, count, center, t.view.position)
+	ranges := _partition_bodies(t.order, t.keys, start, count, center, t.view.position)
 
 	child_half := half * 0.5
 	child_count := 0
@@ -244,6 +254,7 @@ _build_octant :: proc(
 
 _partition_bodies :: proc(
 	buf: []u32,
+	keys: []u8,
 	start, count: int,
 	center: Vec3,
 	position: []Position,
@@ -251,7 +262,12 @@ _partition_bodies :: proc(
 	end := start + count
 	counts: [8]int
 	for i in start ..< end {
-		counts[_get_octant_index(Vec3(position[buf[i]]), center)] += 1
+		// Cache the octant in `keys[i]` while counting: the scatter pass below
+		// then permutes the cheap key instead of re-gathering `position[buf[i]]`
+		// (a random access into the position column) to recompute the same value.
+		oct := _get_octant_index(Vec3(position[buf[i]]), center)
+		keys[i] = u8(oct)
+		counts[oct] += 1
 	}
 
 	ranges: [8]ChildRange
@@ -272,13 +288,14 @@ _partition_bodies :: proc(
 		w := write_pos[k]
 		w_end := ranges[k].start + ranges[k].count
 		for w < w_end {
-			b := _get_octant_index(Vec3(position[buf[w]]), center)
+			b := int(keys[w])
 			if b == k {
 				w += 1
 				continue
 			}
 			t := write_pos[b]
 			buf[w], buf[t] = buf[t], buf[w]
+			keys[w], keys[t] = keys[t], keys[w]
 			write_pos[b] += 1
 		}
 	}
@@ -336,6 +353,7 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
 	obj_mass := f64(view.mass[index])
+	theta_sq := theta * theta
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -362,10 +380,10 @@ _calc_force :: proc(t: ^OctTree, index: u32, theta: f32, dt: f32) {
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {
 				_apply_gravity(view, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
 			}
 			continue
@@ -440,6 +458,7 @@ _calc_force_collect :: proc(
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
 	obj_mass := f64(view.mass[index])
+	theta_sq := theta * theta
 	collision_radius := f32(view.radius[index]) + t.max_radius
 
 	for stack_count > 0 {
@@ -470,9 +489,17 @@ _calc_force_collect :: proc(
 					dist_sq := dx * dx + dy * dy + dz * dz
 					radius_sum := f32(view.radius[index]) + f32(view.radius[other])
 					if dist_sq < radius_sum * radius_sum && dist_sq > 0.000001 {
-						sync.mutex_lock(mutex)
-						append(contacts, Contact{a = index, b = other})
-						sync.mutex_unlock(mutex)
+						// `mutex` is nil when the caller owns `contacts`
+						// outright (one list per work chunk, merged after the
+						// solve); a non-nil mutex keeps the shared-list API
+						// used by serial callers.
+						if mutex == nil {
+							append(contacts, Contact{a = index, b = other})
+						} else {
+							sync.mutex_lock(mutex)
+							append(contacts, Contact{a = index, b = other})
+							sync.mutex_unlock(mutex)
+						}
 					}
 				}
 			}
@@ -489,10 +516,10 @@ _calc_force_collect :: proc(
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {
 				_apply_gravity(view, index, obj_pos, obj_mass, node.mass, node.center_mass, dt)
 			}
 			if _cell_intersects_sphere(node, obj_pos, collision_radius) {
@@ -550,6 +577,7 @@ _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
 	stack[0] = 0
 	view := &t.view
 	obj_pos := Vec3(view.position[index])
+	theta_sq := theta * theta
 
 	for stack_count > 0 {
 		stack_count -= 1
@@ -572,10 +600,10 @@ _stats_walk :: proc(t: ^OctTree, index: u32, theta: f32, stats: ^SolveStats) {
 		dir := node.center_mass - obj_pos
 		dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 		if dist_sq < 1e-10 {dist_sq = 1e-10}
-		dist := math.sqrt_f32(dist_sq)
-
-		if (node.half_size * 2) / dist <= theta {
-			if node.mass > 0 && dist > 0.001 {stats.node_accept += 1}
+		// Squared opening-angle test: (2*half)/dist <= theta is equivalent to
+		// 4*half*half <= theta_sq*dist_sq (dist > 0), avoiding a sqrt per node.
+		if 4 * node.half_size * node.half_size <= theta_sq * dist_sq {
+			if node.mass > 0 && dist_sq > 0.000001 {stats.node_accept += 1}
 			stats.nodes_culled += 1
 			continue
 		}
@@ -611,10 +639,11 @@ _apply_gravity :: proc(
 	dir := other_pos - obj_pos
 	dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 	if dist_sq < 0.001 {dist_sq = 0.001}
-	dir_norm := dir / math.sqrt_f32(dist_sq)
-	force_mag := f32(GRAVITY_CONSTANT * obj_mass * other_mass / f64(dist_sq))
-	acc := dir_norm * (force_mag / f32(obj_mass))
-	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + acc * dt)
+	// acc = dir * G * other_mass / r^3. The accelerated body's mass cancels for
+	// positive masses, so this skips the normalize + divide and matches the GPU
+	// kernels' cancelled form (`physics_brute.comp`, `physics_tree.comp`).
+	scale := f32(GRAVITY_CONSTANT * other_mass) / (dist_sq * math.sqrt_f32(dist_sq))
+	view.velocity[index] = Velocity(Vec3(view.velocity[index]) + dir * (scale * dt))
 }
 
 // Appends the entity indices inside `radius` of `pos` into `result` and sets
