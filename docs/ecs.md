@@ -136,10 +136,12 @@ The bench does the same per world.
 
 ## Groups and views
 
-Odin has no variadic type parameters, so a generic query API is not practical.
-A **view** is instead declared by the package that owns the components: a struct
-of borrowed column slices plus the driver `dense` list, always indexed by entity
-index. `physic.Bodies` is the only one.
+Odin has variadic polymorphic parameters (`args: ..T`), but no way to declare a
+variadic list of distinct type parameters, and a `typeid` is a value rather than
+a type: a query cannot statically name an arbitrary set of component types, so a
+generic query API is not practical. A **view** is instead declared by the package
+that owns the components: a struct of borrowed column slices plus the driver
+`dense` list, always indexed by entity index. `physic.Bodies` is the only one.
 
 The view's contract is that every entity in the driver list carries *all* the
 columns. `body_spawn` is the only constructor and adds them together, and
