@@ -1,8 +1,8 @@
-package graphic
+package vk
 
-import phys "../physic"
-import ecs "../ecs"
-import found "../../foundation"
+import phys "../../physic"
+import ecs "../../ecs"
+import found "../../../foundation"
 import "core:log"
 import "core:sync"
 import "vendor:vulkan"
@@ -143,15 +143,15 @@ Gpu_Gravity :: struct {
 // allocator, which is not thread-safe and belongs to the main thread before the
 // simulation threads start.
 gpu_gravity_init :: proc(
-	renderer: ^Renderer,
+	backend: ^Backend,
 	mode: found.Algorithm,
 	capacity: int,
 ) -> (
 	result: ^Gpu_Gravity,
 	ok: bool,
 ) {
-	if !renderer.gpu.has_compute || renderer.gpu.compute_queue_is_shared {
-		log.warnf("[GPU PHYSICS] Renderer device has no separately usable compute queue")
+	if !backend.gpu.has_compute || backend.gpu.compute_queue_is_shared {
+		log.warnf("[GPU PHYSICS] Backend device has no separately usable compute queue")
 		return nil, false
 	}
 
@@ -160,7 +160,7 @@ gpu_gravity_init :: proc(
 	defer if !committed {gpu_gravity_destroy(self)}
 
 	self.mode = mode
-	self.compute.gpu = &renderer.gpu
+	self.compute.gpu = &backend.gpu
 	_compute_open(&self.compute) or_return
 	_gpu_gravity_open(self) or_return
 	if capacity > 0 {_gpu_gravity_reserve(self, capacity) or_return}

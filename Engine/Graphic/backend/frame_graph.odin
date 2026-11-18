@@ -1,11 +1,11 @@
-package graphic
+package vk
 
 import "core:encoding/json"
 import "core:log"
 import "core:os"
 import "core:slice"
 import "core:strings"
-import found "../../foundation"
+import found "../../../foundation"
 import "vendor:vulkan"
 
 // Path to the declarative frame graph, loaded once at renderer init.

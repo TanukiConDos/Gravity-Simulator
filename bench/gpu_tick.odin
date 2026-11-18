@@ -18,7 +18,7 @@ package main
 
 import ecs "../Engine/ecs"
 import foundation "../foundation"
-import graphic "../Engine/Graphic"
+import vk "../Engine/Graphic/backend"
 import physic "../Engine/physic"
 import "core:fmt"
 import "core:log"
@@ -101,13 +101,13 @@ gpu_tick_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := graphic.gpu_gravity_init_headless(algorithm, n)
+	solver, created := vk.gpu_gravity_init_headless(algorithm, n)
 	if !created {
 		fmt.eprintfln("gpu-tick: cannot create a headless GPU solver")
 		os.exit(1)
 	}
-	defer graphic.gpu_gravity_destroy(solver)
-	info := graphic.gpu_gravity_info(solver)
+	defer vk.gpu_gravity_destroy(solver)
+	info := vk.gpu_gravity_info(solver)
 
 	ensure_workers(REF_WORKERS)
 	// The tree rebuilds every tick for the octree sweep; the brute-force path
@@ -123,7 +123,7 @@ gpu_tick_run :: proc(args: []string) {
 		theta,
 		algorithm,
 		interval,
-		graphic.gpu_gravity_backend(solver),
+		vk.gpu_gravity_backend(solver),
 	)
 	defer ecs.world_destroy(gpu_world)
 	defer ecs.scheduler_destroy(gpu_scheduler)
@@ -177,7 +177,7 @@ _gpu_tick_measure_median :: proc(
 	w: ^ecs.World,
 	s: ^ecs.Scheduler,
 	ticks, samples: int,
-	solver: ^graphic.Gpu_Gravity = nil,
+	solver: ^vk.Gpu_Gravity = nil,
 	mode: foundation.Algorithm = .OCTREE,
 	warm_n: int = 0,
 ) -> f64 {

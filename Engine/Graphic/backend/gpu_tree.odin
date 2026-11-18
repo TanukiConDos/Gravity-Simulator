@@ -1,7 +1,7 @@
-package graphic
+package vk
 
-import phys "../physic"
-import ecs "../ecs"
+import phys "../../physic"
+import ecs "../../ecs"
 import "core:log"
 import "vendor:vulkan"
 

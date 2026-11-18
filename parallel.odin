@@ -1,6 +1,6 @@
 package main
 
-import graphic "./Engine/Graphic"
+import vk "./Engine/Graphic/backend"
 import ecs "./Engine/ecs"
 import foundation "./foundation"
 import "core:log"
@@ -11,7 +11,7 @@ import "core:time"
 SimulationContext :: struct {
 	world:      ^ecs.World,
 	scheduler:  ^ecs.Scheduler,
-	window:     ^graphic.Window,
+	window:     ^vk.Window,
 	frame_time: f32,
 	tick_time:  f32,
 	exit:       bool,

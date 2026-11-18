@@ -13,7 +13,7 @@ package main
 
 import ecs "../Engine/ecs"
 import foundation "../foundation"
-import graphic "../Engine/Graphic"
+import vk "../Engine/Graphic/backend"
 import physic "../Engine/physic"
 import "core:fmt"
 import "core:log"
@@ -80,7 +80,7 @@ _gpu_tree_contact_less :: proc(x, y: physic.Contact) -> bool {
 _gpu_tree_measure_median :: proc(
 	w: ^ecs.World,
 	ticks, samples: int,
-	solver: ^graphic.Gpu_Gravity = nil,
+	solver: ^vk.Gpu_Gravity = nil,
 	warm_n: int = 0,
 ) -> f64 {
 	times := make([dynamic]f64, 0, samples)
@@ -128,18 +128,18 @@ gpu_tree_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := graphic.gpu_gravity_init_headless(.OCTREE, n)
+	solver, created := vk.gpu_gravity_init_headless(.OCTREE, n)
 	if !created {
 		fmt.eprintfln("gpu-tree: cannot create a headless GPU solver")
 		os.exit(1)
 	}
-	defer graphic.gpu_gravity_destroy(solver)
-	info := graphic.gpu_gravity_info(solver)
+	defer vk.gpu_gravity_destroy(solver)
+	info := vk.gpu_gravity_info(solver)
 
 	ensure_workers(REF_WORKERS)
 	cpu_world := _gpu_tree_world(n, depth, theta, 1000, {})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_tree_world(n, depth, theta, 1000, graphic.gpu_gravity_backend(solver))
+	gpu_world := _gpu_tree_world(n, depth, theta, 1000, vk.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// Accuracy: one solve with dt = 1 from rest, so the velocity update is the

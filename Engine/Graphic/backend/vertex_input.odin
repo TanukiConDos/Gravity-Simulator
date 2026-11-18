@@ -1,10 +1,10 @@
-package graphic
+package vk
 
 import "base:runtime"
 import "core:log"
 import "core:strings"
 import "vendor:vulkan"
-import spirv "./spirv"
+import spirv "../spirv"
 
 @(private)
 _Built_Vertex_Input :: struct {

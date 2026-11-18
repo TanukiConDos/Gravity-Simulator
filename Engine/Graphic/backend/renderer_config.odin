@@ -1,5 +1,6 @@
-package graphic
+package vk
 
+import gfx "../shared"
 import "vendor:vulkan"
 
 // Single source of truth for the renderer's Vulkan wiring. Adding a vertex
@@ -40,7 +41,7 @@ RENDERER_PUSH_BINDINGS := [?]Push_Binding_Spec{
 		set = CAMERA_SET,
 		binding = CAMERA_BINDING,
 		descriptor = .UNIFORM_BUFFER,
-		size = size_of(UniformBufferObject),
+		size = size_of(gfx.Camera_Uniforms),
 	},
 }
 

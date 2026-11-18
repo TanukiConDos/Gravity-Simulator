@@ -1,18 +1,27 @@
 package graphic
 
+import gfx "../shared"
 import "core:math"
 import la "core:math/linalg"
 
-@(private)
 Camera :: struct {position: Vec3, target: Vec3, up: Vec3, fov: f32, near: f32, far: f32, aspect: f32}
 
-@(private)
-camera_create :: proc(swapchain: ^SwapChain) -> Camera {return Camera{position={0,0,-4500},target={0,0,0},up={0,1,0},fov=70,near=0.1,far=1e10,aspect=f32(swapchain.extent.width)/f32(swapchain.extent.height)}}
+camera_create :: proc(aspect: f32) -> Camera {return Camera{position={0,0,-4500},target={0,0,0},up={0,1,0},fov=70,near=0.1,far=1e10,aspect=aspect}}
 
-@(private)
-camera_transform :: proc(self: ^Camera, ubo: ^UniformBufferObject) {
+// camera_uniforms packs the camera into the plain struct the backend uploads.
+// Nothing here knows about a frame, a buffer or a swapchain.
+camera_uniforms :: proc(self: ^Camera) -> gfx.Camera_Uniforms {
+	ubo: gfx.Camera_Uniforms
 	ubo.view = la.matrix4_look_at_f32(self.position, self.target, self.up)
 	ubo.proj = la.matrix4_perspective_f32(math.to_radians_f32(self.fov), self.aspect, self.near, self.far)
+	return ubo
+}
+
+// camera_set_aspect keeps the projection in sync with the framebuffer the
+// backend is presenting into. Invalid (minimized) sizes are ignored.
+camera_set_aspect :: proc(self: ^Camera, width, height: i32) {
+	if width <= 0 || height <= 0 {return}
+	self.aspect = f32(width) / f32(height)
 }
 
 @(private) _camera_forward :: proc(self: ^Camera) -> Vec3 {return la.normalize(self.target - self.position)}

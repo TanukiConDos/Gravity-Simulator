@@ -1,4 +1,4 @@
-package graphic
+package vk
 
 import "core:log"
 import "core:slice"

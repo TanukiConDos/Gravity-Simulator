@@ -1,10 +1,10 @@
-package graphic
+package vk
 
 import "core:log"
 import "core:os"
 import "core:strings"
 import "vendor:vulkan"
-import spirv "./spirv"
+import spirv "../spirv"
 
 // A descriptor binding merged across every shader stage of the pipeline. The
 // name is borrowed from the reflection that declared it.

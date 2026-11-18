@@ -1,4 +1,4 @@
-package graphic
+package vk
 
 import "base:intrinsics"
 import "core:log"

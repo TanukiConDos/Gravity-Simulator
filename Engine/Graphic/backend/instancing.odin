@@ -1,9 +1,12 @@
-package graphic
+package vk
 
-import ecs "../ecs"
-import phys "../physic"
+import phys "../../physic"
 import "base:intrinsics"
 import "vendor:vulkan"
+
+// GPU instance vertex stream. The front owns which bodies are drawn and their
+// per-frame columns; this file owns the packed layout, the per-frame buffers
+// and the uploads the frame command buffer needs.
 
 @(private)
 InstanceBuffer :: struct {
@@ -42,9 +45,12 @@ instance_buffer_ensure :: proc(self: ^InstanceBuffer, count: int) {
 	self.has_data = {}
 }
 
+// instance_buffer_write_static packs the entity-indexed radius/selection
+// columns into every frame's vertex buffer once, at init. The slot mapping
+// (`view.bodies`) is the same order the snapshot publishes positions in, so
+// the per-frame columns update the matching slots.
 @(private)
-instance_buffer_write_static :: proc(self: ^InstanceBuffer, world: ^ecs.World) {
-	view := phys.body_view(world)
+instance_buffer_write_static :: proc(self: ^InstanceBuffer, view: phys.Bodies) {
 	count := len(view.bodies)
 	if count == 0 {return}
 	instance_buffer_ensure(self, count)
