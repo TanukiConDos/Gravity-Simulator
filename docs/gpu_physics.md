@@ -9,7 +9,7 @@ snapshot publishing, adaptive tuning).
 
 **M0 (compute plumbing), M1 (GPU brute-force gravity), M2 (GPU Barnes-Hut),
 M3 (GPU integration), M4 (GPU tree build) and M5 (direct rendering) are done.** The engine can create a
-compute device (headless or attached to the renderer's), build compute pipelines
+compute device (headless or attached to the graphics backend's), build compute pipelines
 from SPIR-V, run dispatch chains against storage buffers and synchronize them
 with a timeline semaphore. `gravity_backend = GPU` replaces either gravity solve
 with its compute path: the octree backend builds its tree on the GPU, traverses
@@ -209,11 +209,11 @@ device snapshots and a per-set state machine:
   `release_value` (`vkGetSemaphoreCounterValue`, no host block) — by a
   `FREE -> WRITING` CAS. Upload the columns into that set and dispatch against
   it, then publish (`published_value`/`published_count`, then state
-  `PUBLISHED`) and free the previously published set unless the renderer claimed
-  it (`PUBLISHED -> FREE`; a `READING` set is left to the renderer). When no set
+  `PUBLISHED`) and free the previously published set unless the backend claimed
+  it (`PUBLISHED -> FREE`; a `READING` set is left to the backend). When no set
   is usable the solve still runs against the backend's working copy and simply
   skips the render view; physics never blocks.
-- Renderer, per frame: claim the published set (`PUBLISHED -> READING`), pack the
+- Backend, per frame: claim the published set (`PUBLISHED -> READING`), pack the
   instances from it and submit the frame waiting on its solve value. The set
   stays `READING` for the frames that read it; when a newer view is claimed the
   previous set is released by storing `release_value[set] = frame_value` **before**
@@ -228,7 +228,7 @@ zero and the sets cycle freely.
 Measured at 100k bodies: the per-frame instance work drops from 1.14 ms of CPU
 time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
 dispatch), and the solver's positions are one integration step behind the CPU
-snapshot - the renderer draws what the solve used. A CPU backend, or a GPU
+snapshot - the backend draws what the solve used. A CPU backend, or a GPU
 backend that failed and was uninstalled, keeps the snapshot path unchanged.
 
 ```mermaid
@@ -252,7 +252,7 @@ flowchart LR
 ```
 
 Solver-side ownership: only `FREE` sets whose reader has completed are written;
-`PUBLISHED → READING` is the renderer's claim, and the renderer stores the frame
+`PUBLISHED → READING` is the backend's claim, and the backend stores the frame
 timeline value on the set before releasing it `READING → FREE`, so the solver
 cannot acquire a set an in-flight frame still reads.
 
@@ -304,7 +304,7 @@ per-tick velocity readback plus, when the tree is cached, the traversal.
 The solve-level benches warm the GPU clocks before every GPU sample (see
 `_gpu_warm_clocks` in the bench): the device idles at ≈210 MHz and a short solve
 loop would otherwise report numbers several times too slow and far noisier. The
-app never sees that state because the renderer keeps the device busy.
+app never sees that state because the backend keeps the device busy.
 
 In the app (release build, shipped config: 10 000 bodies, rebuild every ~60
 ticks, 8 workers) the octree tick drops from ≈2.5 ms on CPU to ≈0.57 ms on GPU;
@@ -372,7 +372,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   copies, buffer barriers, timestamp queries, timeline semaphore, headless device
   (`compute_init_headless`) and the bench probe.
 - **M1 — GPU brute-force gravity (done).** The `Gpu_Gravity` backend attached to
-  the renderer's device (headless in bench/tests), packed `vec4` body staging,
+  the backend's device (headless in bench/tests), packed `vec4` body staging,
   the tiled `physics_brute.comp`, `gravity_backend` config with CPU fallback, the
   `gpu-force` bench stage and the CPU/GPU match test.
 - **M2 — GPU Barnes-Hut (done).** Tree upload on rebuild, the
@@ -393,7 +393,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
 - **M5 — direct rendering (done).** The solver publishes a render view as one of
-  three vended device snapshots; the renderer claims the published set, packs the
+  three vended device snapshots; the backend claims the published set, packs the
   per-frame instance data from it with a compute pass, and the frame submission
   waits on that set's solve value. A set is only written once the frame that last
   read it has completed (per-set `release_value` on the frame timeline), so

@@ -823,7 +823,7 @@ physic_snapshot_publish :: proc(w: ^ecs.World) {
 		// A healthy hooked backend owns the render path: the renderer draws the
 		// backend's buffers directly and never reads the snapshot, so the
 		// per-tick O(N) copy is dead work. Debug builds always publish because
-		// `_renderer_verify_direct` compares the direct instances against this
+		// `_backend_verify_direct` compares the direct instances against this
 		// snapshot as its reference. The flag clears when the hook is dropped,
 		// which re-enables publishing on the CPU fallback automatically.
 		if physic_gravity_backend_active(w) {return}
