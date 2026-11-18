@@ -75,7 +75,7 @@ sequenceDiagram
 
 ## Backends
 
-`Engine/Graphic/gpu_physics.odin` owns the backend (device attachment, staging,
+`Engine/Graphic/backend/gpu_physics.odin` owns the backend (device attachment, staging,
 pipeline and submission ring); `gpu_tree.odin` adds the octree-specific buffers
 and traversal.
 

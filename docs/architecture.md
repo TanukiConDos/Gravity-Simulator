@@ -7,7 +7,7 @@ to the focused documents, which carry the subsystem diagrams:
 - [`ecs.md`](ecs.md) — entity/component storage, the system scheduler, threading.
 - [`physics.md`](physics.md) — the tick pipeline, Barnes-Hut octree, collision fold,
   adaptive tuning.
-- [`renderer.md`](renderer.md) — data-driven Vulkan renderer and the frame graph.
+- [`renderer.md`](renderer.md) — the graphics front/backend split and the frame graph.
 - [`gpu_physics.md`](gpu_physics.md) — compute backends, GPU tree build, direct
   rendering.
 - [`benchmark.md`](benchmark.md) — the bench harness and profiler.
@@ -30,7 +30,7 @@ flowchart LR
 
 The simulation is configured entirely from `config.json` and, in `FILE` mode,
 one scene JSON in `scenes/`. The app opens one GLFW window, brings up one Vulkan
-device (shared by the renderer and, optionally, the GPU physics backend), and
+device (owned by the backend, shared with the optional GPU physics backend), and
 runs until the window closes.
 
 ## Module dependencies
@@ -40,38 +40,51 @@ flowchart TD
     main["main.odin / parallel.odin"]
     bench["bench/"]
     tests["tests/"]
-    graphic["Engine/Graphic"]
+    front["Engine/Graphic/front<br/>package graphic"]
+    backend["Engine/Graphic/backend<br/>package vk"]
+    shared["Engine/Graphic/shared<br/>package gfx"]
     spirv["Engine/Graphic/spirv<br/>SPIR-V reflection (CPU only)"]
     physic["Engine/physic"]
     ecs["Engine/ecs"]
     foundation["foundation"]
 
-    main --> graphic
+    main --> front
+    main --> backend
     main --> physic
     main --> ecs
     main --> foundation
-    bench --> graphic
+    bench --> front
+    bench --> backend
     bench --> physic
     bench --> ecs
     bench --> foundation
-    tests --> graphic
+    tests --> front
+    tests --> backend
     tests --> physic
     tests --> ecs
     tests --> foundation
 
-    graphic --> physic
-    graphic --> ecs
-    graphic --> foundation
-    graphic --> spirv
+    front --> backend
+    front --> shared
+    backend --> shared
+    backend --> spirv
+    front --> physic
+    front --> ecs
+    front --> foundation
+    backend --> physic
+    backend --> ecs
+    backend --> foundation
     physic --> ecs
     physic --> foundation
     ecs --> foundation
 ```
 
 `foundation` has no engine dependencies (config, arena, file I/O, the job pool,
-the profiler). `physic` and `Graphic` both sit on `ecs`; `Graphic` additionally
-depends on `physic` for the body view and snapshot types it renders. The `bench/`
-and `tests/` packages are separate binaries that drive the same libraries.
+the profiler). `physic` and both graphics packages sit on `ecs`; both graphics
+packages additionally depend on `physic` for the body view and snapshot types.
+The front never imports `vendor:vulkan`; the backend never imports the front.
+`shared` (`gfx`) is plain data only. The `bench/` and `tests/` packages are
+separate binaries that drive the same libraries.
 
 ## Runtime topology
 
@@ -101,11 +114,13 @@ flowchart TB
     end
 
     world[("World<br/>pools + resources<br/>frozen before threads start")]
+    win[("Backend Window<br/>atomic Input_State")]
     snap[("RenderSnapshot<br/>triple buffer")]
     render_view[("Gpu render view<br/>3 vended sets")]
     pick[("Selection_State<br/>atomic pick")]
 
-    pump -->|"atomic Input_State"| world
+    pump -->|"atomic Input_State"| win
+    win -->|"snapshot"| rsched
     psched -->|"sole writer"| world
     psched -->|"publish"| snap
     rsched -->|"concurrent reads"| world
@@ -134,23 +149,25 @@ sequenceDiagram
     participant F as foundation
     participant W as ecs.World
     participant P as physic
-    participant R as graphic.Renderer
+    participant B as vk backend
+    participant R as graphic front (Renderer)
     participant T as physics + graphics threads
 
     M->>F: config_load("config.json")
     M->>F: parallel_init(worker_threads)
-    M->>M: window_init(1280, 720)
+    M->>B: vk.window_init(1280, 720)
     M->>W: world_create()
     M->>P: body_spawn(...) — scene / random
     M->>P: physic_init(world, config)
     M->>W: scheduler_create(job_system)
     M->>P: physic_register_systems(scheduler)
-    M->>R: renderer_init(window, world)
-    M->>R: graphic_register_systems(scheduler)
+    M->>B: vk.backend_init(window, world)
+    M->>R: graphic.renderer_init(backend, window, world)
+    M->>R: graphic.graphic_register_systems(scheduler)
     M->>W: scheduler_finalize()
     alt gravity_backend == GPU
-        M->>R: gpu_gravity_init(renderer, algorithm, capacity)
-        M->>R: renderer_set_gravity_source(solver)
+        M->>B: vk.gpu_gravity_init(backend, algorithm, capacity)
+        M->>B: vk.backend_set_gravity_source(backend, solver)
         M->>P: physic_set_gravity_solver(hook)
     end
     M->>W: world_freeze()
@@ -179,7 +196,7 @@ sequenceDiagram
     participant W as World
     participant S as RenderSnapshot
     participant G as graphics thread
-    participant V as Vulkan
+    participant V as vk.Backend
 
     loop every wake-up
         P->>P: accumulator += elapsed, clamp to 16 steps
@@ -194,13 +211,15 @@ sequenceDiagram
     loop every frame
         G->>W: scheduler_run(RENDER, dt)
         W->>W: graphic.input → graphic.render
+        G->>G: front: build Frame_Packet<br/>(claims snapshot in CPU mode)
+        G->>V: backend_draw: resolve picks, fence, acquire
         alt GPU backend owns the world
             G->>G: claim render view, instance_pack, wait solver timeline
-        else CPU backend
-            G->>S: claim + copy latest complete buffer
+        else CPU instance mode
+            G->>G: upload positions / selected columns
         end
-        G->>V: record, submit, present
-        G->>W: store pick id in Selection_State
+        G->>V: frame graph, submit, present
+        G->>W: store Frame_Result pick in Selection_State
     end
 
     loop blocked up to 1/60 s
@@ -222,7 +241,7 @@ flowchart TD
     bf --> backend{"config.gravity_backend"}
     ot --> backend
     backend -->|"CPU"| cpu["built-in CPU solver"]
-    backend -->|"GPU"| init{"gpu_gravity_init ok?<br/>renderer has a separate compute queue"}
+    backend -->|"GPU"| init{"gpu_gravity_init ok?<br/>backend has a separate compute queue"}
     init -->|"yes"| hook["Gpu_Gravity submit/finish hook"]
     init -->|"no"| cpu
     hook -->|"submit or finish fails at runtime"| cpu
@@ -248,15 +267,15 @@ flowchart LR
     pools -->|"pack + upload (GPU backend)"| sets[("render view sets ×3<br/>CONCURRENT buffers")]
 
     subgraph GT["graphics thread"]
-        pick["read snapshot / claim view"]
-        pack["instance_pack.comp (GPU path)"]
-        draw["CmdDrawIndexed"]
+        pick["front: claim snapshot<br/>build Frame_Packet"]
+        pack["backend: claim view<br/>instance_pack.comp (GPU path)"]
+        draw["backend: CmdDrawIndexed"]
         pick --> pack --> draw
     end
 
     snap -->|"claim PUBLISHED"| pick
     sets -->|"claim PUBLISHED → READING"| pack
-    draw -->|"id pixel"| sel[("Selection_State")]
+    draw -->|"Frame_Result.picked"| sel[("Selection_State")]
     sel -->|"physic.select (atomic exchange)"| pools
 ```
 
@@ -264,7 +283,9 @@ The triple buffer is latest-wins and lock-free: the writer never blocks, the
 reader always sees a complete version, and intermediate ticks are skipped. The
 GPU render view is *vended* rather than shared, because a single set could be
 overwritten by solve `T+1` before the frame reading solve `T` completes; see
-[`gpu_physics.md`](gpu_physics.md).
+[`gpu_physics.md`](gpu_physics.md). A pick travels back as `gfx.Frame_Result`
+from `backend_draw`; the front stores it into `Selection_State` and the physics
+thread consumes it.
 
 ## Where to go next
 
@@ -272,7 +293,7 @@ overwritten by solve `T+1` before the frame reading solve `T` completes; see
 |---|---|
 | Entities, pools, scheduler graph, deferred changes | [`ecs.md`](ecs.md) |
 | Solver, octree, collision fold, adaptive tuning | [`physics.md`](physics.md) |
-| Vulkan wiring, frame graph, reflection, picking | [`renderer.md`](renderer.md) |
+| Graphics front/backend split, frame graph, reflection, picking | [`renderer.md`](renderer.md) |
 | Compute context, GPU tree build, direct rendering | [`gpu_physics.md`](gpu_physics.md) |
 | Sweeps, spall traces, measured results | [`benchmark.md`](benchmark.md) |
 | Performance model, measured optimizations, open directions | [`performance.md`](performance.md) |

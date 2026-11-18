@@ -35,26 +35,27 @@ non-`_` fields consume the shader input locations in ascending order.
 ## Adding a resource / binding
 
 1. Add it to the GLSL interface.
-2. Register it in `renderer_config.odin` (single source of truth; types live in
-   `pipeline_config.odin`).
+2. Register it in `backend/renderer_config.odin` (single source of truth; types
+   live in `backend/pipeline_config.odin`).
 
-`descriptors.odin` pushes bindings with `vkCmdPushDescriptorSet2`, and
+`backend/descriptors.odin` pushes bindings with `vkCmdPushDescriptorSet2`, and
 `push_descriptors_validate` checks each configured binding against the shader
 interface.
 
 ## Frame graph
 
 `Engine/Graphic/frame_graph.json` owns the structure (resources, passes,
-`inputs`/`outputs`, `bindings`, `optional`). `frame_graph.odin` culls, topo-sorts
-and executes it; passes bind to code by name in `_renderer_record_pass`. Add a
-pass in the JSON and implement its record callback in the renderer.
+`inputs`/`outputs`, `bindings`, `optional`). `Engine/Graphic/backend/frame_graph.odin`
+culls, topo-sorts and executes it; passes bind to code by name in
+`_backend_record_pass`. Add a pass in the JSON and implement its record callback
+in the backend.
 
 ## Compute shaders
 
 Compute pipelines are built the same data-driven way: `Compute_Config` names one
 `.comp` shader, reflection supplies the workgroup size (`LocalSize`) and the
 descriptor/push-constant interface (`pipeline_registry_add_compute`). They are
-not declared in `frame_graph.json`; `Engine/Graphic/compute.odin` owns their
+not declared in `frame_graph.json`; `Engine/Graphic/backend/compute.odin` owns their
 submission and timeline synchronization (see `docs/gpu_physics.md`). The bench
 `gpu` stage runs `shader/compute_probe.comp` as an end-to-end plumbing check,
 `shader/physics_brute.comp` is the all-pairs gravity kernel (bench `gpu-force`)

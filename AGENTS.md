@@ -55,6 +55,15 @@ VK_LAYER_SETTINGS_PATH=/path/to/vk_layer_settings.txt odin run . -debug
 A `vk_layer_settings.txt` enabling best practices is generated with
 `vkconfig settings --generate txt --layers VK_LAYER_KHRONOS_validation`.
 
+Package layering is checked separately, without building:
+
+```
+scripts/check_layering.sh
+```
+
+It fails if the front or `shared` package mentions `vendor:vulkan`, or if the
+backend mentions `Graphic/front` / declares `package graphic`.
+
 ## Project Structure
 
 ```
@@ -63,16 +72,24 @@ A `vk_layer_settings.txt` enabling best practices is generated with
 ├── config.json              # Simulation configuration (edit by hand)
 ├── bench/                   # Octree parameter sweep (results in bench/results/)
 ├── docs/                    # Deeper design notes (read on demand)
-├── Engine/Graphic/          # Vulkan renderer
+├── scripts/                 # check_layering.sh (front/backend dependency check)
+├── Engine/Graphic/
+│   ├── shared/              # package gfx: plain data seam (no Vulkan, ECS or GLFW)
+│   ├── front/               # package graphic: camera, input, instancing, Renderer, ECS systems
+│   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
-│   └── renderer_config.odin # Declarative shaders, vertex streams, descriptors
+│   └── frame_graph.json     # Frame graph structure (loaded by the backend)
 ├── Engine/ecs/              # Entity-component-system core
 ├── Engine/physic/           # Physics components + systems
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
 ```
+
+`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
+(`vk`): `front -> backend -> shared`, the front never imports `vendor:vulkan`,
+and the backend never imports the front.
 
 ## Configuration
 
@@ -113,7 +130,7 @@ missing/invalid fields fall back to defaults).
 - `docs/architecture.md` — top-level map: packages, runtime threads, startup and tick/frame lifecycle, backend selection, cross-thread data flow.
 - `docs/ecs.md` — ECS core, physics/graphics as ECS, threading.
 - `docs/physics.md` — solver, collision fold, fixed timestep, adaptive tuning, app flow.
-- `docs/renderer.md` — reflection, ownership/error handling, visibility, Vulkan usage.
+- `docs/renderer.md` — graphics front/backend split, frame graph, reflection, ownership/error handling, visibility, Vulkan usage.
 - `docs/gpu_physics.md` — compute context, timeline semaphores, GPU physics roadmap.
 - `docs/benchmark.md` — bench harness, spall profiling, measured results.
 - `docs/performance.md` — performance model, measured optimizations, open directions.

@@ -10,10 +10,23 @@ description: Use before committing or finishing a change in Gravity-Simulator to
 ```
 odin test tests -debug                     # ECS, physics and SPIR-V reflection
 odin build . -o:speed -disable-assert      # catches issues only hidden by debug asserts
+scripts/check_layering.sh                  # front/backend/shared dependency rules
 ```
 
 If you edited anything under `Engine/Graphic/shader/`, recompile the shaders
 first — see the `shader-pipeline` skill.
+
+`scripts/check_layering.sh` runs the package boundary checks:
+
+```
+rg -n "vendor:vulkan" Engine/Graphic/front Engine/Graphic/shared   # must be empty
+rg -n "Graphic/front" Engine/Graphic/backend                       # must be empty
+rg -n "package graphic" Engine/Graphic/backend                     # must be empty
+```
+
+The front (`graphic`) never imports `vendor:vulkan`; the backend (`vk`) never
+imports the front. `shared` (`gfx`) is plain data and imports neither Vulkan nor
+ECS. Both sides may import `physic`, `ecs` and `foundation`.
 
 ## Engine invariants to respect
 
@@ -32,6 +45,8 @@ first — see the `shader-pipeline` skill.
   don't make a field mandatory by accident.
 - **Visibility**: the engine packages expose only handles and their
   lifecycle/draw procedures; everything else is `@(private)`.
+- **Layering**: `front -> backend -> shared`. The front never imports
+  `vendor:vulkan`; the backend never imports `../front`.
 
 ## Don't commit
 

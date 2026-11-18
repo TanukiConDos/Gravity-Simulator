@@ -163,8 +163,9 @@ state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
 
 ## Graphics as ECS
 
-The Vulkan `Renderer` is owned by `main` and published as a `Renderer_Ref`
-resource; the `Camera` and the `Window_Ref` are world resources.
+The `graphic` front's `Renderer` is owned by `main` and published as a
+`Renderer_Ref` resource; the `Camera`, the front's `Pick_Request` and the
+`Window_Ref` are world resources, and the window itself belongs to the backend.
 `graphic_register_systems` adds two `RENDER`-phase systems: `graphic.input`
 mutates the camera from the keyboard, and `graphic.render` runs the frame
 through the renderer resource. A graphics system returns `false` only on a fatal
@@ -177,13 +178,14 @@ cursor, framebuffer size) on `Window`. `graphic.input` consumes that snapshot to
 move the camera and to turn a left-click edge into a `Pick_Request`, and the
 swapchain reads the snapshot's cached framebuffer size when it is recreated.
 
-The frame itself is data-driven. `Engine/Graphic/frame_graph.json` declares the
-resources (imported or transient) and the passes (`inputs`/`outputs`, `bindings`,
-`optional`). `frame_graph.odin` loads it, resolves pipelines, builds the
-dependency edges and, every frame, culls disabled/unused passes, topologically
-sorts the rest and executes it: it emits the layout barriers derived from each
-resource's usage and opens the rendering scope around the pass's record callback.
-Passes are bound to code by name in the renderer (`_renderer_record_pass`), so the
+The frame itself is data-driven. `Engine/Graphic/frame_graph.json` (path
+unchanged) declares the resources (imported or transient) and the passes
+(`inputs`/`outputs`, `bindings`, `optional`). The backend's `frame_graph.odin`
+loads it, resolves pipelines, builds the dependency edges and, every frame, culls
+disabled/unused passes, topologically sorts the rest and executes it: it emits the
+layout barriers derived from each resource's usage and opens the rendering scope
+around the pass's record callback.
+Passes are bound to code by name in the backend (`_backend_record_pass`), so the
 JSON owns the structure and the code owns the draw calls.
 
 The main pass writes both the swapchain color and, as a second output (MRT), a
@@ -280,10 +282,10 @@ flowchart TD
 ## Threading
 
 The world is not synchronised; one thread owns it at a time. All pools and
-resources are created during `physic_init`/`renderer_init` and the world is
-frozen before the threads start, so afterwards the graphics thread only performs
-concurrent reads of the registries. The physics thread owns all mutations and
-runs `world_flush`.
+resources are created during `physic_init` / `backend_init` / `renderer_init` and
+the world is frozen before the threads start, so afterwards the graphics thread
+only performs concurrent reads of the registries. The physics thread owns all
+mutations and runs `world_flush`.
 
 The render handoff is a lock-free triple buffer (`RenderSnapshot`): the physics
 thread copies the published view into a free buffer and atomically publishes it,
