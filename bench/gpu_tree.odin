@@ -13,6 +13,7 @@ package main
 
 import ecs "../Engine/ecs"
 import foundation "../foundation"
+import vk "../Engine/Graphic/backend"
 import physic_gpu "../Engine/physic/gpu"
 import physic "../Engine/physic"
 import "core:fmt"
@@ -128,9 +129,16 @@ gpu_tree_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := physic_gpu.gpu_gravity_init_headless(.OCTREE, n)
+	// The bench owns the headless compute context; the solver borrows it.
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {
+		fmt.eprintfln("gpu-tree: cannot create a headless compute context")
+		os.exit(1)
+	}
+	defer vk.compute_destroy(compute)
+	solver, created := physic_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .OCTREE, n)
 	if !created {
-		fmt.eprintfln("gpu-tree: cannot create a headless GPU solver")
+		fmt.eprintfln("gpu-tree: cannot create the GPU solver")
 		os.exit(1)
 	}
 	defer physic_gpu.gpu_gravity_destroy(solver)

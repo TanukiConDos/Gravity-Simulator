@@ -23,13 +23,17 @@ Frame_Source_Ops :: struct {
 }
 
 // Renderer is the front-end handle: camera, input, the opaque frame-source and
-// GPU-stream handles, and the frame loop. It never imports the physics module,
-// never calls Vulkan and owns no GPU resource; main owns the backend and
-// destroys it after this handle.
+// GPU-stream handles, the compute context the physics module drives, and the
+// frame loop. It never imports the physics module and never calls Vulkan; the
+// compute context is the only GPU resource it owns, and it borrows the backend's
+// device. main owns the backend and destroys it after this handle.
 Renderer :: struct {
 	backend:    ^vk.Backend,
 	world:      ^ecs.World,
 	camera:     ^Camera,
+	// Compute context attached to the backend's device on first request
+	// (`renderer_compute`). Created and closed by the front; producers borrow it.
+	compute:    ^vk.Compute,
 	frame_handle: Frame_Source_Handle,
 	frame_ops:    Frame_Source_Ops,
 }
@@ -100,13 +104,19 @@ renderer_seed_instances :: proc(self: ^Renderer, bodies: []u32, radii: []f32, se
 // renderer_set_stream_producer installs (or clears) the GPU stream producer.
 // The producer package passes its opaque handle and dispatch table; the front
 // only forwards them to the backend.
-renderer_set_stream_producer :: proc(self: ^Renderer, handle: vk.Stream_Handle, ops: vk.Stream_Ops) {
+renderer_set_stream_producer :: proc(self: ^Renderer, handle: gfx.Stream_Handle, ops: gfx.Stream_Ops) {
 	if self == nil {return}
 	vk.backend_set_stream_producer(self.backend, handle, ops)
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
 	if self == nil {return}
+	// The compute context borrows the backend's device, so it is closed here,
+	// before main destroys the backend. Producers must already be destroyed.
+	if self.compute != nil {
+		vk.compute_detach(self.compute)
+		self.compute = nil
+	}
 	if self.world != nil {
 		if ref := ecs.world_resource(self.world, Renderer_Ref); ref != nil {ref.renderer = nil}
 		if window := ecs.world_resource(self.world, Window_Ref); window != nil {window.input = nil}

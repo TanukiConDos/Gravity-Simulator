@@ -1,18 +1,19 @@
 package physic_gpu
 
-import vk "../../Graphic/backend"
+import graphic "../../Graphic/front"
+import gfx "../../Graphic/shared"
 import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
 import "core:log"
 import "core:sync"
-import "vendor:vulkan"
 
 // GPU gravity backends (M1/M2/M3 of docs/gpu_physics.md).
 //
-// `Gpu_Gravity` owns a compute context (attached to the renderer's device in the
-// app, headless in the bench) plus shared staging for the body list and the
-// velocities. Two pipelines implement the `physic.Gravity_Solver` hook:
+// `Gpu_Gravity` records compute work in a context the graphics front owns
+// (attached to the renderer's device in the app, headless in the bench) and
+// keeps shared staging for the body list and the velocities. Two pipelines
+// implement the `physic.Gravity_Solver` hook:
 //
 //   - physics_brute.comp: all-pairs O(N^2) gravity (mode .BRUTE_FORCE).
 //   - physics_tree.comp: Barnes-Hut traversal of the CPU-built octree with the
@@ -25,6 +26,10 @@ import "vendor:vulkan"
 // appends the contacts. The brute-force solve stays in flight across the
 // collision pass (`finish_at_collision = false`); the tree solve feeds
 // collision with its contacts and finishes before the narrow phase.
+//
+// This package imports the front (`graphic`) and the plain seam (`gfx`) only:
+// no Vulkan, no backend device, no graphic handles. All GPU sequencing goes
+// through `graphic.compute_*`.
 
 @(private)
 GPU_GRAVITY_BRUTE_SHADER :: "Engine/Graphic/shader/physics_brute.spv"
@@ -55,10 +60,10 @@ Render_Set_State :: enum(u32) {
 // shared between sets, so only the device buffers live here.
 @(private)
 Gpu_Render_Set :: struct {
-	bodies_device:   vk.Buffer,
-	radii_device:    vk.Buffer,
-	selected_device: vk.Buffer,
-	live_device:     vk.Buffer,
+	bodies_device:   gfx.Buffer,
+	radii_device:    gfx.Buffer,
+	selected_device: gfx.Buffer,
+	live_device:     gfx.Buffer,
 	// Ownership state (atomic Render_Set_State).
 	state:           u32,
 	// Frame timeline value whose completion frees this set: the frame that last
@@ -86,34 +91,31 @@ Gpu_Force_Push :: struct {
 }
 
 @(private)
-GPU_BRUTE_BINDINGS :: []vk.Push_Binding_Spec {
-	{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true}, // bodies
-	{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true}, // velocities
-}
+GPU_BRUTE_BINDINGS :: []u32 {0, 1} // bodies, velocities
 
 Gpu_Gravity :: struct {
-	compute:     vk.Compute,
+	// The front's compute context; borrowed, never destroyed here.
+	compute:     gfx.Compute,
 	mode:        found.Algorithm,
-	pipeline_id: vk.Pipeline_ID,
-	push:        vk.Push_Descriptors,
+	pipeline:    gfx.Pipeline,
 	// Shared by both modes and sized for the body capacity. The brute backend
 	// packs them densely; the tree backend indexes them by entity index.
 	capacity:          int,
 	// Host staging shared by both modes and the tree build. `bodies_device` and
 	// `radii_device` are the GPU tree build's working copies; the solve and the
 	// renderer read the published render set below instead.
-	bodies_host:       vk.Buffer,
-	bodies_device:     vk.Buffer,
-	radii_device:      vk.Buffer,
-	velocities_host:   vk.Buffer,
-	velocities_device: vk.Buffer,
+	bodies_host:       gfx.Buffer,
+	bodies_device:     gfx.Buffer,
+	radii_device:      gfx.Buffer,
+	velocities_host:   gfx.Buffer,
+	velocities_device: gfx.Buffer,
 	// Render columns staged on the host, then uploaded into the active render
 	// set below. `bodies` is entity-indexed in tree mode and slot-packed in
 	// brute mode; the rest is entity-indexed and `live` maps the draw slot to
 	// the entity.
-	radii_host:    vk.Buffer,
-	selected_host: vk.Buffer,
-	live_host:     vk.Buffer,
+	radii_host:    gfx.Buffer,
+	selected_host: gfx.Buffer,
+	live_host:     gfx.Buffer,
 	// Published render-view snapshots. The renderer claims the PUBLISHED set and
 	// reads it after waiting on the solve value; the solver only writes a set it
 	// owns. Both queues touch the buffers, so they are created CONCURRENT.
@@ -126,7 +128,7 @@ Gpu_Gravity :: struct {
 	// The renderer's frame timeline. The vending protocol reads its counter to
 	// tell whether the frame named by a set's `release_value` has completed; zero
 	// in headless contexts (benches, tests), where sets are always reusable.
-	frame_semaphore: vulkan.Semaphore,
+	frame_semaphore: gfx.Semaphore,
 	// Submission in flight between `submit` and `finish`.
 	pending:       bool,
 	pending_value: u64,
@@ -141,10 +143,10 @@ Gpu_Gravity :: struct {
 	verify_selected:  [dynamic]u8,
 }
 
-// gpu_gravity_init attaches the solver to the graphics backend's device so the
-// two share one device. It refuses when compute aliases the graphics queue
-// handle: the physics and render threads would share one queue and need
-// host-side locking, which the CPU fallback handles better.
+// gpu_gravity_init attaches the solver to a compute context the front owns, so
+// the solve and the frame share one device and one timeline vocabulary. The
+// caller keeps ownership: the context must outlive the solver (`main` gets it
+// from `graphic.renderer_compute`; the bench and tests create a headless one).
 //
 // `world` is only used by the one-shot debug check that compares the packed
 // instances against the published CPU snapshot; pass nil for a headless solver.
@@ -153,7 +155,7 @@ Gpu_Gravity :: struct {
 // allocator, which is not thread-safe and belongs to the main thread before the
 // simulation threads start.
 gpu_gravity_init :: proc(
-	backend: ^vk.Backend,
+	compute: gfx.Compute,
 	world: ^ecs.World,
 	mode: found.Algorithm,
 	capacity: int,
@@ -161,8 +163,8 @@ gpu_gravity_init :: proc(
 	result: ^Gpu_Gravity,
 	ok: bool,
 ) {
-	if !backend.gpu.has_compute || backend.gpu.compute_queue_is_shared {
-		log.warnf("[GPU PHYSICS] Backend device has no separately usable compute queue")
+	if compute == nil {
+		log.warnf("[GPU PHYSICS] No compute context available")
 		return nil, false
 	}
 
@@ -172,8 +174,7 @@ gpu_gravity_init :: proc(
 
 	self.mode = mode
 	self.world = world
-	self.compute.gpu = &backend.gpu
-	vk.compute_open(&self.compute) or_return
+	self.compute = compute
 	_gpu_gravity_open(self) or_return
 	if capacity > 0 {_gpu_gravity_reserve(self, capacity) or_return}
 	if world != nil {
@@ -186,38 +187,19 @@ gpu_gravity_init :: proc(
 	return self, true
 }
 
-// gpu_gravity_init_headless creates its own windowless device. Used by the bench
-// and the tests; the app attaches to the renderer instead.
-gpu_gravity_init_headless :: proc(mode: found.Algorithm, capacity: int) -> (result: ^Gpu_Gravity, ok: bool) {
-	self := new(Gpu_Gravity)
-	committed := false
-	defer if !committed {gpu_gravity_destroy(self)}
-
-	self.mode = mode
-	self.compute.device = vk.gpu_init_headless() or_return
-	self.compute.gpu = &self.compute.device
-	self.compute.owns_device = true
-	vk.compute_open(&self.compute) or_return
-	_gpu_gravity_open(self) or_return
-	if capacity > 0 {_gpu_gravity_reserve(self, capacity) or_return}
-
-	log.infof("[GPU PHYSICS] Headless %v solver ready on %s", mode, gpu_gravity_info(self).device_name)
-	committed = true
-	return self, true
-}
-
 gpu_gravity_destroy :: proc(self: ^Gpu_Gravity) {
 	if self == nil {return}
 	delete(self.verify_positions)
 	delete(self.verify_selected)
+	// The compute context belongs to the front (or to the bench/tests); only the
+	// solver's own buffers and pipelines are released here.
 	_gpu_gravity_close(self)
-	vk.compute_close(&self.compute)
-	if self.compute.owns_device {vk.gpu_destroy(&self.compute.device)}
 	free(self)
 }
 
-gpu_gravity_info :: proc(self: ^Gpu_Gravity) -> vk.Compute_Info {
-	return vk.compute_info(&self.compute)
+gpu_gravity_info :: proc(self: ^Gpu_Gravity) -> gfx.Info {
+	if self == nil {return {}}
+	return graphic.compute_info(self.compute)
 }
 
 // Gpu_Render_View is the renderer's read-only view of the solver state. `value`
@@ -226,25 +208,25 @@ gpu_gravity_info :: proc(self: ^Gpu_Gravity) -> vk.Compute_Info {
 // are the concrete handles of the claimed set (`set`), which stays READING until
 // the renderer releases it.
 Gpu_Render_View :: struct {
-	bodies:    vulkan.Buffer,
-	radii:     vulkan.Buffer,
-	selected:  vulkan.Buffer,
-	live:      vulkan.Buffer,
+	bodies:    gfx.Buffer,
+	radii:     gfx.Buffer,
+	selected:  gfx.Buffer,
+	live:      gfx.Buffer,
 	mode:      u32, // 0 = octree (`bodies` indexed by entity), 1 = brute (packed by slot)
 	count:     int,
 	// Entity/slot budget the buffers were sized for; descriptor ranges use it.
 	capacity:  int,
 	set:       u32, // render-view set the buffers belong to
 	value:     u64,
-	semaphore: vulkan.Semaphore,
+	semaphore: gfx.Semaphore,
 }
 
 // gpu_gravity_instance_stream converts a claimed render view into the backend's
 // neutral instance stream. The stream also carries the one-shot verification
 // hook, so the backend can ask the solver to check the packed data without
 // knowing about physics or ECS.
-gpu_gravity_instance_stream :: proc(self: ^Gpu_Gravity, view: Gpu_Render_View) -> vk.Instance_Stream {
-	return vk.Instance_Stream {
+gpu_gravity_instance_stream :: proc(self: ^Gpu_Gravity, view: Gpu_Render_View) -> gfx.Instance_Stream {
+	return gfx.Instance_Stream {
 		bodies      = view.bodies,
 		radii       = view.radii,
 		selected    = view.selected,
@@ -269,7 +251,7 @@ gpu_gravity_instance_stream :: proc(self: ^Gpu_Gravity, view: Gpu_Render_View) -
 // is static between picks and compared when both name the same body count; the
 // radius column is not in the snapshot and is only checked for a sane value.
 @(private)
-_gpu_verify_instances :: proc(user: rawptr, frame: u32, instances: [^]vk.InstanceData, count: int) {
+_gpu_verify_instances :: proc(user: rawptr, frame: u32, instances: [^]gfx.InstanceData, count: int) {
 	when ODIN_DEBUG {
 		self := cast(^Gpu_Gravity)user
 		if self == nil || self.verified || self.world == nil || count == 0 {return}
@@ -311,14 +293,14 @@ _gpu_verify_instances :: proc(user: rawptr, frame: u32, instances: [^]vk.Instanc
 
 // stream_handle is the opaque handle the front holds: the solver pointer. The
 // backend never interprets it.
-stream_handle :: proc(self: ^Gpu_Gravity) -> vk.Stream_Handle {
-	return vk.Stream_Handle(rawptr(self))
+stream_handle :: proc(self: ^Gpu_Gravity) -> gfx.Stream_Handle {
+	return gfx.Stream_Handle(rawptr(self))
 }
 
 // stream_ops is the dispatch table the backend calls through the handle: claim a
 // newly published view, release a held one with the frame that last read it.
-stream_ops :: proc() -> vk.Stream_Ops {
-	return vk.Stream_Ops {
+stream_ops :: proc() -> gfx.Stream_Ops {
+	return gfx.Stream_Ops {
 		claim = _stream_claim,
 		release = _stream_release,
 		set_frame_timeline = _stream_set_frame_timeline,
@@ -326,13 +308,13 @@ stream_ops :: proc() -> vk.Stream_Ops {
 }
 
 @(private)
-_stream_set_frame_timeline :: proc(handle: vk.Stream_Handle, semaphore: vulkan.Semaphore) {
+_stream_set_frame_timeline :: proc(handle: gfx.Stream_Handle, semaphore: gfx.Semaphore) {
 	self := cast(^Gpu_Gravity)rawptr(handle)
 	gpu_gravity_set_frame_timeline(self, semaphore)
 }
 
 @(private)
-_stream_claim :: proc(handle: vk.Stream_Handle) -> (stream: vk.Instance_Stream, ok: bool) {
+_stream_claim :: proc(handle: gfx.Stream_Handle) -> (stream: gfx.Instance_Stream, ok: bool) {
 	self := cast(^Gpu_Gravity)rawptr(handle)
 	view, claimed := gpu_gravity_render_view(self)
 	if !claimed {return {}, false}
@@ -340,7 +322,7 @@ _stream_claim :: proc(handle: vk.Stream_Handle) -> (stream: vk.Instance_Stream, 
 }
 
 @(private)
-_stream_release :: proc(handle: vk.Stream_Handle, stream: vk.Instance_Stream, frame_value: u64) {
+_stream_release :: proc(handle: gfx.Stream_Handle, stream: gfx.Instance_Stream, frame_value: u64) {
 	self := cast(^Gpu_Gravity)rawptr(handle)
 	// Release only needs the set the stream names; the buffers stay owned by the
 	// solver.
@@ -350,7 +332,7 @@ _stream_release :: proc(handle: vk.Stream_Handle, stream: vk.Instance_Stream, fr
 // gpu_gravity_set_frame_timeline gives the solver the renderer's frame timeline.
 // The vending protocol reads its counter to know when the frame that last read a
 // set has completed. A headless solver has none.
-gpu_gravity_set_frame_timeline :: proc(self: ^Gpu_Gravity, semaphore: vulkan.Semaphore) {
+gpu_gravity_set_frame_timeline :: proc(self: ^Gpu_Gravity, semaphore: gfx.Semaphore) {
 	if self == nil {return}
 	self.frame_semaphore = semaphore
 }
@@ -358,9 +340,9 @@ gpu_gravity_set_frame_timeline :: proc(self: ^Gpu_Gravity, semaphore: vulkan.Sem
 // gpu_gravity_solve_timeline is the timeline every solve signals (the renderer
 // waits on it before reading a view). Exposed so a headless test can stand in a
 // frame timeline and exercise the vending protocol.
-gpu_gravity_solve_timeline :: proc(self: ^Gpu_Gravity) -> vulkan.Semaphore {
+gpu_gravity_solve_timeline :: proc(self: ^Gpu_Gravity) -> gfx.Semaphore {
 	if self == nil {return 0}
-	return self.compute.timeline.semaphore
+	return graphic.compute_timeline(self.compute)
 }
 
 // gpu_gravity_render_view claims the PUBLISHED set for the renderer: CAS
@@ -383,16 +365,16 @@ gpu_gravity_render_view :: proc(self: ^Gpu_Gravity) -> (view: Gpu_Render_View, o
 		)
 		if !claimed {continue}
 		return Gpu_Render_View {
-			bodies = set.bodies_device.buffer,
-			radii = set.radii_device.buffer,
-			selected = set.selected_device.buffer,
-			live = set.live_device.buffer,
+			bodies = set.bodies_device,
+			radii = set.radii_device,
+			selected = set.selected_device,
+			live = set.live_device,
 			mode = self.render_mode,
 			count = int(sync.atomic_load(&set.published_count)),
 			capacity = self.capacity,
 			set = u32(i),
 			value = sync.atomic_load(&set.published_value),
-			semaphore = self.compute.timeline.semaphore,
+			semaphore = graphic.compute_timeline(self.compute),
 		}, true
 	}
 	return {}, false
@@ -431,7 +413,7 @@ gpu_gravity_render_set_state :: proc(self: ^Gpu_Gravity, index: int) -> Render_S
 _render_set_released :: proc(self: ^Gpu_Gravity, set: ^Gpu_Render_Set) -> bool {
 	release := sync.atomic_load(&set.release_value)
 	if release == 0 || self.frame_semaphore == 0 {return true}
-	return vk.semaphore_counter(self.compute.gpu.device, self.frame_semaphore) >= release
+	return graphic.compute_semaphore_value(self.compute, self.frame_semaphore) >= release
 }
 
 // _render_set_acquire claims a FREE set whose reader has completed. Returns -1
@@ -506,7 +488,7 @@ _gpu_gravity_open :: proc(self: ^Gpu_Gravity) -> bool {
 
 	name: string
 	shader: string
-	bindings: []vk.Push_Binding_Spec
+	bindings: []u32
 	switch self.mode {
 	case .BRUTE_FORCE:
 		name = "physics_brute"
@@ -518,17 +500,9 @@ _gpu_gravity_open :: proc(self: ^Gpu_Gravity) -> bool {
 		bindings = GPU_TREE_BINDINGS
 	}
 
-	pipeline_id, built := vk.pipeline_registry_add_compute(
-		&self.compute.pipelines,
-		name,
-		vk.Compute_Config{shaders = []vk.Shader_Spec{{path = shader}}},
-	)
+	pipeline, built := graphic.compute_pipeline_create(self.compute, name, shader, bindings)
 	if !built {return false}
-	self.pipeline_id = pipeline_id
-
-	self.push = vk.push_descriptors_init(self.compute.gpu, bindings) or_return
-	pipeline := vk.pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
-	if !vk.push_descriptors_validate(&self.push, pipeline) {return false}
+	self.pipeline = pipeline
 	if self.mode == .OCTREE && !_gpu_tree_build_open(self) {return false}
 	self.published_set = -1
 
@@ -539,25 +513,23 @@ _gpu_gravity_open :: proc(self: ^Gpu_Gravity) -> bool {
 @(private)
 _gpu_gravity_close :: proc(self: ^Gpu_Gravity) {
 	_gpu_gravity_release_buffers(self)
-	_gpu_tree_build_close(self)
-	vk.push_descriptors_destroy(&self.push)
 }
 
 @(private)
 _gpu_gravity_release_buffers :: proc(self: ^Gpu_Gravity) {
-	vk.buffer_destroy(&self.bodies_host)
-	vk.buffer_destroy(&self.bodies_device)
-	vk.buffer_destroy(&self.radii_device)
-	vk.buffer_destroy(&self.velocities_host)
-	vk.buffer_destroy(&self.velocities_device)
-	vk.buffer_destroy(&self.radii_host)
-	vk.buffer_destroy(&self.selected_host)
-	vk.buffer_destroy(&self.live_host)
+	graphic.compute_buffer_destroy(self.compute, &self.bodies_host)
+	graphic.compute_buffer_destroy(self.compute, &self.bodies_device)
+	graphic.compute_buffer_destroy(self.compute, &self.radii_device)
+	graphic.compute_buffer_destroy(self.compute, &self.velocities_host)
+	graphic.compute_buffer_destroy(self.compute, &self.velocities_device)
+	graphic.compute_buffer_destroy(self.compute, &self.radii_host)
+	graphic.compute_buffer_destroy(self.compute, &self.selected_host)
+	graphic.compute_buffer_destroy(self.compute, &self.live_host)
 	for &set in self.render_sets {
-		vk.buffer_destroy(&set.bodies_device)
-		vk.buffer_destroy(&set.radii_device)
-		vk.buffer_destroy(&set.selected_device)
-		vk.buffer_destroy(&set.live_device)
+		graphic.compute_buffer_destroy(self.compute, &set.bodies_device)
+		graphic.compute_buffer_destroy(self.compute, &set.radii_device)
+		graphic.compute_buffer_destroy(self.compute, &set.selected_device)
+		graphic.compute_buffer_destroy(self.compute, &set.live_device)
 		sync.atomic_store(&set.state, u32(Render_Set_State.FREE))
 		sync.atomic_store(&set.release_value, u64(0))
 		sync.atomic_store(&set.published_value, u64(0))
@@ -584,84 +556,75 @@ _gpu_gravity_reserve :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	_gpu_gravity_release_buffers(self)
 
 	// The render sets are written by compute and read by the graphics queue, so
-	// they are shared across the two families (CONCURRENT). Everything else
-	// stays EXCLUSIVE.
-	families: [2]u32
-	sharing: []u32
-	if !self.compute.owns_device {
-		graphics := self.compute.gpu.graphics_queue_family_index
-		compute := self.compute.gpu.compute_queue_family_index
-		if graphics != compute {
-			families = {graphics, compute}
-			sharing = families[:]
-		}
-	}
-
-	body_bytes := vulkan.DeviceSize(capacity * size_of(Gpu_Body_Record))
-	velocity_bytes := vulkan.DeviceSize(capacity * size_of(Gpu_Velocity_Record))
-	scalar_bytes := vulkan.DeviceSize(capacity * size_of(u32))
-	self.bodies_host = vk.buffer_init(self.compute.gpu, body_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.bodies_device = vk.buffer_init_shared(
-		self.compute.gpu,
+	// the front creates them shared across the two families when they differ.
+	// Everything else stays exclusive.
+	body_bytes := u64(capacity * size_of(Gpu_Body_Record))
+	velocity_bytes := u64(capacity * size_of(Gpu_Velocity_Record))
+	scalar_bytes := u64(capacity * size_of(u32))
+	self.bodies_host = graphic.compute_buffer_create(self.compute, body_bytes, {.TRANSFER_SRC}, .HOST, .EXCLUSIVE) or_return
+	self.bodies_device = graphic.compute_buffer_create(
+		self.compute,
 		body_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
-		sharing,
+		{.STORAGE, .TRANSFER_DST},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
-	self.radii_device = vk.buffer_init_shared(
-		self.compute.gpu,
+	self.radii_device = graphic.compute_buffer_create(
+		self.compute,
 		scalar_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
-		sharing,
+		{.STORAGE, .TRANSFER_DST},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
 	// The host velocity buffer is both the upload source and the readback
 	// destination, so it needs both transfer usages.
-	self.velocities_host = vk.buffer_init(
-		self.compute.gpu,
+	self.velocities_host = graphic.compute_buffer_create(
+		self.compute,
 		velocity_bytes,
 		{.TRANSFER_SRC, .TRANSFER_DST},
-		.HostVisible,
+		.HOST,
+		.EXCLUSIVE,
 	) or_return
-	self.velocities_device = vk.buffer_init(
-		self.compute.gpu,
+	self.velocities_device = graphic.compute_buffer_create(
+		self.compute,
 		velocity_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_DST, .TRANSFER_SRC},
-		.DeviceLocal,
+		{.STORAGE, .TRANSFER_DST, .TRANSFER_SRC},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
-	self.radii_host = vk.buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.selected_host = vk.buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
-	self.live_host = vk.buffer_init(self.compute.gpu, scalar_bytes, {.TRANSFER_SRC}, .HostVisible) or_return
+	self.radii_host = graphic.compute_buffer_create(self.compute, scalar_bytes, {.TRANSFER_SRC}, .HOST, .EXCLUSIVE) or_return
+	self.selected_host = graphic.compute_buffer_create(self.compute, scalar_bytes, {.TRANSFER_SRC}, .HOST, .EXCLUSIVE) or_return
+	self.live_host = graphic.compute_buffer_create(self.compute, scalar_bytes, {.TRANSFER_SRC}, .HOST, .EXCLUSIVE) or_return
 	// One snapshot of the render columns per set, all shared across the two
 	// queue families. Every set must be destroyed on release.
 	for &set in self.render_sets {
-		set.bodies_device = vk.buffer_init_shared(
-			self.compute.gpu,
+		set.bodies_device = graphic.compute_buffer_create(
+			self.compute,
 			body_bytes,
-			{.STORAGE_BUFFER, .TRANSFER_DST},
-			.DeviceLocal,
-			sharing,
+			{.STORAGE, .TRANSFER_DST},
+			.DEVICE,
+			.RENDER,
 		) or_return
-		set.radii_device = vk.buffer_init_shared(
-			self.compute.gpu,
+		set.radii_device = graphic.compute_buffer_create(
+			self.compute,
 			scalar_bytes,
-			{.STORAGE_BUFFER, .TRANSFER_DST},
-			.DeviceLocal,
-			sharing,
+			{.STORAGE, .TRANSFER_DST},
+			.DEVICE,
+			.RENDER,
 		) or_return
-		set.selected_device = vk.buffer_init_shared(
-			self.compute.gpu,
+		set.selected_device = graphic.compute_buffer_create(
+			self.compute,
 			scalar_bytes,
-			{.STORAGE_BUFFER, .TRANSFER_DST},
-			.DeviceLocal,
-			sharing,
+			{.STORAGE, .TRANSFER_DST},
+			.DEVICE,
+			.RENDER,
 		) or_return
-		set.live_device = vk.buffer_init_shared(
-			self.compute.gpu,
+		set.live_device = graphic.compute_buffer_create(
+			self.compute,
 			scalar_bytes,
-			{.STORAGE_BUFFER, .TRANSFER_DST},
-			.DeviceLocal,
-			sharing,
+			{.STORAGE, .TRANSFER_DST},
+			.DEVICE,
+			.RENDER,
 		) or_return
 	}
 	if self.mode == .OCTREE && !_gpu_tree_reserve(self, capacity) {return false}
@@ -719,7 +682,7 @@ _gpu_gravity_finish :: proc(
 	self := cast(^Gpu_Gravity)user
 	if !self.pending {return true}
 	self.pending = false
-	vk.compute_wait(&self.compute, self.pending_value)
+	graphic.compute_wait(self.compute, self.pending_value)
 	switch self.mode {
 	case .BRUTE_FORCE:
 		return _gpu_brute_finish(self, w, bodies)
@@ -729,22 +692,18 @@ _gpu_gravity_finish :: proc(
 	return false
 }
 
-// Records a staging -> device copy with the barriers around it: the host write
-// is made available to the transfer, and the transfer write to the compute
-// stage. `dst_access` covers both reads and writes when the shader updates the
-// buffer in place.
+// Records a staging -> device copy with the barriers around it. The front owns
+// the sequence; `write` covers the buffers the shader updates in place.
 @(private)
 _gpu_upload :: proc(
-	cmd: vulkan.CommandBuffer,
-	gpu: ^vk.GPU,
-	host: ^vk.Buffer,
-	device: ^vk.Buffer,
-	size: vulkan.DeviceSize,
-	dst_access: vulkan.AccessFlags2 = {.SHADER_STORAGE_READ},
+	self: ^Gpu_Gravity,
+	cmd: gfx.Command,
+	host: gfx.Buffer,
+	device: gfx.Buffer,
+	size: u64,
+	write := false,
 ) {
-	vk.buffer_barrier(cmd, host.buffer, 0, size, {.HOST}, {.TRANSFER}, {.HOST_WRITE}, {.TRANSFER_READ})
-	vk.gpu_copy_buffer(gpu, host.buffer, device.buffer, size, cmd)
-	vk.buffer_barrier(cmd, device.buffer, 0, size, {.TRANSFER}, {.COMPUTE_SHADER}, {.TRANSFER_WRITE}, dst_access)
+	graphic.compute_upload(self.compute, cmd, host, device, size, write)
 }
 
 // _gpu_brute_submit packs, uploads, dispatches and submits the all-pairs solve.
@@ -780,69 +739,46 @@ _gpu_brute_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, seco
 		live[k] = entity
 	}
 
-	pipeline := vk.pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
-	cmd, slot := vk.compute_begin(&self.compute)
+	cmd := graphic.compute_begin(self.compute)
 	// Acquire a set for the render view; when none is free, still run the solve
-	// (velocities/contacts) against the backend's working copy and skip the
-	// render view this tick rather than block.
+	// (velocities/contacts) against the working copy and skip the render view
+	// this tick rather than block.
 	set_index := _render_set_acquire(self)
-	solve_bodies := set_index >= 0 ? &self.render_sets[set_index].bodies_device : &self.bodies_device
-	body_bytes := vulkan.DeviceSize(count * size_of(Gpu_Body_Record))
-	velocity_bytes := vulkan.DeviceSize(count * size_of(Gpu_Velocity_Record))
-	pool_bytes := vulkan.DeviceSize((int(max_entity) + 1) * size_of(u32))
-	live_bytes := vulkan.DeviceSize(count * size_of(u32))
+	solve_bodies := set_index >= 0 ? self.render_sets[set_index].bodies_device : self.bodies_device
+	body_bytes := u64(count * size_of(Gpu_Body_Record))
+	velocity_bytes := u64(count * size_of(Gpu_Velocity_Record))
+	pool_bytes := u64((int(max_entity) + 1) * size_of(u32))
+	live_bytes := u64(count * size_of(u32))
 
 	// The solve reads the set the renderer will read (or the working copy when the
 	// view is skipped).
-	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, solve_bodies, body_bytes)
-	_gpu_upload(
-		cmd,
-		self.compute.gpu,
-		&self.velocities_host,
-		&self.velocities_device,
-		velocity_bytes,
-		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE},
-	)
+	_gpu_upload(self, cmd, self.bodies_host, solve_bodies, body_bytes)
+	_gpu_upload(self, cmd, self.velocities_host, self.velocities_device, velocity_bytes, write = true)
 	if set_index >= 0 {
 		set := &self.render_sets[set_index]
-		_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &set.radii_device, pool_bytes)
-		_gpu_upload(cmd, self.compute.gpu, &self.selected_host, &set.selected_device, pool_bytes)
-		_gpu_upload(cmd, self.compute.gpu, &self.live_host, &set.live_device, live_bytes)
+		_gpu_upload(self, cmd, self.radii_host, set.radii_device, pool_bytes)
+		_gpu_upload(self, cmd, self.selected_host, set.selected_device, pool_bytes)
+		_gpu_upload(self, cmd, self.live_host, set.live_device, live_bytes)
 	}
 
-	vk.pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Force_Push{body_count = u32(count), dt = f32(seconds)}
-	vk.pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Force_Push))
-	vk.push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), solve_bodies.buffer, 0, body_bytes)
-	vk.push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), self.velocities_device.buffer, 0, velocity_bytes)
-	vk.push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
-
+	binds := [2]gfx.Bind {
+		{binding = 0, buffer = solve_bodies, size = body_bytes},
+		{binding = 1, buffer = self.velocities_device, size = velocity_bytes},
+	}
 	groups := u32((count + GPU_GRAVITY_BRUTE_WORKGROUP - 1) / GPU_GRAVITY_BRUTE_WORKGROUP)
-	vulkan.CmdDispatch(cmd, groups, 1, 1)
-
-	vk.buffer_barrier(
+	graphic.compute_pass(
+		self.compute,
 		cmd,
-		self.velocities_device.buffer,
-		0,
-		velocity_bytes,
-		{.COMPUTE_SHADER},
-		{.TRANSFER},
-		{.SHADER_STORAGE_WRITE},
-		{.TRANSFER_READ},
+		self.pipeline,
+		binds[:],
+		{groups = {groups, 1, 1}},
+		&push,
+		size_of(Gpu_Force_Push),
 	)
-	vk.gpu_copy_buffer(self.compute.gpu, self.velocities_device.buffer, self.velocities_host.buffer, velocity_bytes, cmd)
-	vk.buffer_barrier(
-		cmd,
-		self.velocities_host.buffer,
-		0,
-		velocity_bytes,
-		{.TRANSFER},
-		{.HOST},
-		{.TRANSFER_WRITE},
-		{.HOST_READ},
-	)
+	graphic.compute_readback(self.compute, cmd, self.velocities_device, 0, self.velocities_host, 0, velocity_bytes)
 
-	self.pending_value = vk.compute_submit(&self.compute, slot)
+	self.pending_value = graphic.compute_submit(self.compute, cmd)
 	self.pending = true
 	if set_index >= 0 {
 		_render_set_publish(self, set_index, count, self.pending_value)

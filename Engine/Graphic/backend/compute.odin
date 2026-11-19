@@ -33,6 +33,10 @@ Compute :: struct {
 	device:       GPU,
 	owns_device:  bool,
 	pipelines:    Pipeline_Registry,
+	// Pipelines created through the producer API (`compute_pipeline_create`):
+	// each entry pairs a registry pipeline with its external push-descriptor
+	// bindings. A `gfx.Pipeline` is an index into this table.
+	producers:    [dynamic]Producer_Pipeline,
 	command_pool: CommandPool,
 	timeline:     Timeline,
 	slots:        [COMPUTE_SLOTS]Compute_Slot,
@@ -41,6 +45,13 @@ Compute :: struct {
 	// slot reservation and the timeline advance one atomic step, so no two
 	// (possibly worker-thread) submissions can interleave them.
 	submit_mutex: sync.Mutex,
+}
+
+// Producer_Pipeline is one compute pipeline plus the push-descriptor bindings
+// its producer fills per pass.
+Producer_Pipeline :: struct {
+	id:   Pipeline_ID,
+	push: Push_Descriptors,
 }
 
 @(private)
@@ -87,6 +98,7 @@ compute_init_headless :: proc() -> (result: ^Compute, ok: bool) {
 // device.
 compute_open :: proc(self: ^Compute) -> bool {
 	self.pipelines = pipeline_registry_init(self.gpu)
+	self.producers = make([dynamic]Producer_Pipeline, 0, 8)
 	self.command_pool = command_pool_init_for(self.gpu, self.gpu.compute_queue_family_index, COMPUTE_SLOTS) or_return
 	self.timeline = timeline_init(self.gpu) or_return
 	for i in 0 ..< COMPUTE_SLOTS {self.slots[i].cmd = self.command_pool.command_buffers[i]}
@@ -98,6 +110,9 @@ compute_open :: proc(self: ^Compute) -> bool {
 compute_close :: proc(self: ^Compute) {
 	if self.gpu == nil {return}
 	gpu_wait(self.gpu)
+	for &producer in self.producers {push_descriptors_destroy(&producer.push)}
+	delete(self.producers)
+	self.producers = nil
 	timeline_destroy(&self.timeline)
 	command_pool_destroy(&self.command_pool)
 	pipeline_registry_destroy(&self.pipelines)

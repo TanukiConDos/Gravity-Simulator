@@ -32,11 +32,10 @@ Vertex :: struct #packed {
 	color: [3]f32,
 }
 
-InstanceData :: struct #packed {
-	position: Vec3,
-	radius:   f32,
-	selected: i32,
-	_pad:     [12]u8,
-}
-
-#assert(size_of(InstanceData) == 32)
+// The plain structs that cross into a compute producer live in `shared/gfx.odin`
+// (`InstanceData`, `Instance_Stream`, `Stream_Ops`); these aliases keep the
+// backend's own code terse.
+InstanceData :: gfx.InstanceData
+Instance_Stream :: gfx.Instance_Stream
+Stream_Handle :: gfx.Stream_Handle
+Stream_Ops :: gfx.Stream_Ops

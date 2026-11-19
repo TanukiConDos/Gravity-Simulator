@@ -279,7 +279,10 @@ main :: proc() {
 	gpu_solver: ^physic_gpu.Gpu_Gravity
 	if config.gravity_backend == .GPU {
 		capacity := max(g_world.capacity, physic.body_count(g_world))
-		if solver, solver_ok := physic_gpu.gpu_gravity_init(backend, g_world, config.algorithm, capacity); solver_ok {
+		// The front owns the compute context (attached to the backend's device);
+		// main hands it to the solver and keeps it alive past the solver.
+		compute := graphic.renderer_compute(renderer)
+		if solver, solver_ok := physic_gpu.gpu_gravity_init(compute, g_world, config.algorithm, capacity); solver_ok {
 			gpu_solver = solver
 			// main orchestrates: the front receives the opaque producer handle and
 			// ops and forwards them to the backend.

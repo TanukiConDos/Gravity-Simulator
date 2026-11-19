@@ -7,52 +7,9 @@ import "core:sync"
 import "core:time"
 import "vendor:vulkan"
 
-// Stream_Handle names a GPU producer the backend can draw from. It is opaque to
-// the backend and the front: only the producer that registered `Stream_Ops`
-// interprets it (typically its own object pointer), exactly like a Vulkan
-// dispatch handle.
-Stream_Handle :: distinct rawptr
-
-// Stream_Ops is the producer's dispatch table. The backend calls `claim` once
-// per frame while a producer is installed, and `release` when it stops holding a
-// claimed stream (a newer one arrived, or the producer was uninstalled).
-Stream_Ops :: struct {
-	claim:   proc(handle: Stream_Handle) -> (stream: Instance_Stream, ok: bool),
-	release: proc(handle: Stream_Handle, stream: Instance_Stream, frame_value: u64),
-	// Optional: receives the frame timeline the backend signals, so the producer
-	// can tell when the frame that last read a set has completed.
-	set_frame_timeline: proc(handle: Stream_Handle, semaphore: vulkan.Semaphore),
-}
-
-// Instance_Stream is the backend's neutral description of GPU-produced instance
-// data. A compute consumer (the GPU physics package) owns the buffers and the
-// vending protocol; the backend only packs them into its instance vertex buffer
-// before the main pass and waits on `semaphore`/`value` at submit. The backend
-// does not know who produces the stream or what `set` means.
-Instance_Stream :: struct {
-	bodies:    vulkan.Buffer,
-	radii:     vulkan.Buffer,
-	selected:  vulkan.Buffer,
-	live:      vulkan.Buffer,
-	mode:      u32,
-	count:     int,
-	capacity:  int,
-	// Bytes per body record in `bodies` (the producer's layout; the backend only
-	// sizes the descriptor range with it).
-	body_stride: int,
-	semaphore: vulkan.Semaphore,
-	value:     u64,
-	// Opaque owner token; only the owner interprets it (it releases the set with
-	// backend_stream_release_value).
-	set:       u32,
-	// Optional one-shot debug hook. The owner can verify the instance data it
-	// supplied against its own reference without the backend knowing where that
-	// reference comes from. Called once, after the slot's frame fence, before
-	// the slot is recorded again.
-	verify:      proc(user: rawptr, frame: u32, instances: [^]InstanceData, count: int),
-	verify_user: rawptr,
-}
-
+// Stream_Handle, Stream_Ops, Instance_Stream and InstanceData are the neutral
+// stream seam, defined in `shared/gfx.odin` so a producer never imports `vk`.
+// The aliases live in `graphic.odin`.
 
 // Backend is the Vulkan side of the renderer: window surface, device, swapchain,
 // pipelines, frame graph, compute and the optional GPU gravity solver. The front
@@ -173,7 +130,7 @@ backend_set_stream_producer :: proc(self: ^Backend, handle: Stream_Handle, ops: 
 	self.stream_handle = handle
 	self.stream_ops = ops
 	if ops.set_frame_timeline != nil {
-		ops.set_frame_timeline(handle, self.frame_timeline.semaphore)
+		ops.set_frame_timeline(handle, gfx.Semaphore(u64(self.frame_timeline.semaphore)))
 	}
 }
 
@@ -299,7 +256,7 @@ backend_draw :: proc(
 		wait_semaphore: vulkan.Semaphore
 		wait_value: u64
 		if self.direct_valid {
-			wait_semaphore = self.stream.semaphore
+			wait_semaphore = vulkan.Semaphore(u64(self.stream.semaphore))
 			wait_value = self.stream.value
 		}
 		submit_result = swapchain_submit(
@@ -498,6 +455,15 @@ _backend_draw_main :: proc(self: ^Backend, cmd: vulkan.CommandBuffer, frame: u32
 	}
 }
 
+// _buffer_handle unwraps a neutral buffer handle into its Vulkan handle. Every
+// neutral buffer was created through this backend's compute API, so the handle
+// is one of our `Buffer` values.
+@(private)
+_buffer_handle :: proc(b: gfx.Buffer) -> vulkan.Buffer {
+	if b.id == nil {return 0}
+	return (cast(^Buffer)b.id).buffer
+}
+
 // _backend_verify_stream gives the stream's owner a one-shot chance to check the
 // instance data the pack shader produced. The previous frame that used this slot
 // has completed (the fence above), so its instance data is readable. The backend
@@ -535,10 +501,10 @@ _backend_pack_instances :: proc(self: ^Backend, cmd: vulkan.CommandBuffer, frame
 	pool_range := vulkan.DeviceSize(view.capacity * size_of(u32))
 	bodies_range := vulkan.DeviceSize(view.capacity * view.body_stride)
 	live_range := vulkan.DeviceSize(count * size_of(u32))
-	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_BODIES_BINDING, frame, view.bodies, 0, bodies_range)
-	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_RADII_BINDING, frame, view.radii, 0, pool_range)
-	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_SELECTED_BINDING, frame, view.selected, 0, pool_range)
-	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_LIVE_BINDING, frame, view.live, 0, live_range)
+	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_BODIES_BINDING, frame, _buffer_handle(view.bodies), 0, bodies_range)
+	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_RADII_BINDING, frame, _buffer_handle(view.radii), 0, pool_range)
+	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_SELECTED_BINDING, frame, _buffer_handle(view.selected), 0, pool_range)
+	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_LIVE_BINDING, frame, _buffer_handle(view.live), 0, live_range)
 	instances := &self.instances.buffers[frame]
 	push_descriptors_bind_buffer(&self.direct_push, DIRECT_SET, DIRECT_INSTANCES_BINDING, frame, instances.buffer, 0, instances.size)
 	push_descriptors_flush(&self.direct_push, cmd, pipeline.layout, frame)

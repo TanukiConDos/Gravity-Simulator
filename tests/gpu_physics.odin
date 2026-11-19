@@ -1,6 +1,7 @@
 package tests
 
 import ecs "../Engine/ecs"
+import vk "../Engine/Graphic/backend"
 import physic_gpu "../Engine/physic/gpu"
 import physics "../Engine/physic"
 import foundation "../foundation"
@@ -38,7 +39,10 @@ _gpu_world :: proc(n: int, solver: physics.Gravity_Solver) -> ^ecs.World {
 // fixture tests) when the headless context cannot be created.
 @(test)
 test_gpu_gravity_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := physic_gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {return}
+	defer vk.compute_destroy(compute)
+	solver, created := physic_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .BRUTE_FORCE, 64)
 	if !created {return}
 	defer physic_gpu.gpu_gravity_destroy(solver)
 
@@ -127,7 +131,10 @@ _gpu_tree_world :: proc(solver: physics.Gravity_Solver) -> ^ecs.World {
 // the overlap test all run on the same tree.
 @(test)
 test_gpu_tree_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := physic_gpu.gpu_gravity_init_headless(.OCTREE, 128)
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {return}
+	defer vk.compute_destroy(compute)
+	solver, created := physic_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .OCTREE, 128)
 	if !created {return}
 	defer physic_gpu.gpu_gravity_destroy(solver)
 
@@ -205,7 +212,10 @@ _leaf_record_less :: proc(a, b: _Leaf_Record) -> bool {
 // the order inside a leaf may differ.
 @(test)
 test_gpu_tree_build_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := physic_gpu.gpu_gravity_init_headless(.OCTREE, 128)
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {return}
+	defer vk.compute_destroy(compute)
+	solver, created := physic_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .OCTREE, 128)
 	if !created {return}
 	defer physic_gpu.gpu_gravity_destroy(solver)
 
@@ -353,7 +363,10 @@ _gpu_solve_once :: proc(w: ^ecs.World, dt: f32) {
 // values gate on real completion.
 @(test)
 test_gpu_render_set_vending :: proc(t: ^testing.T) {
-	solver, created := physic_gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {return}
+	defer vk.compute_destroy(compute)
+	solver, created := physic_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .BRUTE_FORCE, 64)
 	if !created {return}
 	defer physic_gpu.gpu_gravity_destroy(solver)
 	physic_gpu.gpu_gravity_set_frame_timeline(solver, physic_gpu.gpu_gravity_solve_timeline(solver))

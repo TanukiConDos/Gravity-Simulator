@@ -1,10 +1,10 @@
 package physic_gpu
 
-import vk "../../Graphic/backend"
+import graphic "../../Graphic/front"
+import gfx "../../Graphic/shared"
 import phys "../../physic"
 import ecs "../../ecs"
 import "core:log"
-import "vendor:vulkan"
 
 // GPU octree build (docs/gpu_physics.md). One build reproduces the CPU
 // builder's structure exactly (see `shader/tree_build.comp`), so the traversal
@@ -116,70 +116,38 @@ Tree_Build_Order_Push :: struct {
 }
 
 @(private)
-TREE_BUILD_BINDINGS: [TREE_BUILD_STAGES][]vk.Push_Binding_Spec = {
+TREE_BUILD_BINDINGS: [TREE_BUILD_STAGES][]u32 = {
 	// init: control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0},
 	// setup: bodies, radii, live, order_a, control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 3, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 4, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0, 1, 2, 3, 4},
 	// root: nodes, cells, control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0, 1, 2},
 	// level: nodes, bodies, order_a, order_b, cells, control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 3, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 4, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 5, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0, 1, 2, 3, 4, 5},
 	// com: nodes, bodies, order_a, order_b, cells, control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 3, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 4, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 5, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0, 1, 2, 3, 4, 5},
 	// order: order_a, order_b, order_out, control
-	{
-		{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true},
-		{set = 0, binding = 3, descriptor = .STORAGE_BUFFER, external = true},
-	},
+	{0, 1, 2, 3},
 }
 
 @(private)
 Gpu_Tree_Build :: struct {
-	pipelines:      [TREE_BUILD_STAGES]vk.Pipeline_ID,
-	push:           [TREE_BUILD_STAGES]vk.Push_Descriptors,
-	state_device:   vk.Buffer, // nodes | cells | control
-	state_host:     vk.Buffer, // control readback
-	orders_device:  vk.Buffer, // order_a | order_b
-	live_host:      vk.Buffer,
-	live_device:    vk.Buffer,
-	nodes_offset:   vulkan.DeviceSize,
-	cells_offset:   vulkan.DeviceSize,
-	control_offset: vulkan.DeviceSize,
-	nodes_bytes:    vulkan.DeviceSize,
-	cells_bytes:    vulkan.DeviceSize,
-	control_bytes:  vulkan.DeviceSize,
-	order_a_offset: vulkan.DeviceSize,
-	order_b_offset: vulkan.DeviceSize,
-	order_bytes:    vulkan.DeviceSize,
+	pipelines:      [TREE_BUILD_STAGES]gfx.Pipeline,
+	state_device:   gfx.Buffer, // nodes | cells | control
+	state_host:     gfx.Buffer, // control readback
+	orders_device:  gfx.Buffer, // order_a | order_b
+	live_host:      gfx.Buffer,
+	live_device:    gfx.Buffer,
+	nodes_offset:   u64,
+	cells_offset:   u64,
+	control_offset: u64,
+	nodes_bytes:    u64,
+	cells_bytes:    u64,
+	control_bytes:  u64,
+	order_a_offset: u64,
+	order_b_offset: u64,
+	order_bytes:    u64,
 }
 
 // _gpu_tree_build_open registers the six build pipelines. `_gpu_tree_reserve`
@@ -188,40 +156,26 @@ Gpu_Tree_Build :: struct {
 _gpu_tree_build_open :: proc(self: ^Gpu_Gravity) -> bool {
 	build := &self.tree.build
 	for i in 0 ..< TREE_BUILD_STAGES {
-		pipeline_id, built := vk.pipeline_registry_add_compute(
-			&self.compute.pipelines,
+		pipeline, built := graphic.compute_pipeline_create(
+			self.compute,
 			TREE_BUILD_NAMES[i],
-			vk.Compute_Config{shaders = []vk.Shader_Spec{{path = TREE_BUILD_SHADERS[i]}}},
+			TREE_BUILD_SHADERS[i],
+			TREE_BUILD_BINDINGS[i],
 		)
 		if !built {return false}
-		build.pipelines[i] = pipeline_id
-		build.push[i] = vk.push_descriptors_init(self.compute.gpu, TREE_BUILD_BINDINGS[i]) or_return
-		pipeline := vk.pipeline_registry_get(&self.compute.pipelines, pipeline_id)
-		if !vk.push_descriptors_validate(&build.push[i], pipeline) {return false}
+		build.pipelines[i] = pipeline
 	}
 	return true
-}
-
-// _gpu_tree_build_close destroys the build descriptors. The pipelines belong to
-// the compute context; buffer release and descriptor close are separate because
-// `_gpu_gravity_reserve` may release the buffers again (world growth) without
-// touching the descriptors.
-@(private)
-_gpu_tree_build_close :: proc(self: ^Gpu_Gravity) {
-	build := &self.tree.build
-	for i in 0 ..< TREE_BUILD_STAGES {
-		vk.push_descriptors_destroy(&build.push[i])
-	}
 }
 
 @(private)
 _gpu_tree_build_release :: proc(self: ^Gpu_Gravity) {
 	build := &self.tree.build
-	vk.buffer_destroy(&build.state_device)
-	vk.buffer_destroy(&build.state_host)
-	vk.buffer_destroy(&build.orders_device)
-	vk.buffer_destroy(&build.live_host)
-	vk.buffer_destroy(&build.live_device)
+	graphic.compute_buffer_destroy(self.compute, &build.state_device)
+	graphic.compute_buffer_destroy(self.compute, &build.state_host)
+	graphic.compute_buffer_destroy(self.compute, &build.orders_device)
+	graphic.compute_buffer_destroy(self.compute, &build.live_host)
+	graphic.compute_buffer_destroy(self.compute, &build.live_device)
 	build.nodes_offset = 0
 	build.cells_offset = 0
 	build.control_offset = 0
@@ -238,12 +192,11 @@ _gpu_tree_build_release :: proc(self: ^Gpu_Gravity) {
 @(private)
 _gpu_tree_build_reserve :: proc(self: ^Gpu_Gravity, capacity, node_capacity: int) -> bool {
 	build := &self.tree.build
-	gpu := self.compute.gpu
 
-	build.nodes_bytes = vulkan.DeviceSize(node_capacity * size_of(Tree_Node))
-	build.cells_bytes = vulkan.DeviceSize(node_capacity * size_of(u32))
-	build.control_bytes = vulkan.DeviceSize(size_of(Tree_Build_Control))
-	build.order_bytes = vulkan.DeviceSize(capacity * size_of(u32))
+	build.nodes_bytes = u64(node_capacity * size_of(Tree_Node))
+	build.cells_bytes = u64(node_capacity * size_of(u32))
+	build.control_bytes = u64(size_of(Tree_Build_Control))
+	build.order_bytes = u64(capacity * size_of(u32))
 
 	build.nodes_offset = 0
 	build.cells_offset = build.nodes_bytes
@@ -252,30 +205,34 @@ _gpu_tree_build_reserve :: proc(self: ^Gpu_Gravity, capacity, node_capacity: int
 	build.order_b_offset = build.order_bytes
 
 	state_bytes := build.control_offset + build.control_bytes
-	build.state_device = vk.buffer_init(
-		gpu,
+	build.state_device = graphic.compute_buffer_create(
+		self.compute,
 		state_bytes,
-		{.STORAGE_BUFFER, .TRANSFER_SRC, .INDIRECT_BUFFER},
-		.DeviceLocal,
+		{.STORAGE, .TRANSFER_SRC, .INDIRECT},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
-	build.state_host = vk.buffer_init(gpu, build.control_bytes, {.TRANSFER_DST}, .HostVisible) or_return
-	build.orders_device = vk.buffer_init(
-		gpu,
+	build.state_host = graphic.compute_buffer_create(self.compute, build.control_bytes, {.TRANSFER_DST}, .HOST, .EXCLUSIVE) or_return
+	build.orders_device = graphic.compute_buffer_create(
+		self.compute,
 		build.order_bytes * 2,
-		{.STORAGE_BUFFER},
-		.DeviceLocal,
+		{.STORAGE},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
-	build.live_host = vk.buffer_init(
-		gpu,
-		vulkan.DeviceSize(capacity * size_of(u32)),
+	build.live_host = graphic.compute_buffer_create(
+		self.compute,
+		u64(capacity * size_of(u32)),
 		{.TRANSFER_SRC},
-		.HostVisible,
+		.HOST,
+		.EXCLUSIVE,
 	) or_return
-	build.live_device = vk.buffer_init(
-		gpu,
-		vulkan.DeviceSize(capacity * size_of(u32)),
-		{.STORAGE_BUFFER, .TRANSFER_DST},
-		.DeviceLocal,
+	build.live_device = graphic.compute_buffer_create(
+		self.compute,
+		u64(capacity * size_of(u32)),
+		{.STORAGE, .TRANSFER_DST},
+		.DEVICE,
+		.EXCLUSIVE,
 	) or_return
 
 	log.debugf(
@@ -288,27 +245,8 @@ _gpu_tree_build_reserve :: proc(self: ^Gpu_Gravity, capacity, node_capacity: int
 }
 
 @(private)
-_tree_build_barrier :: proc(cmd: vulkan.CommandBuffer, buffer: vulkan.Buffer, size: vulkan.DeviceSize) {
-	vk.buffer_barrier(
-		cmd,
-		buffer,
-		0,
-		size,
-		{.COMPUTE_SHADER},
-		{.COMPUTE_SHADER, .DRAW_INDIRECT},
-		{.SHADER_STORAGE_WRITE},
-		{.SHADER_STORAGE_READ, .SHADER_STORAGE_WRITE, .INDIRECT_COMMAND_READ},
-	)
-}
-
-@(private)
-_tree_build_dispatch_indirect :: proc(
-	cmd: vulkan.CommandBuffer,
-	buffer: vulkan.Buffer,
-	base_offset: vulkan.DeviceSize,
-	index: int,
-) {
-	vulkan.CmdDispatchIndirect(cmd, buffer, base_offset + vulkan.DeviceSize(index * size_of([3]u32)))
+_tree_build_barrier :: proc(self: ^Gpu_Gravity, cmd: gfx.Command, buffer: gfx.Buffer, size: u64) {
+	graphic.compute_advance(self.compute, cmd, buffer, 0, size, indirect = true)
 }
 
 @(private)
@@ -360,75 +298,83 @@ _gpu_tree_build :: proc(
 	live := cast([^]u32)build.live_host.mapped
 	for k in 0 ..< count {live[k] = bodies[k]}
 
-	entity_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Body_Record))
-	velocity_bytes := vulkan.DeviceSize(copy_entries * size_of(Gpu_Velocity_Record))
-	radii_bytes := vulkan.DeviceSize(copy_entries * size_of(f32))
-	live_bytes := vulkan.DeviceSize(count * size_of(u32))
+	entity_bytes := u64(copy_entries * size_of(Gpu_Body_Record))
+	velocity_bytes := u64(copy_entries * size_of(Gpu_Velocity_Record))
+	radii_bytes := u64(copy_entries * size_of(f32))
+	live_bytes := u64(count * size_of(u32))
 
-	init_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_INIT])
-	setup_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_SETUP])
-	root_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_ROOT])
-	level_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_LEVEL])
-	com_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_COM])
-	order_pipeline := vk.pipeline_registry_get(&self.compute.pipelines, build.pipelines[TREE_BUILD_ORDER])
-
-	cmd, slot := vk.compute_begin(&self.compute)
-	frame := u32(slot)
+	cmd := graphic.compute_begin(self.compute)
 	control_size := build.control_bytes
 
-	_gpu_upload(cmd, self.compute.gpu, &self.bodies_host, &self.bodies_device, entity_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &self.radii_host, &self.radii_device, radii_bytes)
-	_gpu_upload(cmd, self.compute.gpu, &build.live_host, &build.live_device, live_bytes)
+	_gpu_upload(self, cmd, self.bodies_host, self.bodies_device, entity_bytes)
+	_gpu_upload(self, cmd, self.radii_host, self.radii_device, radii_bytes)
+	_gpu_upload(self, cmd, build.live_host, build.live_device, live_bytes)
 
 	groups := u32((count + TREE_BUILD_WORKGROUP - 1) / TREE_BUILD_WORKGROUP)
 
-	// init
-	vk.pipeline_bind_compute(init_pipeline, cmd)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_INIT], 0, 0, frame, build.state_device.buffer, build.control_offset, control_size)
-	vk.push_descriptors_flush(&build.push[TREE_BUILD_INIT], cmd, init_pipeline.layout, frame)
-	vulkan.CmdDispatch(cmd, 1, 1, 1)
-	_tree_build_barrier(cmd, build.state_device.buffer, build.control_offset + control_size)
+	// init: clear the control block.
+	graphic.compute_pass(
+		self.compute,
+		cmd,
+		build.pipelines[TREE_BUILD_INIT],
+		[]gfx.Bind{{binding = 0, buffer = build.state_device, offset = build.control_offset, size = control_size}},
+		{groups = {1, 1, 1}},
+	)
+	_tree_build_barrier(self, cmd, build.state_device, build.control_offset + control_size)
 
-	// setup
-	vk.pipeline_bind_compute(setup_pipeline, cmd)
+	// setup: bounds, counts and the initial order.
+	setup_binds := [5]gfx.Bind {
+		{binding = 0, buffer = self.bodies_device, size = self.bodies_device.size},
+		{binding = 1, buffer = self.radii_device, size = self.radii_device.size},
+		{binding = 2, buffer = build.live_device, size = live_bytes},
+		{binding = 3, buffer = build.orders_device, offset = build.order_a_offset, size = build.order_bytes},
+		{binding = 4, buffer = build.state_device, offset = build.control_offset, size = control_size},
+	}
 	setup_push := Tree_Build_Setup_Push{count = u32(count)}
-	vk.pipeline_push_constants(setup_pipeline, cmd, &setup_push, size_of(Tree_Build_Setup_Push))
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 0, frame, self.bodies_device.buffer, 0, self.bodies_device.size)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 1, frame, self.radii_device.buffer, 0, self.radii_device.size)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 2, frame, build.live_device.buffer, 0, live_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 3, frame, build.orders_device.buffer, build.order_a_offset, build.order_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_SETUP], 0, 4, frame, build.state_device.buffer, build.control_offset, control_size)
-	vk.push_descriptors_flush(&build.push[TREE_BUILD_SETUP], cmd, setup_pipeline.layout, frame)
-	vulkan.CmdDispatch(cmd, groups, 1, 1)
-	_tree_build_barrier(cmd, build.state_device.buffer, build.control_offset + control_size)
-	_tree_build_barrier(cmd, build.orders_device.buffer, build.order_bytes * 2)
+	graphic.compute_pass(
+		self.compute,
+		cmd,
+		build.pipelines[TREE_BUILD_SETUP],
+		setup_binds[:],
+		{groups = {groups, 1, 1}},
+		&setup_push,
+		size_of(Tree_Build_Setup_Push),
+	)
+	_tree_build_barrier(self, cmd, build.state_device, build.control_offset + control_size)
+	_tree_build_barrier(self, cmd, build.orders_device, build.order_bytes * 2)
 
 	// root
-	vk.pipeline_bind_compute(root_pipeline, cmd)
+	root_binds := [3]gfx.Bind {
+		{binding = 0, buffer = build.state_device, offset = build.nodes_offset, size = build.nodes_bytes},
+		{binding = 1, buffer = build.state_device, offset = build.cells_offset, size = build.cells_bytes},
+		{binding = 2, buffer = build.state_device, offset = build.control_offset, size = control_size},
+	}
 	root_push := Tree_Build_Root_Push{count = u32(count)}
-	vk.pipeline_push_constants(root_pipeline, cmd, &root_push, size_of(Tree_Build_Root_Push))
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ROOT], 0, 0, frame, build.state_device.buffer, build.nodes_offset, build.nodes_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ROOT], 0, 1, frame, build.state_device.buffer, build.cells_offset, build.cells_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ROOT], 0, 2, frame, build.state_device.buffer, build.control_offset, control_size)
-	vk.push_descriptors_flush(&build.push[TREE_BUILD_ROOT], cmd, root_pipeline.layout, frame)
-	vulkan.CmdDispatch(cmd, 1, 1, 1)
-	_tree_build_barrier(cmd, build.state_device.buffer, build.state_device.size)
-	_tree_build_barrier(cmd, build.orders_device.buffer, build.order_bytes * 2)
-
+	graphic.compute_pass(
+		self.compute,
+		cmd,
+		build.pipelines[TREE_BUILD_ROOT],
+		root_binds[:],
+		{groups = {1, 1, 1}},
+		&root_push,
+		size_of(Tree_Build_Root_Push),
+	)
+	_tree_build_barrier(self, cmd, build.state_device, build.state_device.size)
+	_tree_build_barrier(self, cmd, build.orders_device, build.order_bytes * 2)
 
 	// level pass: one workgroup per cell per level, dispatched indirectly from
 	// the counts the previous level wrote.
-	vk.pipeline_bind_compute(level_pipeline, cmd)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 0, frame, build.state_device.buffer, build.nodes_offset, build.nodes_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 1, frame, self.bodies_device.buffer, 0, self.bodies_device.size)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 2, frame, build.orders_device.buffer, build.order_a_offset, build.order_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 3, frame, build.orders_device.buffer, build.order_b_offset, build.order_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 4, frame, build.state_device.buffer, build.cells_offset, build.cells_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_LEVEL], 0, 5, frame, build.state_device.buffer, build.control_offset, control_size)
-	vk.push_descriptors_flush(&build.push[TREE_BUILD_LEVEL], cmd, level_pipeline.layout, frame)
+	level_binds := [6]gfx.Bind {
+		{binding = 0, buffer = build.state_device, offset = build.nodes_offset, size = build.nodes_bytes},
+		{binding = 1, buffer = self.bodies_device, size = self.bodies_device.size},
+		{binding = 2, buffer = build.orders_device, offset = build.order_a_offset, size = build.order_bytes},
+		{binding = 3, buffer = build.orders_device, offset = build.order_b_offset, size = build.order_bytes},
+		{binding = 4, buffer = build.state_device, offset = build.cells_offset, size = build.cells_bytes},
+		{binding = 5, buffer = build.state_device, offset = build.control_offset, size = control_size},
+	}
 	for d in 0 ..< levels {
-		_tree_build_barrier(cmd, build.state_device.buffer, build.state_device.size)
-		_tree_build_barrier(cmd, build.orders_device.buffer, build.order_bytes * 2)
+		_tree_build_barrier(self, cmd, build.state_device, build.state_device.size)
+		_tree_build_barrier(self, cmd, build.orders_device, build.order_bytes * 2)
 		push := Tree_Build_Level_Push {
 			level     = u32(d),
 			src       = u32(d % 2),
@@ -437,82 +383,69 @@ _gpu_tree_build :: proc(
 			capacity  = u32(tree.node_capacity),
 			min_half  = min_half,
 		}
-		vk.pipeline_push_constants(level_pipeline, cmd, &push, size_of(Tree_Build_Level_Push))
-		_tree_build_dispatch_indirect(
-					cmd,
-					build.state_device.buffer,
-					build.control_offset + vulkan.DeviceSize(offset_of(Tree_Build_Control, level_dispatch)),
-					d,
-				)
+		graphic.compute_pass(
+			self.compute,
+			cmd,
+			build.pipelines[TREE_BUILD_LEVEL],
+			level_binds[:],
+			{
+				indirect = build.state_device,
+				offset   = build.control_offset +
+					u64(offset_of(Tree_Build_Control, level_dispatch)) +
+					u64(d * size_of([3]u32)),
+			},
+			&push,
+			size_of(Tree_Build_Level_Push),
+		)
 	}
-
 
 	// COM pass, deepest level first: children are always one level below their
 	// parent, so bottom-up order is descending level order.
 	if levels > 0 {
-		vk.pipeline_bind_compute(com_pipeline, cmd)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 0, frame, build.state_device.buffer, build.nodes_offset, build.nodes_bytes)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 1, frame, self.bodies_device.buffer, 0, self.bodies_device.size)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 2, frame, build.orders_device.buffer, build.order_a_offset, build.order_bytes)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 3, frame, build.orders_device.buffer, build.order_b_offset, build.order_bytes)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 4, frame, build.state_device.buffer, build.cells_offset, build.cells_bytes)
-		vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_COM], 0, 5, frame, build.state_device.buffer, build.control_offset, control_size)
-		vk.push_descriptors_flush(&build.push[TREE_BUILD_COM], cmd, com_pipeline.layout, frame)
 		for i in 0 ..< levels {
 			d := levels - 1 - i
-			_tree_build_barrier(cmd, build.state_device.buffer, build.state_device.size)
+			_tree_build_barrier(self, cmd, build.state_device, build.state_device.size)
 			push := Tree_Build_Com_Push{level = u32(d)}
-			vk.pipeline_push_constants(com_pipeline, cmd, &push, size_of(Tree_Build_Com_Push))
-			_tree_build_dispatch_indirect(
+			graphic.compute_pass(
+				self.compute,
 				cmd,
-				build.state_device.buffer,
-				build.control_offset + vulkan.DeviceSize(offset_of(Tree_Build_Control, com_dispatch)),
-				d,
+				build.pipelines[TREE_BUILD_COM],
+				level_binds[:],
+				{
+					indirect = build.state_device,
+					offset   = build.control_offset +
+						u64(offset_of(Tree_Build_Control, com_dispatch)) +
+						u64(d * size_of([3]u32)),
+				},
+				&push,
+				size_of(Tree_Build_Com_Push),
 			)
 		}
 	}
 
 	// Publish the order the traversal binds, whatever parity the last level wrote.
-	vk.pipeline_bind_compute(order_pipeline, cmd)
+	order_binds := [4]gfx.Bind {
+		{binding = 0, buffer = build.orders_device, offset = build.order_a_offset, size = build.order_bytes},
+		{binding = 1, buffer = build.orders_device, offset = build.order_b_offset, size = build.order_bytes},
+		{binding = 2, buffer = self.tree.order_device, size = self.tree.order_device.size},
+		{binding = 3, buffer = build.state_device, offset = build.control_offset, size = control_size},
+	}
 	order_push := Tree_Build_Order_Push{count = u32(count)}
-	vk.pipeline_push_constants(order_pipeline, cmd, &order_push, size_of(Tree_Build_Order_Push))
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ORDER], 0, 0, frame, build.orders_device.buffer, build.order_a_offset, build.order_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ORDER], 0, 1, frame, build.orders_device.buffer, build.order_b_offset, build.order_bytes)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ORDER], 0, 2, frame, self.tree.order_device.buffer, 0, self.tree.order_device.size)
-	vk.push_descriptors_bind_buffer(&build.push[TREE_BUILD_ORDER], 0, 3, frame, build.state_device.buffer, build.control_offset, control_size)
-	vk.push_descriptors_flush(&build.push[TREE_BUILD_ORDER], cmd, order_pipeline.layout, frame)
-	vulkan.CmdDispatch(cmd, groups, 1, 1)
+	graphic.compute_pass(
+		self.compute,
+		cmd,
+		build.pipelines[TREE_BUILD_ORDER],
+		order_binds[:],
+		{groups = {groups, 1, 1}},
+		&order_push,
+		size_of(Tree_Build_Order_Push),
+	)
 
 	// Control readback (metrics + overflow flag).
-	vk.buffer_barrier(
-		cmd,
-		build.state_device.buffer,
-		build.control_offset,
-		control_size,
-		{.COMPUTE_SHADER},
-		{.TRANSFER},
-		{.SHADER_STORAGE_WRITE},
-		{.TRANSFER_READ},
-	)
-	copy_region := vulkan.BufferCopy {
-		srcOffset = build.control_offset,
-		dstOffset = 0,
-		size      = control_size,
-	}
-	vulkan.CmdCopyBuffer(cmd, build.state_device.buffer, build.state_host.buffer, 1, &copy_region)
-	vk.buffer_barrier(
-		cmd,
-		build.state_host.buffer,
-		0,
-		control_size,
-		{.TRANSFER},
-		{.HOST},
-		{.TRANSFER_WRITE},
-		{.HOST_READ},
-	)
+	graphic.compute_readback(self.compute, cmd, build.state_device, build.control_offset, build.state_host, 0, control_size)
 
-	value := vk.compute_submit(&self.compute, slot)
-	vk.compute_wait(&self.compute, value)
+	value := graphic.compute_submit(self.compute, cmd)
+	graphic.compute_wait(self.compute, value)
 
 	control := cast(^Tree_Build_Control)build.state_host.mapped
 	if control.overflow != 0 {
