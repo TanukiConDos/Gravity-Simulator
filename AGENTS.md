@@ -83,7 +83,6 @@ imports a physics package, if the backend imports `ecs`/`physic` or mentions
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
 ├── Engine/ecs/              # Entity-component-system core
 ├── Engine/physic/           # Physics components + systems
-│   ├── render/              # package physic_render: CPU instance columns + pick handoff
 │   └── gpu/                 # package physic_gpu: GPU gravity solver, GPU tree build, stream
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
@@ -91,12 +90,11 @@ imports a physics package, if the backend imports `ecs`/`physic` or mentions
 ```
 
 `Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
-(`vk`): `front -> backend -> shared`. The front never imports a physics package;
-the backend imports no ECS/physics state. The physics module integrates with
-graphics through `Engine/physic/render` (CPU columns + pick) and
-`Engine/physic/gpu` (GPU solver + stream), so the integration chain is
-`main -> physic -> front -> backend`. `main` also bootstraps the window, backend
-and renderer for the app shell.
+(`vk`): `front -> backend -> shared`. `main` is the orchestrator: it owns the
+frame-source adapter (`frame_source.odin`), registers it and the optional GPU
+producer with the front, and runs the modules. The front never imports a physics
+package; no physics package imports the front; the backend imports no ECS/physics
+state. `physic/gpu` uses the backend's compute primitives for the solver.
 
 ## Configuration
 

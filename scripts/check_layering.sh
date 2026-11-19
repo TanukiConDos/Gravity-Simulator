@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Enforce the engine package boundaries.
 #
-#   main -> physic -> front -> backend
-#   physic/gpu, physic/render -> front -> backend
+#   main orchestrates: main -> physic -> front -> backend
+#   physic/gpu uses the backend's compute primitives only.
 #
-# The front never imports physics; the backend imports no ECS/physics.
+# The front never imports physics; no physics package imports the front; the
+# backend imports no ECS/physics.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -47,8 +48,8 @@ check "Engine/Graphic/front and Engine/Graphic/shared must not import vendor:vul
       'vendor:vulkan' Engine/Graphic/front Engine/Graphic/shared
 
 check "Engine/Graphic/front must not import the physics packages" \
-      "physics integrates with the front, never the other way round" \
-      '^import (phys|physic|physic_gpu|physic_render) ' Engine/Graphic/front
+      "main orchestrates and owns the frame source; physics never points at the front" \
+      '^import (phys|physic|physic_gpu) ' Engine/Graphic/front
 
 check "Engine/Graphic/backend must not import ecs or physic" \
       "the backend is device-level; engine integration belongs to physic/render and the front" \
@@ -62,13 +63,13 @@ check "Engine/Graphic/backend must not declare package graphic" \
       "the front's package name lives only under Engine/Graphic/front" \
       'package graphic' Engine/Graphic/backend
 
-check "Engine/physic core must not depend on the graphics front" \
-      "only Engine/physic/render and Engine/physic/gpu may integrate with graphics" \
-      'Graphic/front' Engine/physic/*.odin
+check "Engine/physic must not depend on the graphics front" \
+      "main is the orchestrator: it owns the frame-source adapter and registers it with the front" \
+      'Graphic/front' Engine/physic/*.odin Engine/physic/gpu/*.odin
 
 if [ "$failed" -ne 0 ]; then
     echo "check_layering: layer violations found (see above)" >&2
     exit 1
 fi
 
-echo "check_layering: OK (main -> physic -> front -> backend)"
+echo "check_layering: OK (main orchestrates: physic + front -> backend)"
