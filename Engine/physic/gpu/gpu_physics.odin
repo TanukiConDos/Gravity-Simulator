@@ -1,7 +1,6 @@
 package physic_gpu
 
 import vk "../../Graphic/backend"
-import graphic "../../Graphic/front"
 import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
@@ -324,18 +323,6 @@ stream_ops :: proc() -> vk.Stream_Ops {
 		release = _stream_release,
 		set_frame_timeline = _stream_set_frame_timeline,
 	}
-}
-
-// install makes the renderer draw this solver's published stream. The front keeps
-// no solver type: it forwards the opaque handle and ops to the backend.
-install :: proc(renderer: ^graphic.Renderer, self: ^Gpu_Gravity) {
-	graphic.renderer_set_stream_producer(renderer, stream_handle(self), stream_ops())
-}
-
-// uninstall releases the stream the backend holds and forgets the producer. Call
-// it before destroying the solver.
-uninstall :: proc(renderer: ^graphic.Renderer) {
-	graphic.renderer_set_stream_producer(renderer, nil, {})
 }
 
 @(private)

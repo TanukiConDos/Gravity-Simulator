@@ -3,7 +3,6 @@ package main
 import graphic "./Engine/Graphic/front"
 import vk "./Engine/Graphic/backend"
 import physic_gpu "./Engine/physic/gpu"
-import physic_render "./Engine/physic/render"
 import physic "./Engine/physic"
 import ecs "./Engine/ecs"
 import foundation "./foundation"
@@ -264,9 +263,9 @@ main :: proc() {
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
 
-	frame_source, frame_ok := physic_render.init(renderer, g_world)
-	if !frame_ok {log.errorf("Failed to create the physics frame source!"); return}
-	defer physic_render.destroy(frame_source)
+	frame_source: Frame_Source
+	frame_source_init(&frame_source, renderer, g_world)
+	defer frame_source_destroy(&frame_source)
 
 	graphic.graphic_register_systems(g_scheduler)
 	if !ecs.scheduler_finalize(g_scheduler) {
@@ -282,9 +281,13 @@ main :: proc() {
 		capacity := max(g_world.capacity, physic.body_count(g_world))
 		if solver, solver_ok := physic_gpu.gpu_gravity_init(backend, g_world, config.algorithm, capacity); solver_ok {
 			gpu_solver = solver
-			// The physics side integrates with the renderer: the front holds only
-			// opaque handles and the backend draws the producer's stream.
-			physic_gpu.install(renderer, solver)
+			// main orchestrates: the front receives the opaque producer handle and
+			// ops and forwards them to the backend.
+			graphic.renderer_set_stream_producer(
+				renderer,
+				physic_gpu.stream_handle(solver),
+				physic_gpu.stream_ops(),
+			)
 			physic.physic_set_gravity_solver(g_world, physic_gpu.gpu_gravity_backend(solver))
 			log.infof(
 				"GPU gravity enabled (%v): %s",
@@ -297,7 +300,7 @@ main :: proc() {
 	}
 	defer if gpu_solver != nil {
 		// Release the stream the backend holds, then destroy the solver.
-		physic_gpu.uninstall(renderer)
+		graphic.renderer_set_stream_producer(renderer, nil, {})
 		physic_gpu.gpu_gravity_destroy(gpu_solver)
 	}
 
