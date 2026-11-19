@@ -61,9 +61,9 @@ Package layering is checked separately, without building:
 scripts/check_layering.sh
 ```
 
-It fails if the front or `shared` package mentions `vendor:vulkan`, if the
-backend imports `ecs`/`physic` or mentions `Graphic/front`, if the front imports
-the GPU physics package, or if `Engine/physic/gpu` imports the front.
+It fails if the front or `shared` package mentions `vendor:vulkan`, if the front
+imports a physics package, if the backend imports `ecs`/`physic` or mentions
+`Graphic/front`, or if the physics core imports the graphics front.
 
 ## Project Structure
 
@@ -83,17 +83,20 @@ the GPU physics package, or if `Engine/physic/gpu` imports the front.
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
 ├── Engine/ecs/              # Entity-component-system core
 ├── Engine/physic/           # Physics components + systems
-│   └── gpu/                 # package physic_gpu: GPU gravity solver, GPU tree build, render stream
+│   ├── render/              # package physic_render: CPU instance columns + pick handoff
+│   └── gpu/                 # package physic_gpu: GPU gravity solver, GPU tree build, stream
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
 ```
 
 `Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
-(`vk`): `front -> backend -> shared`. The front never imports `vendor:vulkan`, the
-backend imports no ECS/physics state, and the GPU gravity solver lives with
-physics in `Engine/physic/gpu` (`physic_gpu`), which uses the backend's compute
-primitives. The front holds only an opaque `vk.Stream_Handle` for it.
+(`vk`): `front -> backend -> shared`. The front never imports a physics package;
+the backend imports no ECS/physics state. The physics module integrates with
+graphics through `Engine/physic/render` (CPU columns + pick) and
+`Engine/physic/gpu` (GPU solver + stream), so the integration chain is
+`main -> physic -> front -> backend`. `main` also bootstraps the window, backend
+and renderer for the app shell.
 
 ## Configuration
 

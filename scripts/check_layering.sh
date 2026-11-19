@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Enforce the Engine/Graphic package boundaries:
+# Enforce the engine package boundaries.
 #
-#   front (package graphic) -> backend (package vk) -> shared (package gfx)
+#   main -> physic -> front -> backend
+#   physic/gpu, physic/render -> front -> backend
 #
-# The front never imports Vulkan; the backend never imports the front.
+# The front never imports physics; the backend imports no ECS/physics.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -45,8 +46,12 @@ check "Engine/Graphic/front and Engine/Graphic/shared must not import vendor:vul
       "move Vulkan code into Engine/Graphic/backend" \
       'vendor:vulkan' Engine/Graphic/front Engine/Graphic/shared
 
+check "Engine/Graphic/front must not import the physics packages" \
+      "physics integrates with the front, never the other way round" \
+      '^import (phys|physic|physic_gpu|physic_render) ' Engine/Graphic/front
+
 check "Engine/Graphic/backend must not import ecs or physic" \
-      "the backend is device-level; engine integration belongs to front/gpu" \
+      "the backend is device-level; engine integration belongs to physic/render and the front" \
       '^import (ecs|physic|phys) ' Engine/Graphic/backend
 
 check "Engine/Graphic/backend must not depend on the front package" \
@@ -57,17 +62,13 @@ check "Engine/Graphic/backend must not declare package graphic" \
       "the front's package name lives only under Engine/Graphic/front" \
       'package graphic' Engine/Graphic/backend
 
-check "Engine/Graphic/front must not import the GPU physics package" \
-      "the front holds an opaque vk.Stream_Handle; main wires the producer" \
-      'physic/gpu|Gpu_Gravity' Engine/Graphic/front
-
-check "Engine/physic/gpu must not import the front package" \
-      "the front consumes the producer through the backend's Stream_Handle" \
-      'Graphic/front' Engine/physic/gpu
+check "Engine/physic core must not depend on the graphics front" \
+      "only Engine/physic/render and Engine/physic/gpu may integrate with graphics" \
+      'Graphic/front' Engine/physic/*.odin
 
 if [ "$failed" -ne 0 ]; then
     echo "check_layering: layer violations found (see above)" >&2
     exit 1
 fi
 
-echo "check_layering: OK (front -> backend -> shared; physic/gpu -> backend)"
+echo "check_layering: OK (main -> physic -> front -> backend)"

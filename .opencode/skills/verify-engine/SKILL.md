@@ -20,18 +20,19 @@ first — see the `shader-pipeline` skill.
 
 ```
 rg -n "vendor:vulkan" Engine/Graphic/front Engine/Graphic/shared   # must be empty
+rg -n '^import (phys|physic|physic_gpu|physic_render) ' Engine/Graphic/front
 rg -n '^import (ecs|physic|phys) ' Engine/Graphic/backend           # must be empty
 rg -n "Graphic/front" Engine/Graphic/backend                       # must be empty
 rg -n "package graphic" Engine/Graphic/backend                     # must be empty
-rg -n 'physic/gpu|Gpu_Gravity' Engine/Graphic/front                # must be empty
-rg -n "Graphic/front" Engine/physic/gpu                            # must be empty
+rg -n "Graphic/front" Engine/physic/*.odin                         # must be empty
 ```
 
-The front (`graphic`) never imports `vendor:vulkan`, and never imports the GPU
-physics package: it holds an opaque `vk.Stream_Handle`. The backend (`vk`)
-imports no `ecs`/`physic` state and never imports the front. `physic_gpu`
-(`Engine/physic/gpu`) owns the engine-side compute consumer and may import the
-backend. `shared` (`gfx`) is plain data and imports neither Vulkan nor ECS.
+The front (`graphic`) never imports `vendor:vulkan` and never imports a physics
+package: it holds opaque handles (`Frame_Source_Handle`, `vk.Stream_Handle`).
+Physics integrates with graphics through `physic/render` and `physic/gpu`, so the
+chain is `main -> physic -> front -> backend`. The backend (`vk`) imports no
+`ecs`/`physic` state and never imports the front. The physics core imports no
+graphics. `shared` (`gfx`) is plain data and imports neither Vulkan nor ECS.
 
 ## Engine invariants to respect
 
@@ -50,8 +51,9 @@ backend. `shared` (`gfx`) is plain data and imports neither Vulkan nor ECS.
   don't make a field mandatory by accident.
 - **Visibility**: the engine packages expose only handles and their
   lifecycle/draw procedures; everything else is `@(private)`.
-- **Layering**: `front -> backend -> shared`, `physic_gpu -> backend`. The front
-  never imports `vendor:vulkan` or `physic/gpu`; the backend imports no
+- **Layering**: `main -> physic -> front -> backend`. Physics integrates through
+  the front's opaque handles (`physic/render`, `physic/gpu`); the front never
+  imports a physics package or `vendor:vulkan`; the backend imports no
   `ecs`/`physic` and never imports the front.
 
 ## Don't commit

@@ -396,9 +396,10 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
 - **M5 — direct rendering (done).** The solver publishes a render view as one of
-  three vended device snapshots; `main` registers the solver's `stream_handle`/
-  `stream_ops` with the backend, the front pumps it, and the backend claims the
-  published set through the producer's `claim` callback and packs the
+  three vended device snapshots; `main` installs the solver through the front
+  (`physic_gpu.install`), the front holds the opaque handle and pumps it, and the
+  backend claims the published set through the producer's `claim` callback and
+  packs the
   per-frame instance data from it with a compute pass, and the frame submission
   waits on that set's solve value. A set is only written once the frame that last
   read it has completed (per-set `release_value` on the frame timeline), so
