@@ -62,8 +62,8 @@ scripts/check_layering.sh
 ```
 
 It fails if the front or `shared` package mentions `vendor:vulkan`, if the
-backend imports `ecs`/`physic` or mentions `Graphic/front`/`Graphic/gpu`, or if
-`gpu` mentions `Graphic/front`.
+backend imports `ecs`/`physic` or mentions `Graphic/front`, if the front imports
+the GPU physics package, or if `Engine/physic/gpu` imports the front.
 
 ## Project Structure
 
@@ -78,21 +78,22 @@ backend imports `ecs`/`physic` or mentions `Graphic/front`/`Graphic/gpu`, or if
 │   ├── shared/              # package gfx: plain data seam (no Vulkan, ECS or GLFW)
 │   ├── front/               # package graphic: camera, input, instancing, Renderer, ECS integration
 │   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute (no ECS)
-│   ├── gpu/                 # package gpu: GPU gravity solver, GPU tree build, render stream
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
 ├── Engine/ecs/              # Entity-component-system core
 ├── Engine/physic/           # Physics components + systems
+│   └── gpu/                 # package physic_gpu: GPU gravity solver, GPU tree build, render stream
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
 ```
 
-`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`), `backend`
-(`vk`) and `gpu` (`gpu`): `front -> {backend, gpu} -> shared`. The front never
-imports `vendor:vulkan`, the backend imports no ECS/physics state, and `gpu` is
-the only graphics package that may import `physic`/`ecs` besides the front.
+`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
+(`vk`): `front -> backend -> shared`. The front never imports `vendor:vulkan`, the
+backend imports no ECS/physics state, and the GPU gravity solver lives with
+physics in `Engine/physic/gpu` (`physic_gpu`), which uses the backend's compute
+primitives. The front holds only an opaque `vk.Stream_Handle` for it.
 
 ## Configuration
 

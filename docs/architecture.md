@@ -42,8 +42,8 @@ flowchart TD
     tests["tests/"]
     front["Engine/Graphic/front<br/>package graphic"]
     backend["Engine/Graphic/backend<br/>package vk"]
-    gpu["Engine/Graphic/gpu<br/>package gpu"]
     shared["Engine/Graphic/shared<br/>package gfx"]
+    pgpu["Engine/physic/gpu<br/>package physic_gpu"]
     spirv["Engine/Graphic/spirv<br/>SPIR-V reflection (CPU only)"]
     physic["Engine/physic"]
     ecs["Engine/ecs"]
@@ -51,48 +51,48 @@ flowchart TD
 
     main --> front
     main --> backend
-    main --> gpu
+    main --> pgpu
     main --> physic
     main --> ecs
     main --> foundation
     bench --> front
     bench --> backend
-    bench --> gpu
+    bench --> pgpu
     bench --> physic
     bench --> ecs
     bench --> foundation
     tests --> front
     tests --> backend
-    tests --> gpu
+    tests --> pgpu
     tests --> physic
     tests --> ecs
     tests --> foundation
 
     front --> backend
-    front --> gpu
     front --> shared
-    gpu --> backend
+    pgpu --> backend
     backend --> shared
     backend --> spirv
     backend --> foundation
     front --> physic
     front --> ecs
     front --> foundation
-    gpu --> physic
-    gpu --> ecs
-    gpu --> foundation
+    pgpu --> physic
+    pgpu --> ecs
+    pgpu --> foundation
     physic --> ecs
     physic --> foundation
     ecs --> foundation
 ```
 
 `foundation` has no engine dependencies (config, arena, file I/O, the job pool,
-the profiler). `physic` and the front/`gpu` packages sit on `ecs`; the front and
-`gpu` additionally depend on `physic` for the body view and snapshot types. The
-front never imports `vendor:vulkan`; the backend imports no engine state (no
-`ecs`, no `physic`) and never imports the front or `gpu`. `shared` (`gfx`) is
-plain data only. The `bench/` and `tests/` packages are separate binaries that
-drive the same libraries.
+the profiler). `physic` and the GPU physics package sit on `ecs`; the front and
+the GPU solver additionally depend on `physic` for the body view and snapshot
+types. The front never imports `vendor:vulkan` and never imports the GPU physics
+package (it holds an opaque `vk.Stream_Handle`). The backend imports no engine
+state and never imports the front or the GPU solver. `shared` (`gfx`) is plain
+data only. The `bench/` and `tests/` packages are separate binaries that drive the
+same libraries.
 
 ## Runtime topology
 
@@ -159,6 +159,7 @@ sequenceDiagram
     participant P as physic
     participant B as vk backend
     participant R as graphic front (Renderer)
+    participant PG as physic_gpu
     participant T as physics + graphics threads
 
     M->>F: config_load("config.json")
@@ -174,8 +175,10 @@ sequenceDiagram
     M->>R: graphic.graphic_register_systems(scheduler)
     M->>W: scheduler_finalize()
     alt gravity_backend == GPU
-        M->>B: gpu.gpu_gravity_init(backend, world, algorithm, capacity)
-        M->>R: graphic.renderer_set_gravity_source(renderer, solver)
+        M->>PG: gpu_gravity_init(backend, world, algorithm, capacity)
+        M->>R: graphic.renderer_set_stream_producer(renderer, handle)
+        M->>B: vk.backend_set_stream_producer(backend, handle, ops)
+        M->>PG: gpu_gravity_set_frame_timeline(solver, timeline)
         M->>P: physic_set_gravity_solver(hook)
     end
     M->>W: world_freeze()
@@ -219,10 +222,10 @@ sequenceDiagram
     loop every frame
         G->>W: scheduler_run(RENDER, dt)
         W->>W: graphic.input → graphic.render
-        G->>G: front: claim snapshot or solver view<br/>build Frame_Packet / Instance_Stream
+        G->>G: front: claim snapshot or pump the producer handle<br/>build Frame_Packet
         G->>V: backend_draw: resolve picks, fence, acquire
         alt GPU backend owns the world
-            G->>G: backend: instance_pack, wait solver timeline
+            G->>G: backend: instance_pack, wait producer timeline
         else CPU instance mode
             G->>G: backend: upload positions / selected columns
         end
@@ -275,14 +278,14 @@ flowchart LR
     pools -->|"pack + upload (GPU backend)"| sets[("render view sets ×3<br/>CONCURRENT buffers")]
 
     subgraph GT["graphics thread"]
-        pick["front: claim snapshot or view<br/>build Frame_Packet / Instance_Stream"]
-        pack["backend: instance_pack.comp (stream)"]
+        pick["front: claim snapshot / pump handle<br/>build Frame_Packet"]
+        pack["backend: stream claim + instance_pack.comp"]
         draw["backend: CmdDrawIndexed"]
         pick --> pack --> draw
     end
 
     snap -->|"claim PUBLISHED"| pick
-    sets -->|"claim PUBLISHED → READING"| pick
+    sets -->|"claim via Stream_Ops"| pack
     draw -->|"Frame_Result.picked"| sel[("Selection_State")]
     sel -->|"physic.select (atomic exchange)"| pools
 ```

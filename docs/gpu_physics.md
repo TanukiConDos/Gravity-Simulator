@@ -75,8 +75,8 @@ sequenceDiagram
 
 ## Backends
 
-`Engine/Graphic/gpu/gpu_physics.odin` owns the compute consumer (device
-attachment, staging, pipeline and submission ring); `gpu/gpu_tree.odin` adds the
+`Engine/physic/gpu/gpu_physics.odin` owns the compute consumer (device
+attachment, staging, pipeline and submission ring); `gpu_tree.odin` adds the
 octree-specific buffers
 and traversal.
 
@@ -253,9 +253,11 @@ flowchart LR
 ```
 
 Solver-side ownership: only `FREE` sets whose reader has completed are written;
-`PUBLISHED → READING` is the front's claim, and the front releases it with the
-backend's last frame timeline value before releasing `READING → FREE`, so the solver
-cannot acquire a set an in-flight frame still reads.
+`PUBLISHED → READING` is the renderer's claim (the front pumps the producer
+handle and the backend calls the producer's `claim` callback), and the front
+releases it with the backend's last frame timeline value before releasing
+`READING → FREE`, so the solver cannot acquire a set an in-flight frame still
+reads.
 
 ## Measurements
 
@@ -394,8 +396,9 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
 - **M5 — direct rendering (done).** The solver publishes a render view as one of
-  three vended device snapshots; the front claims the published set and hands the
-  backend an `Instance_Stream`, which packs the
+  three vended device snapshots; `main` registers the solver's `stream_handle`/
+  `stream_ops` with the backend, the front pumps it, and the backend claims the
+  published set through the producer's `claim` callback and packs the
   per-frame instance data from it with a compute pass, and the frame submission
   waits on that set's solve value. A set is only written once the frame that last
   read it has completed (per-set `release_value` on the frame timeline), so
