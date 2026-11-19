@@ -19,6 +19,9 @@ Stream_Handle :: distinct rawptr
 Stream_Ops :: struct {
 	claim:   proc(handle: Stream_Handle) -> (stream: Instance_Stream, ok: bool),
 	release: proc(handle: Stream_Handle, stream: Instance_Stream, frame_value: u64),
+	// Optional: receives the frame timeline the backend signals, so the producer
+	// can tell when the frame that last read a set has completed.
+	set_frame_timeline: proc(handle: Stream_Handle, semaphore: vulkan.Semaphore),
 }
 
 // Instance_Stream is the backend's neutral description of GPU-produced instance
@@ -152,14 +155,6 @@ backend_destroy :: proc(self: ^Backend) {
 	log.infof("[VULKAN] Backend shutdown complete")
 }
 
-// backend_frame_timeline hands out the semaphore every submitted frame signals.
-// A GPU producer stores it so it can wait for the frame that last read its
-// buffers; the value to wait on is backend_stream_release_value.
-backend_frame_timeline :: proc(self: ^Backend) -> vulkan.Semaphore {
-	if self == nil {return 0}
-	return self.frame_timeline.semaphore
-}
-
 // backend_instances_seed fills the static instance columns (radius, selection)
 // once. The front converts its body view into these plain columns; the backend
 // owns the packed vertex layout and the GPU buffers.
@@ -177,6 +172,9 @@ backend_set_stream_producer :: proc(self: ^Backend, handle: Stream_Handle, ops: 
 	if self.direct_valid {backend_clear_stream(self)}
 	self.stream_handle = handle
 	self.stream_ops = ops
+	if ops.set_frame_timeline != nil {
+		ops.set_frame_timeline(handle, self.frame_timeline.semaphore)
+	}
 }
 
 // backend_pump_stream asks the installed producer for a newly published stream

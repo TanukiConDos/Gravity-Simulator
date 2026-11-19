@@ -1,6 +1,7 @@
 package physic_gpu
 
 import vk "../../Graphic/backend"
+import graphic "../../Graphic/front"
 import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
@@ -318,7 +319,29 @@ stream_handle :: proc(self: ^Gpu_Gravity) -> vk.Stream_Handle {
 // stream_ops is the dispatch table the backend calls through the handle: claim a
 // newly published view, release a held one with the frame that last read it.
 stream_ops :: proc() -> vk.Stream_Ops {
-	return vk.Stream_Ops{claim = _stream_claim, release = _stream_release}
+	return vk.Stream_Ops {
+		claim = _stream_claim,
+		release = _stream_release,
+		set_frame_timeline = _stream_set_frame_timeline,
+	}
+}
+
+// install makes the renderer draw this solver's published stream. The front keeps
+// no solver type: it forwards the opaque handle and ops to the backend.
+install :: proc(renderer: ^graphic.Renderer, self: ^Gpu_Gravity) {
+	graphic.renderer_set_stream_producer(renderer, stream_handle(self), stream_ops())
+}
+
+// uninstall releases the stream the backend holds and forgets the producer. Call
+// it before destroying the solver.
+uninstall :: proc(renderer: ^graphic.Renderer) {
+	graphic.renderer_set_stream_producer(renderer, nil, {})
+}
+
+@(private)
+_stream_set_frame_timeline :: proc(handle: vk.Stream_Handle, semaphore: vulkan.Semaphore) {
+	self := cast(^Gpu_Gravity)rawptr(handle)
+	gpu_gravity_set_frame_timeline(self, semaphore)
 }
 
 @(private)

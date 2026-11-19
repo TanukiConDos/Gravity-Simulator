@@ -2,27 +2,36 @@ package graphic
 
 import gfx "../shared"
 import vk "../backend"
-import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
 import "core:log"
-import "core:sync"
 
-// Renderer is the front-end handle: it owns the camera, the CPU instance
-// columns, the pick request and the opaque handle of an optional GPU stream
-// producer. It never calls Vulkan, never imports the producer's package and owns
-// no GPU resource; main owns the backend and destroys it after this handle.
+// Frame_Source_Handle names the module that supplies this frame's simulation
+// data and receives pick results. It is opaque to the front: the physics side
+// owns the snapshot and the pick state, exactly like the GPU stream handle.
+Frame_Source_Handle :: distinct rawptr
+
+// Frame_Source_Ops is the physics side's dispatch table.
+Frame_Source_Ops :: struct {
+	// instances returns this frame's instance columns in draw-slot order. The
+	// slices are owned by the source and stay valid until the next call.
+	// `gpu_active` tells the front whether a GPU stream producer is live; when it
+	// is false the front releases any stream it holds and draws the columns.
+	instances: proc(handle: Frame_Source_Handle) -> (positions: []gfx.Vec3, selected: []u8, gpu_active: bool),
+	// pick receives a resolved pick index (-1 = nothing hit).
+	pick:      proc(handle: Frame_Source_Handle, picked: i32),
+}
+
+// Renderer is the front-end handle: camera, input, the opaque frame-source and
+// GPU-stream handles, and the frame loop. It never imports the physics module,
+// never calls Vulkan and owns no GPU resource; main owns the backend and
+// destroys it after this handle.
 Renderer :: struct {
-	backend:   ^vk.Backend,
-	world:     ^ecs.World,
-	camera:    ^Camera,
-	snapshot:  ^phys.RenderSnapshot,
-	positions: [dynamic]gfx.Vec3,
-	selected:  [dynamic]u8,
-	// GPU producer integration: an opaque handle (zero for none). The backend
-	// holds the dispatch table and drives claim/release; the front only decides
-	// when to pump and clears it when physic uninstalls the backend.
-	stream_handle: vk.Stream_Handle,
+	backend:    ^vk.Backend,
+	world:      ^ecs.World,
+	camera:     ^Camera,
+	frame_handle: Frame_Source_Handle,
+	frame_ops:    Frame_Source_Ops,
 }
 
 renderer_init :: proc(
@@ -48,12 +57,9 @@ renderer_init :: proc(
 	self.camera^ = camera_create(aspect)
 	ecs.world_resource(world, Window_Ref).input = &window.input
 	_ = ecs.world_resource(world, Pick_Request)
-	self.snapshot = phys.physic_snapshot(world)
-	instance_columns_reserve(self, phys.body_count(world))
-	instance_seed_backend(backend, world)
 
 	log.infof("========================================")
-	log.infof("[RENDER] FRONT INITIALIZATION COMPLETE (%d objects)", phys.body_count(world))
+	log.infof("[RENDER] FRONT INITIALIZATION COMPLETE")
 	log.infof("========================================")
 	ecs.world_resource(world, Renderer_Ref).renderer = self
 	committed = true
@@ -77,15 +83,26 @@ renderer_system :: proc(w: ^ecs.World, delta_seconds: f32) -> bool {
 	return renderer_draw_frame(ref.renderer)
 }
 
-// renderer_set_stream_producer installs (or clears, with a zero handle) the GPU
-// producer the backend may draw from. The handle is opaque: the front never
-// imports the producer's package. The caller registers the matching Stream_Ops
-// with the backend; clearing releases the stream the backend currently holds.
-renderer_set_stream_producer :: proc(self: ^Renderer, handle: vk.Stream_Handle) {
-	if self.stream_handle != nil {
-		vk.backend_clear_stream(self.backend)
-	}
-	self.stream_handle = handle
+// renderer_set_frame_source installs (or clears, with a nil handle) the module
+// that supplies the CPU instance columns and receives pick results.
+renderer_set_frame_source :: proc(self: ^Renderer, handle: Frame_Source_Handle, ops: Frame_Source_Ops) {
+	if self == nil {return}
+	self.frame_handle = handle
+	self.frame_ops = ops
+}
+
+// renderer_seed_instances uploads the static per-body instance columns once.
+renderer_seed_instances :: proc(self: ^Renderer, bodies: []u32, radii: []f32, selected: []u8) {
+	if self == nil {return}
+	vk.backend_instances_seed(self.backend, bodies, radii, selected)
+}
+
+// renderer_set_stream_producer installs (or clears) the GPU stream producer.
+// The producer package passes its opaque handle and dispatch table; the front
+// only forwards them to the backend.
+renderer_set_stream_producer :: proc(self: ^Renderer, handle: vk.Stream_Handle, ops: vk.Stream_Ops) {
+	if self == nil {return}
+	vk.backend_set_stream_producer(self.backend, handle, ops)
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
@@ -94,49 +111,37 @@ renderer_destroy :: proc(self: ^Renderer) {
 		if ref := ecs.world_resource(self.world, Renderer_Ref); ref != nil {ref.renderer = nil}
 		if window := ecs.world_resource(self.world, Window_Ref); window != nil {window.input = nil}
 	}
-	delete(self.positions)
-	delete(self.selected)
 	free(self)
 	log.infof("[RENDER] Front renderer shutdown complete")
 }
 
-// renderer_draw_frame pumps the GPU producer (when one is installed), builds
-// this frame's packet and hands it to the backend. The backend owns resize,
-// acquire, submit and present; the front owns every interaction with the
-// simulation.
+// renderer_draw_frame asks the frame source for this frame's data, builds the
+// packet and hands it to the backend. The backend owns resize, acquire, submit
+// and present; the source owns the simulation handoff.
 renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	if self.backend == nil || self.world == nil {return false}
-
-	// GPU producer: ask the backend to claim a newly published stream. The
-	// producer's liveness flag (set by physic) tells the front when the hook was
-	// dropped; then the held stream is released and no more frames are pumped.
-	if self.stream_handle != nil {
-		if phys.physic_gravity_backend_active(self.world) {
-			vk.backend_pump_stream(self.backend)
-		} else {
-			vk.backend_clear_stream(self.backend)
-			self.stream_handle = nil
-			log.warnf("[RENDER] GPU gravity backend uninstalled; falling back to the snapshot path")
-		}
-	}
 
 	req := ecs.world_resource(self.world, Pick_Request)
 	draw := gfx.Draw{mesh = gfx.MESH_PRIMARY, material = "main"}
 
-	if vk.backend_instance_mode(self.backend) == .CPU && len(self.positions) > 0 {
-		n: int
+	if self.frame_handle != nil && self.frame_ops.instances != nil {
+		positions: []gfx.Vec3
+		selected: []u8
+		gpu_active: bool
 		{
-			found.profile_scope_args("graphics.snapshot_read", "max=%d", {len(self.positions)})
-			n = phys.physic_snapshot_read(
-				self.snapshot,
-				raw_data(self.positions),
-				raw_data(self.selected),
-				len(self.positions),
-			)
+			found.profile_scope("graphics.frame_source")
+			positions, selected, gpu_active = self.frame_ops.instances(self.frame_handle)
 		}
-		if n > 0 {
-			draw.positions = self.positions[:n]
-			draw.selected = self.selected[:n]
+		if gpu_active {
+			vk.backend_pump_stream(self.backend)
+		} else {
+			// No solver owns the world (or it was uninstalled): release any held
+			// stream and fall back to the CPU columns.
+			vk.backend_clear_stream(self.backend)
+		}
+		if vk.backend_instance_mode(self.backend) == .CPU && len(positions) > 0 {
+			draw.positions = positions
+			draw.selected = selected
 		}
 	}
 
@@ -147,9 +152,8 @@ renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	}
 	status, result := vk.backend_draw(self.backend, &packet)
 
-	if result.has_pick {
-		sel := phys.selection_state(self.world)
-		sync.atomic_store(&sel.picked, result.picked)
+	if result.has_pick && self.frame_ops.pick != nil {
+		self.frame_ops.pick(self.frame_handle, result.picked)
 	}
 	switch status {
 	case .RETRY:

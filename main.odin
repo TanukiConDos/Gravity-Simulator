@@ -3,6 +3,7 @@ package main
 import graphic "./Engine/Graphic/front"
 import vk "./Engine/Graphic/backend"
 import physic_gpu "./Engine/physic/gpu"
+import physic_render "./Engine/physic/render"
 import physic "./Engine/physic"
 import ecs "./Engine/ecs"
 import foundation "./foundation"
@@ -262,6 +263,11 @@ main :: proc() {
 	renderer, renderer_ok := graphic.renderer_init(backend, window, g_world)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
+
+	frame_source, frame_ok := physic_render.init(renderer, g_world)
+	if !frame_ok {log.errorf("Failed to create the physics frame source!"); return}
+	defer physic_render.destroy(frame_source)
+
 	graphic.graphic_register_systems(g_scheduler)
 	if !ecs.scheduler_finalize(g_scheduler) {
 		log.errorf("Failed to resolve the system schedule!")
@@ -276,12 +282,9 @@ main :: proc() {
 		capacity := max(g_world.capacity, physic.body_count(g_world))
 		if solver, solver_ok := physic_gpu.gpu_gravity_init(backend, g_world, config.algorithm, capacity); solver_ok {
 			gpu_solver = solver
-			// The front holds only an opaque handle; the backend holds the
-			// producer's dispatch table and draws its stream directly.
-			handle := physic_gpu.stream_handle(solver)
-			graphic.renderer_set_stream_producer(renderer, handle)
-			vk.backend_set_stream_producer(backend, handle, physic_gpu.stream_ops())
-			physic_gpu.gpu_gravity_set_frame_timeline(solver, vk.backend_frame_timeline(backend))
+			// The physics side integrates with the renderer: the front holds only
+			// opaque handles and the backend draws the producer's stream.
+			physic_gpu.install(renderer, solver)
 			physic.physic_set_gravity_solver(g_world, physic_gpu.gpu_gravity_backend(solver))
 			log.infof(
 				"GPU gravity enabled (%v): %s",
@@ -293,9 +296,8 @@ main :: proc() {
 		}
 	}
 	defer if gpu_solver != nil {
-		// Release the stream the backend holds, then forget the producer.
-		graphic.renderer_set_stream_producer(renderer, nil)
-		vk.backend_set_stream_producer(backend, nil, {})
+		// Release the stream the backend holds, then destroy the solver.
+		physic_gpu.uninstall(renderer)
 		physic_gpu.gpu_gravity_destroy(gpu_solver)
 	}
 
