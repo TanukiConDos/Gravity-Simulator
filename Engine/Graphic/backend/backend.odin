@@ -7,6 +7,20 @@ import "core:sync"
 import "core:time"
 import "vendor:vulkan"
 
+// Stream_Handle names a GPU producer the backend can draw from. It is opaque to
+// the backend and the front: only the producer that registered `Stream_Ops`
+// interprets it (typically its own object pointer), exactly like a Vulkan
+// dispatch handle.
+Stream_Handle :: distinct rawptr
+
+// Stream_Ops is the producer's dispatch table. The backend calls `claim` once
+// per frame while a producer is installed, and `release` when it stops holding a
+// claimed stream (a newer one arrived, or the producer was uninstalled).
+Stream_Ops :: struct {
+	claim:   proc(handle: Stream_Handle) -> (stream: Instance_Stream, ok: bool),
+	release: proc(handle: Stream_Handle, stream: Instance_Stream, frame_value: u64),
+}
+
 // Instance_Stream is the backend's neutral description of GPU-produced instance
 // data. A compute consumer (the GPU physics package) owns the buffers and the
 // vending protocol; the backend only packs them into its instance vertex buffer
@@ -52,18 +66,22 @@ Backend :: struct {
 	frame_graph:     Frame_Graph,
 	push:            Push_Descriptors,
 	model:           Model,
-	// Direct rendering (M5): when a compute consumer supplies an instance stream,
+	// Direct rendering (M5): when a compute consumer registers a stream producer,
 	// the instance data is packed from its buffers and the frame waits on its
-	// timeline. The stream is set and released by the caller (the front), so the
-	// backend needs no engine types to draw it.
+	// timeline. The front holds the handle and asks the backend to pump/clear;
+	// the backend dispatches through the producer's ops, so it needs no engine
+	// types to draw the stream.
 	direct_pipeline: Pipeline_ID,
 	direct_push:     Push_Descriptors,
 	direct_valid:    bool,
 	stream:          Instance_Stream,
-	// Frame value the currently held stream was last read at. The caller releases
-	// the stream with this value so the producer waits for that frame before
+	stream_handle:   Stream_Handle,
+	stream_ops:      Stream_Ops,
+	// Frame value the currently held stream was last read at. The producer
+	// releases the stream with this value so it waits for that frame before
 	// reusing the buffers.
 	direct_release_value: u64,
+	direct_logged:   bool,
 	direct_count:    int,
 	// Signals every submitted frame so the producer can keep its render columns
 	// stable while this thread reads them (the reverse of the frame's wait on
@@ -150,39 +168,59 @@ backend_instances_seed :: proc(self: ^Backend, bodies: []u32, radii: []f32, sele
 	instance_buffer_write_static(&self.instances, bodies, radii, selected)
 }
 
-// backend_set_instance_stream makes the backend draw from GPU-produced instance
-// data supplied by a compute consumer. The caller owns the stream's lifetime and
-// must release the previous one with backend_stream_release_value before
-// replacing it.
-backend_set_instance_stream :: proc(self: ^Backend, stream: ^Instance_Stream) {
-	if self == nil || stream == nil {return}
-	self.stream = stream^
-	self.direct_valid = true
-	self.direct_release_value = 0
+// backend_set_stream_producer registers the GPU producer the renderer may draw
+// from. `handle` is opaque to the backend; `ops` is the producer's dispatch
+// table. Installing a new producer releases any stream the backend currently
+// holds through the previous producer.
+backend_set_stream_producer :: proc(self: ^Backend, handle: Stream_Handle, ops: Stream_Ops) {
+	if self == nil {return}
+	if self.direct_valid {backend_clear_stream(self)}
+	self.stream_handle = handle
+	self.stream_ops = ops
 }
 
-// backend_clear_instance_stream returns to the CPU instance columns. The caller
-// releases the stream first.
-backend_clear_instance_stream :: proc(self: ^Backend) {
+// backend_pump_stream asks the installed producer for a newly published stream
+// and adopts it. The producer returns false while it has nothing new; the backend
+// then keeps the stream it already holds. The previous stream is released with
+// the last frame value that read it.
+backend_pump_stream :: proc(self: ^Backend) -> bool {
+	if self == nil || self.stream_ops.claim == nil {return false}
+	stream, ok := self.stream_ops.claim(self.stream_handle)
+	if !ok {return false}
+	if self.direct_valid && self.stream_ops.release != nil {
+		self.stream_ops.release(self.stream_handle, self.stream, self.direct_release_value)
+	}
+	self.stream = stream
+	self.direct_valid = true
+	self.direct_release_value = 0
+	if !self.direct_logged {
+		self.direct_logged = true
+		log.infof(
+			"[RENDER] Direct instances enabled: %d bodies (mode %d, set %d) from the GPU producer",
+			stream.count,
+			stream.mode,
+			stream.set,
+		)
+	}
+	return true
+}
+
+// backend_clear_stream releases the held stream through its producer and returns
+// to the CPU instance columns.
+backend_clear_stream :: proc(self: ^Backend) {
 	if self == nil {return}
+	if self.direct_valid && self.stream_ops.release != nil {
+		self.stream_ops.release(self.stream_handle, self.stream, self.direct_release_value)
+	}
 	self.direct_valid = false
 	self.stream = {}
 	self.direct_release_value = 0
-}
-
-// backend_stream_release_value is the frame timeline value whose completion
-// frees the currently held stream: the last frame that read it, or 0 when no
-// frame has. The producer waits on its own timeline against this value.
-backend_stream_release_value :: proc(self: ^Backend) -> u64 {
-	if self == nil {return 0}
-	return self.direct_release_value
+	self.direct_logged = false
 }
 
 // backend_instance_mode tells the front whether this frame's instance data comes
-// from its CPU columns (CPU) or from the GPU solver's buffers (BACKEND). The
-// liveness check mirrors backend_draw's, so a solver uninstalled between frames
-// drops the front straight back to the snapshot instead of skipping one frame.
-// The read is graphics-thread only, like every field of the frame path.
+// from its CPU columns (CPU) or from a GPU producer's stream (BACKEND). The read
+// is graphics-thread only, like every field of the frame path.
 backend_instance_mode :: proc(self: ^Backend) -> gfx.Instance_Mode {
 	if self != nil && self.direct_valid {return .BACKEND}
 	return .CPU

@@ -1,6 +1,6 @@
-package gpu
+package physic_gpu
 
-import vk "../backend"
+import vk "../../Graphic/backend"
 import phys "../../physic"
 import ecs "../../ecs"
 import "core:log"

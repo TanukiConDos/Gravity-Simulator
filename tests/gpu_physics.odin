@@ -1,7 +1,7 @@
 package tests
 
 import ecs "../Engine/ecs"
-import gpu "../Engine/Graphic/gpu"
+import physic_gpu "../Engine/physic/gpu"
 import physics "../Engine/physic"
 import foundation "../foundation"
 import "core:math"
@@ -38,13 +38,13 @@ _gpu_world :: proc(n: int, solver: physics.Gravity_Solver) -> ^ecs.World {
 // fixture tests) when the headless context cannot be created.
 @(test)
 test_gpu_gravity_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
+	solver, created := physic_gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
 	if !created {return}
-	defer gpu.gpu_gravity_destroy(solver)
+	defer physic_gpu.gpu_gravity_destroy(solver)
 
 	cpu_world := _gpu_world(64, {})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_world(64, gpu.gpu_gravity_backend(solver))
+	gpu_world := _gpu_world(64, physic_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// dt = 1 turns the velocity update into the acceleration.
@@ -127,13 +127,13 @@ _gpu_tree_world :: proc(solver: physics.Gravity_Solver) -> ^ecs.World {
 // the overlap test all run on the same tree.
 @(test)
 test_gpu_tree_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := gpu.gpu_gravity_init_headless(.OCTREE, 128)
+	solver, created := physic_gpu.gpu_gravity_init_headless(.OCTREE, 128)
 	if !created {return}
-	defer gpu.gpu_gravity_destroy(solver)
+	defer physic_gpu.gpu_gravity_destroy(solver)
 
 	cpu_world := _gpu_tree_world({})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_tree_world(gpu.gpu_gravity_backend(solver))
+	gpu_world := _gpu_tree_world(physic_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// dt = 1 turns the velocity update into the acceleration.
@@ -205,13 +205,13 @@ _leaf_record_less :: proc(a, b: _Leaf_Record) -> bool {
 // the order inside a leaf may differ.
 @(test)
 test_gpu_tree_build_matches_cpu :: proc(t: ^testing.T) {
-	solver, created := gpu.gpu_gravity_init_headless(.OCTREE, 128)
+	solver, created := physic_gpu.gpu_gravity_init_headless(.OCTREE, 128)
 	if !created {return}
-	defer gpu.gpu_gravity_destroy(solver)
+	defer physic_gpu.gpu_gravity_destroy(solver)
 
 	cpu_world := _gpu_tree_world({})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_tree_world(gpu.gpu_gravity_backend(solver))
+	gpu_world := _gpu_tree_world(physic_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// begin builds the tree: CPU builder for the first world, GPU build for the
@@ -223,11 +223,11 @@ test_gpu_tree_build_matches_cpu :: proc(t: ^testing.T) {
 	testing.expect(t, cpu_tree != nil, "CPU world must own a tree")
 	if cpu_tree == nil {return}
 
-	gpu_dump_leaves := make([]gpu.Tree_Leaf, 4096)
+	gpu_dump_leaves := make([]physic_gpu.Tree_Leaf, 4096)
 	defer delete(gpu_dump_leaves)
 	gpu_order := make([]u32, 4096)
 	defer delete(gpu_order)
-	leaf_count, order_count, dumped := gpu.gpu_tree_dump(solver, gpu_dump_leaves, gpu_order)
+	leaf_count, order_count, dumped := physic_gpu.gpu_tree_dump(solver, gpu_dump_leaves, gpu_order)
 	testing.expect(t, dumped, "gpu_tree_dump failed")
 	if !dumped {return}
 
@@ -353,27 +353,27 @@ _gpu_solve_once :: proc(w: ^ecs.World, dt: f32) {
 // values gate on real completion.
 @(test)
 test_gpu_render_set_vending :: proc(t: ^testing.T) {
-	solver, created := gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
+	solver, created := physic_gpu.gpu_gravity_init_headless(.BRUTE_FORCE, 64)
 	if !created {return}
-	defer gpu.gpu_gravity_destroy(solver)
-	gpu.gpu_gravity_set_frame_timeline(solver, gpu.gpu_gravity_solve_timeline(solver))
+	defer physic_gpu.gpu_gravity_destroy(solver)
+	physic_gpu.gpu_gravity_set_frame_timeline(solver, physic_gpu.gpu_gravity_solve_timeline(solver))
 
-	w := _gpu_world(64, gpu.gpu_gravity_backend(solver))
+	w := _gpu_world(64, physic_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(w)
 
 	dt := f32(1.0)
-	used: [gpu.RENDER_VIEW_SETS]bool
+	used: [physic_gpu.RENDER_VIEW_SETS]bool
 	// Each solve publishes one set; claim it and release it with a frame value
 	// that only the third solve reaches, so the next solve must take a new set.
-	for i in 0 ..< gpu.RENDER_VIEW_SETS {
+	for i in 0 ..< physic_gpu.RENDER_VIEW_SETS {
 		_gpu_solve_once(w, dt)
-		view, ok := gpu.gpu_gravity_render_view(solver)
+		view, ok := physic_gpu.gpu_gravity_render_view(solver)
 		if !testing.expectf(t, ok, "solve %d did not publish a view", i) {return}
 		testing.expectf(t, !used[view.set], "solve %d reused unsignalled set %d", i, view.set)
 		used[view.set] = true
 		// All three offsets land on the same value, V2 + 1.
-		offset := u64(gpu.RENDER_VIEW_SETS - i)
-		gpu.gpu_gravity_release_render_view(solver, view, view.value + offset)
+		offset := u64(physic_gpu.RENDER_VIEW_SETS - i)
+		physic_gpu.gpu_gravity_release_render_view(solver, view, view.value + offset)
 	}
 	for u, i in used {
 		testing.expectf(t, u, "set %d was never published", i)
@@ -389,11 +389,11 @@ test_gpu_render_set_vending :: proc(t: ^testing.T) {
 		vel_before != vel_after,
 		"skipped solve did not apply its velocities",
 	)
-	if _, ok := gpu.gpu_gravity_render_view(solver); ok {
+	if _, ok := physic_gpu.gpu_gravity_render_view(solver); ok {
 		testing.expect(t, false, "solver published a view while every set was unsignalled")
 	}
-	for i in 0 ..< gpu.RENDER_VIEW_SETS {
-		state := gpu.gpu_gravity_render_set_state(solver, i)
+	for i in 0 ..< physic_gpu.RENDER_VIEW_SETS {
+		state := physic_gpu.gpu_gravity_render_set_state(solver, i)
 		testing.expectf(
 			t,
 			state == .FREE,
@@ -406,7 +406,7 @@ test_gpu_render_set_vending :: proc(t: ^testing.T) {
 	// That solve advanced the timeline past the releases, so the sets are
 	// reusable and the next solve publishes again.
 	_gpu_solve_once(w, dt)
-	if _, ok := gpu.gpu_gravity_render_view(solver); !testing.expect(t, ok, "sets were not reusable after their frames completed") {
+	if _, ok := physic_gpu.gpu_gravity_render_view(solver); !testing.expect(t, ok, "sets were not reusable after their frames completed") {
 		return
 	}
 }

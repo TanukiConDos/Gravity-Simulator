@@ -1,6 +1,6 @@
-package gpu
+package physic_gpu
 
-import vk "../backend"
+import vk "../../Graphic/backend"
 import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
@@ -307,6 +307,34 @@ _gpu_verify_instances :: proc(user: rawptr, frame: u32, instances: [^]vk.Instanc
 			log.errorf("[RENDER] Direct instance mismatch: %d of %d sampled", mismatches, sampled)
 		}
 	}
+}
+
+// stream_handle is the opaque handle the front holds: the solver pointer. The
+// backend never interprets it.
+stream_handle :: proc(self: ^Gpu_Gravity) -> vk.Stream_Handle {
+	return vk.Stream_Handle(rawptr(self))
+}
+
+// stream_ops is the dispatch table the backend calls through the handle: claim a
+// newly published view, release a held one with the frame that last read it.
+stream_ops :: proc() -> vk.Stream_Ops {
+	return vk.Stream_Ops{claim = _stream_claim, release = _stream_release}
+}
+
+@(private)
+_stream_claim :: proc(handle: vk.Stream_Handle) -> (stream: vk.Instance_Stream, ok: bool) {
+	self := cast(^Gpu_Gravity)rawptr(handle)
+	view, claimed := gpu_gravity_render_view(self)
+	if !claimed {return {}, false}
+	return gpu_gravity_instance_stream(self, view), true
+}
+
+@(private)
+_stream_release :: proc(handle: vk.Stream_Handle, stream: vk.Instance_Stream, frame_value: u64) {
+	self := cast(^Gpu_Gravity)rawptr(handle)
+	// Release only needs the set the stream names; the buffers stay owned by the
+	// solver.
+	gpu_gravity_release_render_view(self, Gpu_Render_View{set = stream.set, value = stream.value}, frame_value)
 }
 
 // gpu_gravity_set_frame_timeline gives the solver the renderer's frame timeline.

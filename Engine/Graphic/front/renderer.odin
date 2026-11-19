@@ -2,7 +2,6 @@ package graphic
 
 import gfx "../shared"
 import vk "../backend"
-import gpu "../gpu"
 import phys "../../physic"
 import ecs "../../ecs"
 import found "../../../foundation"
@@ -10,10 +9,9 @@ import "core:log"
 import "core:sync"
 
 // Renderer is the front-end handle: it owns the camera, the CPU instance
-// columns, the pick request and the optional GPU gravity solver integration,
-// and talks to the backend through the plain structs in `gfx`. It never calls
-// Vulkan and owns no GPU resource; main owns the backend and destroys it after
-// this handle.
+// columns, the pick request and the opaque handle of an optional GPU stream
+// producer. It never calls Vulkan, never imports the producer's package and owns
+// no GPU resource; main owns the backend and destroys it after this handle.
 Renderer :: struct {
 	backend:   ^vk.Backend,
 	world:     ^ecs.World,
@@ -21,13 +19,10 @@ Renderer :: struct {
 	snapshot:  ^phys.RenderSnapshot,
 	positions: [dynamic]gfx.Vec3,
 	selected:  [dynamic]u8,
-	// GPU gravity integration: the solver, the render view currently handed to
-	// the backend, and a one-shot log flag. A held view stays claimed until a
-	// newer one is published or the solver is uninstalled.
-	solver:            ^gpu.Gpu_Gravity,
-	solver_view:       gpu.Gpu_Render_View,
-	solver_view_valid: bool,
-	solver_logged:     bool,
+	// GPU producer integration: an opaque handle (zero for none). The backend
+	// holds the dispatch table and drives claim/release; the front only decides
+	// when to pump and clears it when physic uninstalls the backend.
+	stream_handle: vk.Stream_Handle,
 }
 
 renderer_init :: proc(
@@ -82,27 +77,15 @@ renderer_system :: proc(w: ^ecs.World, delta_seconds: f32) -> bool {
 	return renderer_draw_frame(ref.renderer)
 }
 
-// renderer_set_gravity_source installs (or clears, with nil) the GPU gravity
-// solver whose buffers the backend should draw from. It releases the view the
-// backend currently holds, so the producer can reclaim it. The caller must clear
-// the source before destroying the solver.
-renderer_set_gravity_source :: proc(self: ^Renderer, solver: ^gpu.Gpu_Gravity) {
-	if self.solver_view_valid && self.solver != nil {
-		gpu.gpu_gravity_release_render_view(
-			self.solver,
-			self.solver_view,
-			vk.backend_stream_release_value(self.backend),
-		)
-		self.solver_view_valid = false
-		vk.backend_clear_instance_stream(self.backend)
+// renderer_set_stream_producer installs (or clears, with a zero handle) the GPU
+// producer the backend may draw from. The handle is opaque: the front never
+// imports the producer's package. The caller registers the matching Stream_Ops
+// with the backend; clearing releases the stream the backend currently holds.
+renderer_set_stream_producer :: proc(self: ^Renderer, handle: vk.Stream_Handle) {
+	if self.stream_handle != nil {
+		vk.backend_clear_stream(self.backend)
 	}
-	self.solver = solver
-	self.solver_logged = false
-	if solver != nil {
-		// The solver reads this timeline's counter to tell when a set's reader has
-		// completed.
-		gpu.gpu_gravity_set_frame_timeline(solver, vk.backend_frame_timeline(self.backend))
-	}
+	self.stream_handle = handle
 }
 
 renderer_destroy :: proc(self: ^Renderer) {
@@ -117,49 +100,22 @@ renderer_destroy :: proc(self: ^Renderer) {
 	log.infof("[RENDER] Front renderer shutdown complete")
 }
 
-// renderer_draw_frame claims the newest GPU render view (when a solver is
-// installed), builds this frame's packet and hands it to the backend. The
-// backend owns resize, acquire, submit and present; the front owns every
-// interaction with the simulation.
+// renderer_draw_frame pumps the GPU producer (when one is installed), builds
+// this frame's packet and hands it to the backend. The backend owns resize,
+// acquire, submit and present; the front owns every interaction with the
+// simulation.
 renderer_draw_frame :: proc(self: ^Renderer) -> bool {
 	if self.backend == nil || self.world == nil {return false}
 
-	// GPU gravity: claim a newly published view and hand it to the backend. A
-	// held view stays valid until a newer one is claimed or the solver is
-	// uninstalled (the physics thread clears the liveness flag).
-	if self.solver != nil {
+	// GPU producer: ask the backend to claim a newly published stream. The
+	// producer's liveness flag (set by physic) tells the front when the hook was
+	// dropped; then the held stream is released and no more frames are pumped.
+	if self.stream_handle != nil {
 		if phys.physic_gravity_backend_active(self.world) {
-			if view, view_ok := gpu.gpu_gravity_render_view(self.solver); view_ok {
-				if self.solver_view_valid {
-					// Hand the set we were holding back now that a newer one is claimed.
-					gpu.gpu_gravity_release_render_view(
-						self.solver,
-						self.solver_view,
-						vk.backend_stream_release_value(self.backend),
-					)
-				}
-				self.solver_view = view
-				self.solver_view_valid = true
-				stream := gpu.gpu_gravity_instance_stream(self.solver, view)
-				vk.backend_set_instance_stream(self.backend, &stream)
-				if !self.solver_logged {
-					self.solver_logged = true
-					log.infof(
-						"[RENDER] Direct instances enabled: %d bodies (mode %d, set %d) from the GPU solver",
-						view.count,
-						view.mode,
-						view.set,
-					)
-				}
-			}
-		} else if self.solver_view_valid {
-			gpu.gpu_gravity_release_render_view(
-				self.solver,
-				self.solver_view,
-				vk.backend_stream_release_value(self.backend),
-			)
-			self.solver_view_valid = false
-			vk.backend_clear_instance_stream(self.backend)
+			vk.backend_pump_stream(self.backend)
+		} else {
+			vk.backend_clear_stream(self.backend)
+			self.stream_handle = nil
 			log.warnf("[RENDER] GPU gravity backend uninstalled; falling back to the snapshot path")
 		}
 	}
