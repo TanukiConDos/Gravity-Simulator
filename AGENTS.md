@@ -76,7 +76,7 @@ imports a physics package, if the backend imports `ecs`/`physic` or mentions
 ├── scripts/                 # check_layering.sh (front/backend dependency check)
 ├── Engine/Graphic/
 │   ├── shared/              # package gfx: plain data seam (no Vulkan, ECS or GLFW)
-│   ├── front/               # package graphic: camera, input, instancing, Renderer, ECS integration
+│   ├── front/               # package graphic: camera, input, Renderer, compute proxy, ECS integration
 │   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute (no ECS)
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
@@ -93,8 +93,9 @@ imports a physics package, if the backend imports `ecs`/`physic` or mentions
 (`vk`): `front -> backend -> shared`. `main` is the orchestrator: it owns the
 frame-source adapter (`frame_source.odin`), registers it and the optional GPU
 producer with the front, and runs the modules. The front never imports a physics
-package; no physics package imports the front; the backend imports no ECS/physics
-state. `physic/gpu` uses the backend's compute primitives for the solver.
+package; the backend imports no ECS/physics state. `physic/gpu` records its GPU
+work through the front's compute proxy (`graphic.compute_*`) using only the plain
+`gfx` handles: no physics package imports the backend or `vendor:vulkan`.
 
 ## Configuration
 

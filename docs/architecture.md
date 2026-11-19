@@ -69,7 +69,8 @@ flowchart TD
     tests --> foundation
 
     physic --> pgpu
-    pgpu --> backend
+    pgpu --> front
+    pgpu --> shared
     front --> backend
     front --> shared
     backend --> shared
@@ -86,11 +87,13 @@ flowchart TD
 the profiler). `main` is the orchestrator: it owns the frame source
 (`frame_source.odin`: CPU columns, snapshot claim, pick handoff) and registers the
 GPU producer through the front. The front never imports a physics package (or
-`vendor:vulkan`), and no physics package imports the front; `physic/gpu` uses the
-backend's compute primitives for the solver. The backend imports no engine state
-and never imports the front. `main` also bootstraps the window, backend and
+`vendor:vulkan`); physics depends on the front, which owns the compute context and
+proxies GPU work to the backend, and on `gfx` for the plain handles. No physics
+package imports the backend or `vendor:vulkan`. The backend imports no engine
+state and never imports the front. `main` also bootstraps the window, backend and
 renderer for the app shell. `shared` (`gfx`) is plain data only. The `bench/` and
-`tests/` packages are separate binaries that drive the same libraries.
+`tests/` packages are separate binaries that drive the same libraries; they open
+a headless compute context from the backend directly.
 
 ## Runtime topology
 
@@ -174,7 +177,8 @@ sequenceDiagram
     M->>R: graphic.graphic_register_systems(scheduler)
     M->>W: scheduler_finalize()
     alt gravity_backend == GPU
-        M->>PG: gpu_gravity_init(backend, world, algorithm, capacity)
+        M->>R: renderer_compute() (attaches on first use) -> gfx.Compute
+        M->>PG: gpu_gravity_init(compute, world, algorithm, capacity)
         M->>R: renderer_set_stream_producer(handle, ops)
         M->>P: physic_set_gravity_solver(hook)
     end
@@ -249,7 +253,7 @@ flowchart TD
     bf --> backend{"config.gravity_backend"}
     ot --> backend
     backend -->|"CPU"| cpu["built-in CPU solver"]
-    backend -->|"GPU"| init{"gpu_gravity_init ok?<br/>backend has a separate compute queue"}
+    backend -->|"GPU"| init{"renderer_compute attaches?<br/>device has a separate compute queue"}
     init -->|"yes"| hook["Gpu_Gravity submit/finish hook"]
     init -->|"no"| cpu
     hook -->|"submit or finish fails at runtime"| cpu

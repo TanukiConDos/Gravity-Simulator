@@ -30,8 +30,8 @@ flowchart LR
     main --> backend["Engine/Graphic/backend<br/>package vk"]
     main --> pgpu["Engine/physic/gpu<br/>package physic_gpu"]
     physic --> pgpu
-    pgpu -->|"compute primitives"| backend
-    front --> backend
+    pgpu -->|"compute proxy"| front
+    front -->|"compute API"| backend
     front --> shared["Engine/Graphic/shared<br/>package gfx"]
     backend --> shared
     backend --> spirv["spirv<br/>(reflection)"]
@@ -44,12 +44,13 @@ Dependency rules, enforced by `scripts/check_layering.sh`:
 - `main` orchestrates: it imports the physics and graphics packages and owns the
   frame source; the logical chain is `main -> physic -> front -> backend`.
 - The front never imports `vendor:vulkan` and never imports a physics package.
-- No physics package imports the front, and the backend imports no engine state
-  (`ecs`, `physic`, or the front).
-- `physic_gpu` may use the backend's compute primitives directly; the render
-  handoff is registered by `main` through the front.
-- The front holds only opaque handles (`Frame_Source_Handle`, `vk.Stream_Handle`);
-  `main` and `physic_gpu` implement them.
+- No physics package imports the backend or `vendor:vulkan`: the GPU solver
+  records its work through the front's compute proxy and speaks only `gfx`
+  handles.
+- The backend imports no engine state (`ecs`, `physic`, or the front).
+- The front holds only opaque handles (`Frame_Source_Handle`, `gfx.Stream_Handle`,
+  `gfx.Compute`); `main` and `physic_gpu` implement the first two, the front owns
+  the compute context.
 
 ## Configuration and reflection
 
@@ -103,8 +104,9 @@ Draw            :: struct { mesh: Mesh_Handle, material: string,
 Frame_Packet    :: struct { camera: Camera_Uniforms, draws: []Draw, pick: Pick_Request }
 ```
 
-The front's engine-facing surface is defined in the front and implemented by
-physics, so the dependency goes physics -> front:
+The front's engine-facing surface is defined in the front. Physics implements the
+frame-source and stream callbacks and calls the compute proxy, so the dependency
+is physics -> front -> backend:
 
 ```odin
 Frame_Source_Handle :: distinct rawptr
@@ -114,8 +116,31 @@ Frame_Source_Ops :: struct {
 }
 renderer_set_frame_source(renderer, handle: Frame_Source_Handle, ops: Frame_Source_Ops)
 renderer_seed_instances(renderer, bodies: []u32, radii: []f32, selected: []u8)
-renderer_set_stream_producer(renderer, handle: vk.Stream_Handle, ops: vk.Stream_Ops)
+renderer_set_stream_producer(renderer, handle: gfx.Stream_Handle, ops: gfx.Stream_Ops)
 ```
+
+The front's compute proxy is what a GPU producer calls instead of touching the
+backend (`Engine/Graphic/front/compute.odin`, all arguments are `gfx` handles):
+
+```odin
+renderer_compute(renderer) -> gfx.Compute     // attaches on first use, nil when unusable
+compute_info / compute_timeline / compute_semaphore_value
+compute_buffer_create / compute_buffer_destroy
+compute_pipeline_create(c, name, shader, bindings: []u32) -> gfx.Pipeline
+compute_begin(c) -> gfx.Command
+compute_upload(c, cmd, host, device, bytes, write)      // barriers + copy
+compute_readback(c, cmd, src, src_offset, dst, dst_offset, bytes)
+compute_zero(c, cmd, buffer, offset, bytes)             // fill + compute barrier
+compute_advance(c, cmd, buffer, offset, bytes, indirect)
+compute_pass(c, cmd, pipeline, binds, dispatch, push, push_bytes)  // bind + push + flush + dispatch
+compute_submit(c, cmd) -> u64
+compute_wait(c, value)
+```
+
+The staging and barrier sequences live in the front; the Vulkan calls and flag
+translation stay in `backend/compute_api.odin`. That keeps the front
+`vendor:vulkan`-free and the physics module unaware of both the backend and
+Vulkan.
 
 `main` owns the CPU columns (`main/frame_source.odin`); the front calls `instances`
 once per frame and `pick` when a readback resolves. `gpu_active` is the producer
@@ -135,8 +160,21 @@ backend_set_stream_producer(b: ^Backend, handle: Stream_Handle, ops: Stream_Ops)
 backend_pump_stream(b: ^Backend) -> bool
 backend_clear_stream(b: ^Backend)
 backend_destroy(b: ^Backend)
-compute_* / gpu_init_headless / the pipeline, descriptor, buffer and sync primitives
+compute_attach / compute_detach / compute_handle / compute_device_info
+compute_buffer_create / compute_buffer_destroy / compute_pipeline_create
+compute_start / compute_finish / compute_await / compute_barrier / compute_copy /
+compute_fill_zero / compute_dispatch / compute_bind_pipeline / compute_push_constants
+compute_init_headless / compute_destroy / compute_probe (bench)
 ```
+
+`Stream_Handle`, `Stream_Ops`, `Instance_Stream` and `InstanceData` are the plain
+stream seam and live in `shared/gfx.odin`; the backend only aliases them.
+
+`compute_attach` opens a compute context on the backend's device (`owns_device =
+false`) and returns `nil` when compute would alias the graphics queue. The front
+creates it on demand from `renderer_compute` and closes it in `renderer_destroy`;
+a producer borrows the handle. `compute_init_headless` is the bench/test variant
+and owns its device, so the bench destroys it after the solver.
 
 `Stream_Handle` is an opaque `rawptr`; `Stream_Ops` is the producer's dispatch
 table (`claim`, `release` and `set_frame_timeline`). `backend_set_stream_producer`
@@ -150,11 +188,11 @@ optional `verify` callback. The backend never learns who produced it.
 The GPU physics package exposes the optional solver and its stream:
 
 ```odin
-// Engine/physic/gpu (physic_gpu)
-Gpu_Gravity + gpu_gravity_init(backend, world, mode, capacity) / _init_headless
-gpu_gravity_destroy / gpu_gravity_info / gpu_gravity_backend
-stream_handle(solver) -> vk.Stream_Handle
-stream_ops() -> vk.Stream_Ops
+// Engine/physic/gpu (physic_gpu): imports gfx + graphic only, no vk
+Gpu_Gravity + gpu_gravity_init(compute: gfx.Compute, world, mode, capacity)
+gpu_gravity_destroy / gpu_gravity_info -> gfx.Info / gpu_gravity_backend
+stream_handle(solver) -> gfx.Stream_Handle
+stream_ops() -> gfx.Stream_Ops
 gpu_tree_dump / Tree_Leaf / RENDER_VIEW_SETS
 ```
 
@@ -184,12 +222,14 @@ frame_source_init(&frame_source, renderer, g_world)
 defer frame_source_destroy(&frame_source)
 
 graphic.graphic_register_systems(g_scheduler)
-// GPU gravity (optional):
-solver, ok := physic_gpu.gpu_gravity_init(backend, g_world, config.algorithm, capacity)
+// GPU gravity (optional): the front owns the compute context, main only asks.
+compute := graphic.renderer_compute(renderer)
+solver, ok := physic_gpu.gpu_gravity_init(compute, g_world, config.algorithm, capacity)
 graphic.renderer_set_stream_producer(renderer, physic_gpu.stream_handle(solver), physic_gpu.stream_ops())
 physic.physic_set_gravity_solver(g_world, physic_gpu.gpu_gravity_backend(solver))
 // shutdown: clear the stream (nil handle), destroy the solver, destroy the frame
-// source, renderer, backend and window.
+// source, then the renderer (which closes the compute context), the backend and
+// the window.
 ```
 
 ## Comments
@@ -237,10 +277,11 @@ There are three long-lived handles: `vk.Backend`, `graphic.Renderer` and
 renderer, the frame source and the solver, and destroys them in reverse: clear the
 GPU stream (which releases the held set), destroy the solver, destroy the frame
 source (which clears the front's source and frees its columns), destroy the front
-`Renderer`, the backend, and finally the window. The renderer holds a backend
-pointer and two *opaque* handles; it never holds a device, swapchain, fence or
-physics type. The backend holds no world, pool or snapshot; `main` owns the frame
-source and physics owns the simulation state.
+`Renderer` (which closes the compute context it attached on demand), the backend,
+and finally the window. The renderer holds a backend pointer and three *opaque*
+handles (frame source, stream producer, compute context); it never holds a
+swapchain, fence or physics type. The backend holds no world, pool or snapshot;
+`main` owns the frame source and physics owns the simulation state.
 
 ## Error handling
 
@@ -266,10 +307,12 @@ Each package exposes only its handles and their lifecycle/draw procedures:
   `wait_events_timeout/pump`; `Backend` + `backend_init/destroy/draw`,
   `backend_instances_seed`, `backend_instance_mode`, the instance-stream API
   (`backend_set_stream_producer`, `backend_pump_stream`, `backend_clear_stream`);
-  the compute primitives listed above.
+  the compute context API (`compute_attach/detach`, the neutral `compute_*`
+  primitives) and the headless variants.
 - Front: `Renderer` + `renderer_init/destroy/draw_frame`,
   `renderer_set_frame_source`, `renderer_seed_instances`,
-  `renderer_set_stream_producer` and `graphic_register_systems`.
+  `renderer_set_stream_producer`, `renderer_compute`, the `compute_*` proxy and
+  `graphic_register_systems`.
 - Physics: `physic_gpu.Gpu_Gravity`, `stream_handle`/`stream_ops` and the solver
   functions. The frame source is `main`'s `Frame_Source` (`frame_source.odin`).
 - Everything else is marked `@(private)`. Odin's `@(private)` is package-scoped:
@@ -429,10 +472,13 @@ query.
 ## Compute
 
 `backend/compute.odin` exposes the `Compute` handle: a device (headless, or the
-backend's, which `Engine/physic/gpu/gpu_physics.odin` attaches to), a command pool
-for the compute queue, a timeline semaphore and a ring of submission slots.
+backend's, borrowed by the context `compute_attach` opens), a command pool for the
+compute queue, a timeline semaphore, a ring of submission slots and the producer
+pipelines registered through `compute_pipeline_create`.
 `compute_begin`/`compute_submit`/`compute_wait` drive one slot at a time; a slot
 is safe to record again once its previous timeline value completed.
+`backend/compute_api.odin` is the neutral layer the front proxies: it accepts
+`gfx` handles and enums, and owns every Vulkan type and flag translation.
 `docs/gpu_physics.md` covers how the physics solver uses this.
 
 - `backend/sync.odin` holds the primitives: the timeline semaphore (host wait with
@@ -457,9 +503,9 @@ is safe to record again once its previous timeline value completed.
   GPU, `gpu_tree.odin` and `gpu_tree_build.odin`), reads velocities and contacts
   back and installs itself as `physic`'s gravity solver. The hook is split into a
   non-blocking `submit` and an idempotent `finish`, so the solve stays in flight
-  until a consumer needs it. `gpu_gravity_init` attaches it to the backend's
-  device; `gpu_gravity_init_headless` is the bench/test variant. The package
-  imports `physic`/`ecs`; the backend does not import it. `main` calls
+  until a consumer needs it. `gpu_gravity_init` takes the `gfx.Compute` handle the
+  front returns; the bench and tests pass a headless context's handle. The package
+  imports `physic`/`ecs`/`graphic`/`gfx`; the backend does not import it. `main` calls
   `graphic.renderer_set_stream_producer(renderer, physic_gpu.stream_handle(solver),
   physic_gpu.stream_ops())`: the front forwards the opaque handle and ops to the
   backend, which hands the producer the frame timeline. The front pumps the
@@ -477,17 +523,19 @@ Vulkan Configurator (`vkconfig`) or `VK_INSTANCE_LAYERS` plus
 Layering is checked by `scripts/check_layering.sh`, which fails if the front or
 shared package mentions `vendor:vulkan`, if the front imports a physics package,
 if the backend imports `ecs`/`physic` or mentions `Graphic/front`, or if any
-physics package imports the front:
+physics package imports the backend or `vendor:vulkan`:
 
 ```
 rg -n "vendor:vulkan" Engine/Graphic/front Engine/Graphic/shared
 rg -n '^import (phys|physic|physic_gpu) ' Engine/Graphic/front
+rg -n '^import .*Graphic/backend' Engine/physic Engine/physic/gpu
+rg -n "vendor:vulkan" Engine/physic Engine/physic/gpu
 rg -n '^import (ecs|physic|phys) ' Engine/Graphic/backend
 rg -n "Graphic/front" Engine/Graphic/backend
 rg -n "package graphic" Engine/Graphic/backend
-rg -n "Graphic/front" Engine/physic/*.odin Engine/physic/gpu/*.odin
 ```
 
-Bench and tests import `Engine/Graphic/backend` as `vk` for `compute_*` and
-`Engine/physic/gpu` as `physic_gpu` for the solver (`gpu_gravity_*`, `Tree_Leaf`,
-`RENDER_VIEW_SETS`); the front is `graphic`.
+Bench and tests import `Engine/Graphic/backend` as `vk` to open the headless
+compute context (`compute_init_headless`, `compute_handle`, `compute_destroy`)
+and `Engine/physic/gpu` as `physic_gpu` for the solver (`gpu_gravity_*`,
+`Tree_Leaf`, `RENDER_VIEW_SETS`); the front is `graphic`.

@@ -21,19 +21,22 @@ first — see the `shader-pipeline` skill.
 ```
 rg -n "vendor:vulkan" Engine/Graphic/front Engine/Graphic/shared   # must be empty
 rg -n '^import (phys|physic|physic_gpu) ' Engine/Graphic/front
+rg -n '^import .*Graphic/backend' Engine/physic Engine/physic/gpu  # must be empty
+rg -n "vendor:vulkan" Engine/physic Engine/physic/gpu              # must be empty
 rg -n '^import (ecs|physic|phys) ' Engine/Graphic/backend           # must be empty
 rg -n "Graphic/front" Engine/Graphic/backend                       # must be empty
 rg -n "package graphic" Engine/Graphic/backend                     # must be empty
-rg -n "Graphic/front" Engine/physic/*.odin                         # must be empty
 ```
 
 The front (`graphic`) never imports `vendor:vulkan` and never imports a physics
-package: it holds opaque handles (`Frame_Source_Handle`, `vk.Stream_Handle`).
-`main` orchestrates: it owns the frame source (`frame_source.odin`) and registers
-it and the optional GPU producer with the front. `physic/gpu` uses the backend's
-compute primitives. The backend (`vk`) imports no `ecs`/`physic` state and never
-imports the front. No physics package imports the front. `shared` (`gfx`) is plain
-data and imports neither Vulkan nor ECS.
+package: it holds opaque handles (`Frame_Source_Handle`, `gfx.Stream_Handle`,
+`gfx.Compute`). `main` orchestrates: it owns the frame source
+(`frame_source.odin`) and registers it and the optional GPU producer with the
+front. `physic/gpu` records GPU work through the front's compute proxy
+(`graphic.compute_*`) and speaks only `gfx` handles, so physics never imports the
+backend or Vulkan. The backend (`vk`) imports no `ecs`/`physic` state and never
+imports the front. `shared` (`gfx`) is plain data and imports neither Vulkan nor
+ECS.
 
 ## Engine invariants to respect
 
@@ -55,8 +58,8 @@ data and imports neither Vulkan nor ECS.
 - **Layering**: `main` orchestrates (`main -> physic -> front -> backend`). It
   owns the frame source and registers it plus the optional GPU producer with the
   front. The front never imports a physics package or `vendor:vulkan`; the backend
-  imports no `ecs`/`physic` and never imports the front; no physics package
-  imports the front.
+  imports no `ecs`/`physic` and never imports the front; physics imports neither
+  the backend nor `vendor:vulkan` (it calls `graphic.compute_*`).
 
 ## Don't commit
 

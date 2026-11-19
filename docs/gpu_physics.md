@@ -73,11 +73,39 @@ sequenceDiagram
     Note over S,F: submit or finish false → uninstall hook,<br/>run the CPU solver for this tick
 ```
 
+## Compute seam
+
+The solver never imports the graphics backend. It records work through the front's
+compute proxy (`Engine/Graphic/front/compute.odin`) using the plain handles of
+`Engine/Graphic/shared/compute.odin`:
+
+```odin
+// Engine/physic/gpu (physic_gpu): imports graphic + gfx, no vk/vulkan
+compute  := graphic.renderer_compute(renderer)          // or a headless handle
+pipeline, ok := graphic.compute_pipeline_create(compute, "physics_brute", shader, []u32{0, 1})
+cmd      := graphic.compute_begin(compute)
+graphic.compute_upload(compute, cmd, host, device, bytes, write)
+graphic.compute_pass(compute, cmd, pipeline, binds, {groups = {n, 1, 1}}, &push, size_of(push))
+graphic.compute_readback(compute, cmd, device, 0, host, 0, bytes)
+value    := graphic.compute_submit(compute, cmd)
+graphic.compute_wait(compute, value)
+```
+
+`Binds` are `{binding, buffer, offset, size}`; a `Dispatch` with a non-nil
+`indirect` buffer records `vkCmdDispatchIndirect` (the tree build's per-level
+counts). The front owns the barrier/staging sequences; `vk.compute_*` in
+`backend/compute_api.odin` translates the handles and enums into Vulkan calls.
+
+The context is owned by whoever created it: the front creates it on demand for
+the app (`renderer_compute`, closed in `renderer_destroy`), the bench/tests create
+a headless one (`vk.compute_init_headless` + `vk.compute_handle`) and destroy it
+after the solver. `gpu_gravity_init(compute, world, mode, capacity)` borrows it
+and `gpu_gravity_destroy` never touches it.
+
 ## Backends
 
-`Engine/physic/gpu/gpu_physics.odin` owns the compute consumer (device
-attachment, staging, pipeline and submission ring); `gpu_tree.odin` adds the
-octree-specific buffers
+`Engine/physic/gpu/gpu_physics.odin` owns the compute consumer (staging, pipelines
+and submission ring); `gpu_tree.odin` adds the octree-specific buffers
 and traversal.
 
 ### Brute force (`physics_brute.comp`)
@@ -319,9 +347,9 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   queue family is preferred; otherwise a second queue from the graphics family;
   on single-queue families the compute queue aliases the graphics queue. The dev
   machine exposes a dedicated compute family, so the solver gets its own queue
-  handle; when compute would share the graphics handle, `gpu_gravity_init`
-  refuses and the CPU solver runs (the two threads would otherwise race on one
-  queue).
+  handle; when compute would share the graphics handle, `compute_attach` refuses
+  and `renderer_compute` returns a null handle, so the CPU solver runs (the two
+  threads would otherwise race on one queue).
 - **Timeline semaphores, not fences, for GPU work.** A compute context owns one
   timeline semaphore and a ring of command slots. A submission signals the next
   timeline value; the host waits with `vkWaitSemaphores` and later consumers
@@ -375,7 +403,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   copies, buffer barriers, timestamp queries, timeline semaphore, headless device
   (`compute_init_headless`) and the bench probe.
 - **M1 — GPU brute-force gravity (done).** The `Gpu_Gravity` backend attached to
-  the backend's device (headless in bench/tests), packed `vec4` body staging,
+  the front's compute context (headless in bench/tests), packed `vec4` body staging,
   the tiled `physics_brute.comp`, `gravity_backend` config with CPU fallback, the
   `gpu-force` bench stage and the CPU/GPU match test.
 - **M2 — GPU Barnes-Hut (done).** Tree upload on rebuild, the
