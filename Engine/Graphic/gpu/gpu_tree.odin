@@ -1,5 +1,6 @@
-package vk
+package gpu
 
+import vk "../backend"
 import phys "../../physic"
 import ecs "../../ecs"
 import "core:log"
@@ -33,7 +34,7 @@ GPU_TREE_WORKGROUP :: 128
 
 // Must match the shader's binding order.
 @(private)
-GPU_TREE_BINDINGS :: []Push_Binding_Spec {
+GPU_TREE_BINDINGS :: []vk.Push_Binding_Spec {
 	{set = 0, binding = 0, descriptor = .STORAGE_BUFFER, external = true}, // nodes
 	{set = 0, binding = 1, descriptor = .STORAGE_BUFFER, external = true}, // order
 	{set = 0, binding = 2, descriptor = .STORAGE_BUFFER, external = true}, // bodies
@@ -84,9 +85,9 @@ Tree_Leaf :: struct {
 
 @(private)
 Gpu_Tree :: struct {
-	order_device:    Buffer,
-	contacts_device: Buffer,
-	contacts_host:   Buffer,
+	order_device:    vk.Buffer,
+	contacts_device: vk.Buffer,
+	contacts_host:   vk.Buffer,
 	node_capacity:   int,
 	pair_capacity:   int,
 	// Highest pair count already warned about this reserve. The list is bounded
@@ -117,19 +118,19 @@ _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 	contact_bytes := vulkan.DeviceSize(GPU_CONTACT_HEADER_SIZE + pair_capacity * size_of(Gpu_Contact_Pair))
 
 	gpu := self.compute.gpu
-	self.tree.order_device = buffer_init(
+	self.tree.order_device = vk.buffer_init(
 		gpu,
 		order_bytes,
 		{.STORAGE_BUFFER, .TRANSFER_SRC, .TRANSFER_DST},
 		.DeviceLocal,
 	) or_return
-	self.tree.contacts_device = buffer_init(
+	self.tree.contacts_device = vk.buffer_init(
 		gpu,
 		contact_bytes,
 		{.STORAGE_BUFFER, .TRANSFER_DST, .TRANSFER_SRC},
 		.DeviceLocal,
 	) or_return
-	self.tree.contacts_host = buffer_init(gpu, contact_bytes, {.TRANSFER_DST}, .HostVisible) or_return
+	self.tree.contacts_host = vk.buffer_init(gpu, contact_bytes, {.TRANSFER_DST}, .HostVisible) or_return
 	if !_gpu_tree_build_reserve(self, capacity, node_capacity) {return false}
 	self.tree.valid = false
 	log.debugf(
@@ -143,9 +144,9 @@ _gpu_tree_reserve :: proc(self: ^Gpu_Gravity, capacity: int) -> bool {
 
 @(private)
 _gpu_tree_release :: proc(self: ^Gpu_Gravity) {
-	buffer_destroy(&self.tree.order_device)
-	buffer_destroy(&self.tree.contacts_device)
-	buffer_destroy(&self.tree.contacts_host)
+	vk.buffer_destroy(&self.tree.order_device)
+	vk.buffer_destroy(&self.tree.contacts_device)
+	vk.buffer_destroy(&self.tree.contacts_host)
 	_gpu_tree_build_release(self)
 	self.tree.node_capacity = 0
 	self.tree.pair_capacity = 0
@@ -214,12 +215,12 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 
 	_gpu_tree_pack_bodies(self, w, bodies)
 
-	pipeline := pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
-	cmd, slot := compute_begin(&self.compute)
+	pipeline := vk.pipeline_registry_get(&self.compute.pipelines, self.pipeline_id)
+	cmd, slot := vk.compute_begin(&self.compute)
 
 	// Reset the contact counter for this dispatch.
 	vulkan.CmdFillBuffer(cmd, tree.contacts_device.buffer, 0, size_of(u32), 0)
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		tree.contacts_device.buffer,
 		0,
@@ -239,8 +240,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	// view this tick rather than block. The traversal reads the set the renderer
 	// will read, so its upload lives in the same submission.
 	set_index := _render_set_acquire(self)
-	solve_bodies: ^Buffer
-	solve_radii: ^Buffer
+	solve_bodies: ^vk.Buffer
+	solve_radii: ^vk.Buffer
 	if set_index >= 0 {
 		set := &self.render_sets[set_index]
 		solve_bodies = &set.bodies_device
@@ -265,7 +266,7 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		_gpu_upload(cmd, self.compute.gpu, &self.live_host, &set.live_device, live_bytes)
 	}
 
-	pipeline_bind_compute(pipeline, cmd)
+	vk.pipeline_bind_compute(pipeline, cmd)
 	push := Gpu_Tree_Push {
 		live_count    = u32(count),
 		theta         = phys.physic_state(w).theta,
@@ -273,19 +274,19 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		pair_capacity = u32(tree.pair_capacity),
 		dt            = f32(seconds),
 	}
-	pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Tree_Push))
-	push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), tree.build.state_device.buffer, tree.build.nodes_offset, tree.build.nodes_bytes)
-	push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), tree.order_device.buffer, 0, tree.order_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), solve_bodies.buffer, 0, solve_bodies.size)
-	push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), solve_radii.buffer, 0, solve_radii.size)
-	push_descriptors_bind_buffer(&self.push, 0, 4, u32(slot), self.velocities_device.buffer, 0, self.velocities_device.size)
-	push_descriptors_bind_buffer(&self.push, 0, 5, u32(slot), tree.contacts_device.buffer, 0, tree.contacts_device.size)
-	push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
+	vk.pipeline_push_constants(pipeline, cmd, &push, size_of(Gpu_Tree_Push))
+	vk.push_descriptors_bind_buffer(&self.push, 0, 0, u32(slot), tree.build.state_device.buffer, tree.build.nodes_offset, tree.build.nodes_bytes)
+	vk.push_descriptors_bind_buffer(&self.push, 0, 1, u32(slot), tree.order_device.buffer, 0, tree.order_device.size)
+	vk.push_descriptors_bind_buffer(&self.push, 0, 2, u32(slot), solve_bodies.buffer, 0, solve_bodies.size)
+	vk.push_descriptors_bind_buffer(&self.push, 0, 3, u32(slot), solve_radii.buffer, 0, solve_radii.size)
+	vk.push_descriptors_bind_buffer(&self.push, 0, 4, u32(slot), self.velocities_device.buffer, 0, self.velocities_device.size)
+	vk.push_descriptors_bind_buffer(&self.push, 0, 5, u32(slot), tree.contacts_device.buffer, 0, tree.contacts_device.size)
+	vk.push_descriptors_flush(&self.push, cmd, pipeline.layout, u32(slot))
 
 	groups := u32((count + GPU_TREE_WORKGROUP - 1) / GPU_TREE_WORKGROUP)
 	vulkan.CmdDispatch(cmd, groups, 1, 1)
 
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		self.velocities_device.buffer,
 		0,
@@ -295,8 +296,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		{.SHADER_STORAGE_WRITE},
 		{.TRANSFER_READ},
 	)
-	gpu_copy_buffer(self.compute.gpu, self.velocities_device.buffer, self.velocities_host.buffer, velocity_bytes, cmd)
-	buffer_barrier(
+	vk.gpu_copy_buffer(self.compute.gpu, self.velocities_device.buffer, self.velocities_host.buffer, velocity_bytes, cmd)
+	vk.buffer_barrier(
 		cmd,
 		self.velocities_host.buffer,
 		0,
@@ -310,7 +311,7 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 	// when there are any. Copying the pre-allocated region here would move
 	// `pair_capacity * 8` bytes every solve (≈13 MB at 100k bodies) for a list
 	// that is usually empty.
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		tree.contacts_device.buffer,
 		0,
@@ -320,14 +321,14 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		{.SHADER_STORAGE_WRITE},
 		{.TRANSFER_READ},
 	)
-	gpu_copy_buffer(
+	vk.gpu_copy_buffer(
 		self.compute.gpu,
 		tree.contacts_device.buffer,
 		tree.contacts_host.buffer,
 		GPU_CONTACT_HEADER_SIZE,
 		cmd,
 	)
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		tree.contacts_host.buffer,
 		0,
@@ -338,7 +339,7 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 		{.HOST_READ},
 	)
 
-	self.pending_value = compute_submit(&self.compute, slot)
+	self.pending_value = vk.compute_submit(&self.compute, slot)
 	self.pending = true
 	if set_index >= 0 {
 		_render_set_publish(self, set_index, count, self.pending_value)
@@ -354,8 +355,8 @@ _gpu_tree_submit :: proc(self: ^Gpu_Gravity, w: ^ecs.World, bodies: []u32, secon
 @(private)
 _gpu_tree_read_pairs :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	bytes := vulkan.DeviceSize(GPU_CONTACT_HEADER_SIZE + count * size_of(Gpu_Contact_Pair))
-	cmd, slot := compute_begin(&self.compute)
-	buffer_barrier(
+	cmd, slot := vk.compute_begin(&self.compute)
+	vk.buffer_barrier(
 		cmd,
 		self.tree.contacts_device.buffer,
 		0,
@@ -365,14 +366,14 @@ _gpu_tree_read_pairs :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 		{.SHADER_STORAGE_WRITE},
 		{.TRANSFER_READ},
 	)
-	gpu_copy_buffer(
+	vk.gpu_copy_buffer(
 		self.compute.gpu,
 		self.tree.contacts_device.buffer,
 		self.tree.contacts_host.buffer,
 		bytes,
 		cmd,
 	)
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		self.tree.contacts_host.buffer,
 		0,
@@ -382,8 +383,8 @@ _gpu_tree_read_pairs :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 		{.TRANSFER_WRITE},
 		{.HOST_READ},
 	)
-	value := compute_submit(&self.compute, slot)
-	compute_wait(&self.compute, value)
+	value := vk.compute_submit(&self.compute, slot)
+	vk.compute_wait(&self.compute, value)
 	return true
 }
 
@@ -459,17 +460,17 @@ gpu_tree_dump :: proc(
 	if node_count <= 0 {return 0, 0, false}
 
 	node_bytes := vulkan.DeviceSize(node_count * size_of(Tree_Node))
-	node_host, node_ok := buffer_init(self.compute.gpu, node_bytes, {.TRANSFER_DST}, .HostVisible)
+	node_host, node_ok := vk.buffer_init(self.compute.gpu, node_bytes, {.TRANSFER_DST}, .HostVisible)
 	if !node_ok {return 0, 0, false}
-	defer buffer_destroy(&node_host)
+	defer vk.buffer_destroy(&node_host)
 
 	order_bytes := vulkan.DeviceSize(tree.live_count * size_of(u32))
-	order_host, order_ok := buffer_init(self.compute.gpu, order_bytes, {.TRANSFER_DST}, .HostVisible)
+	order_host, order_ok := vk.buffer_init(self.compute.gpu, order_bytes, {.TRANSFER_DST}, .HostVisible)
 	if !order_ok {return 0, 0, false}
-	defer buffer_destroy(&order_host)
+	defer vk.buffer_destroy(&order_host)
 
-	cmd, slot := compute_begin(&self.compute)
-	buffer_barrier(
+	cmd, slot := vk.compute_begin(&self.compute)
+	vk.buffer_barrier(
 		cmd,
 		tree.build.state_device.buffer,
 		tree.build.nodes_offset,
@@ -485,7 +486,7 @@ gpu_tree_dump :: proc(
 		size      = node_bytes,
 	}
 	vulkan.CmdCopyBuffer(cmd, tree.build.state_device.buffer, node_host.buffer, 1, &node_region)
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		node_host.buffer,
 		0,
@@ -495,7 +496,7 @@ gpu_tree_dump :: proc(
 		{.TRANSFER_WRITE},
 		{.HOST_READ},
 	)
-	buffer_barrier(
+	vk.buffer_barrier(
 		cmd,
 		tree.order_device.buffer,
 		0,
@@ -505,8 +506,8 @@ gpu_tree_dump :: proc(
 		{.SHADER_STORAGE_WRITE},
 		{.TRANSFER_READ},
 	)
-	gpu_copy_buffer(self.compute.gpu, tree.order_device.buffer, order_host.buffer, order_bytes, cmd)
-	buffer_barrier(
+	vk.gpu_copy_buffer(self.compute.gpu, tree.order_device.buffer, order_host.buffer, order_bytes, cmd)
+	vk.buffer_barrier(
 		cmd,
 		order_host.buffer,
 		0,
@@ -516,8 +517,8 @@ gpu_tree_dump :: proc(
 		{.TRANSFER_WRITE},
 		{.HOST_READ},
 	)
-	value := compute_submit(&self.compute, slot)
-	compute_wait(&self.compute, value)
+	value := vk.compute_submit(&self.compute, slot)
+	vk.compute_wait(&self.compute, value)
 
 	nodes := cast([^]Tree_Node)node_host.mapped
 	for i in 0 ..< node_count {

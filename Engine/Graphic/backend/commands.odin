@@ -63,7 +63,6 @@ command_pool_end_one_shot :: proc(command_pool: ^CommandPool, cmd_buf: vulkan.Co
 
 // A GPU buffer suballocated from the engine's memory blocks. Host-visible
 // buffers stay persistently mapped (HOST_COHERENT memory, no flushing).
-@(private)
 Buffer :: struct {
 	gpu:    ^GPU,
 	buffer: vulkan.Buffer,
@@ -72,7 +71,6 @@ Buffer :: struct {
 	mapped: rawptr,
 }
 
-@(private)
 buffer_init :: proc(gpu: ^GPU, size: vulkan.DeviceSize, usage: vulkan.BufferUsageFlags, kind: MemoryKind) -> (result: Buffer, ok: bool) {
 	return _buffer_init_ex(gpu, size, usage, kind, nil)
 }
@@ -80,7 +78,6 @@ buffer_init :: proc(gpu: ^GPU, size: vulkan.DeviceSize, usage: vulkan.BufferUsag
 // buffer_init_shared creates a buffer several queue families use at once
 // (CONCURRENT). The GPU solver's render view needs it: the compute queue writes
 // the body columns and the graphics queue reads them when it builds instances.
-@(private)
 buffer_init_shared :: proc(
 	gpu: ^GPU,
 	size: vulkan.DeviceSize,
@@ -122,7 +119,6 @@ _buffer_init_ex :: proc(
 	return tmp, true
 }
 
-@(private)
 buffer_destroy :: proc(self: ^Buffer) {
 	if self.gpu == nil {return}
 	if self.buffer != 0 {vulkan.DestroyBuffer(self.gpu.device, self.buffer, nil); self.buffer = 0}
@@ -132,7 +128,6 @@ buffer_destroy :: proc(self: ^Buffer) {
 
 // No Vulkan call here, so violations are programming errors; both checks are
 // O(1) and never run per element.
-@(private)
 buffer_write :: proc(buffer: ^Buffer, data: rawptr, size, offset: vulkan.DeviceSize) {
 	assert(buffer.mapped != nil, "buffer_write on an unmapped buffer")
 	assert(offset + size <= buffer.size, "buffer_write out of bounds")

@@ -18,9 +18,19 @@ instance_columns_reserve :: proc(self: ^Renderer, count: int) {
 }
 
 // One-time static seed (radius + initial selection) handed to the backend at
-// init; those columns are entity-indexed and do not change per frame.
+// init. The body view is entity-indexed, so this converts it into the plain
+// columns the backend takes; the slot -> entity mapping stays the identity of
+// `view.bodies`.
 @(private)
 instance_seed_backend :: proc(backend: ^vk.Backend, world: ^ecs.World) {
-	if phys.body_count(world) == 0 {return}
-	vk.backend_instances_seed(backend, phys.body_view(world))
+	view := phys.body_view(world)
+	count := len(view.bodies)
+	if count == 0 {return}
+	radii := make([]f32, count, context.temp_allocator)
+	selected := make([]u8, count, context.temp_allocator)
+	for entity in view.bodies {
+		radii[entity] = f32(view.radius[entity])
+		selected[entity] = bool(view.selected[entity]) ? 1 : 0
+	}
+	vk.backend_instances_seed(backend, view.bodies, radii, selected)
 }

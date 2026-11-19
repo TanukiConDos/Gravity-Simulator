@@ -10,7 +10,10 @@ import "vendor:vulkan"
 // and waitable on both sides — the host with vkWaitSemaphores, the device with
 // SemaphoreSubmitInfo.value. One context owns one timeline; the submitting
 // thread advances it and consumers wait on a specific value.
-@(private)
+// Timeline semaphore: a monotonic 64-bit counter signaled by queue submissions
+// and waitable on both sides — the host with vkWaitSemaphores, the device with
+// SemaphoreSubmitInfo.value. One context owns one timeline; the submitting
+// thread advances it and consumers wait on a specific value.
 Timeline :: struct {
 	device:    vulkan.Device,
 	semaphore: vulkan.Semaphore,
@@ -61,7 +64,6 @@ timeline_value :: proc(self: ^Timeline) -> u64 {
 // The render-view vending protocol uses it to tell whether the frame that last
 // read a render set has completed. A zero handle means "no timeline" and reads
 // as zero.
-@(private)
 semaphore_counter :: proc(device: vulkan.Device, semaphore: vulkan.Semaphore) -> u64 {
 	if semaphore == 0 {return 0}
 	value: u64
@@ -93,7 +95,6 @@ timeline_wait :: proc(self: ^Timeline, value: u64) {
 
 // buffer_barrier is the buffer counterpart of image_barrier: every transition
 // between a transfer, a dispatch and a host read goes through it.
-@(private)
 buffer_barrier :: proc(
 	cmd: vulkan.CommandBuffer,
 	buffer: vulkan.Buffer,

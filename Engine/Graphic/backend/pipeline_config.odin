@@ -6,7 +6,6 @@ import "vendor:vulkan"
 // listed here: their locations and formats come from SPIR-V reflection and the
 // CPU struct layout (see vertex_input.odin), and descriptor set layouts come
 // from the shader interface (see pipeline.odin).
-@(private)
 Shader_Spec :: struct {
 	path: string,
 }
@@ -46,7 +45,6 @@ Pipeline_Config :: struct {
 
 // A compute pipeline holds exactly one compute shader; the workgroup size and
 // the descriptor/push-constant interface all come from its SPIR-V reflection.
-@(private)
 Compute_Config :: struct {
 	shaders: []Shader_Spec,
 }

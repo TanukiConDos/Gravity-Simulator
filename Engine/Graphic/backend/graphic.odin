@@ -32,7 +32,6 @@ Vertex :: struct #packed {
 	color: [3]f32,
 }
 
-@(private)
 InstanceData :: struct #packed {
 	position: Vec3,
 	radius:   f32,

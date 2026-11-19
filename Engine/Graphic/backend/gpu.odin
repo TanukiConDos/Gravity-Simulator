@@ -5,7 +5,6 @@ import "core:log"
 import "vendor:glfw"
 import "vendor:vulkan"
 
-@(private)
 GPU :: struct {
 	instance:                    vulkan.Instance,
 	physical_device:             vulkan.PhysicalDevice,
@@ -68,9 +67,9 @@ gpu_init :: proc(window: ^Window) -> (result: GPU, ok: bool) {
 }
 
 // gpu_init_headless creates a device without window or surface for compute-only
-// consumers (the bench). The loader's exported vkGetInstanceProcAddr is used
-// because GLFW's wrapper requires an initialized window system.
-@(private)
+// consumers (the bench and the GPU physics package). The loader's exported
+// vkGetInstanceProcAddr is used because GLFW's wrapper requires an initialized
+// window system.
 gpu_init_headless :: proc() -> (result: GPU, ok: bool) {
 	tmp := GPU{debug_logger = context.logger}
 	committed := false
@@ -95,7 +94,6 @@ gpu_init_headless :: proc() -> (result: GPU, ok: bool) {
 	return tmp, true
 }
 
-@(private)
 gpu_destroy :: proc(self: ^GPU) {
 	log.debugf("[VULKAN] Destroying GPU...")
 	if self.device != nil {
@@ -113,13 +111,11 @@ gpu_destroy :: proc(self: ^GPU) {
 	log.debugf("[VULKAN]   GPU destroyed")
 }
 
-@(private)
 gpu_wait :: proc(self: ^GPU) {
 	if self.device == nil {return}
 	vk_assert(vulkan.DeviceWaitIdle(self.device), "vkDeviceWaitIdle")
 }
 
-@(private)
 gpu_copy_buffer :: proc(self: ^GPU, source, destination: vulkan.Buffer, size: vulkan.DeviceSize, cmd: vulkan.CommandBuffer) {
 	copy_region := vulkan.BufferCopy{srcOffset=0,dstOffset=0,size=size}; vulkan.CmdCopyBuffer(cmd, source, destination, 1, &copy_region)
 }

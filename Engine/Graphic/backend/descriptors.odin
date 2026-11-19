@@ -10,7 +10,6 @@ import "vendor:vulkan"
 // The camera uniform is uploaded per draw through vkCmdPushDescriptorSet2
 // (maintenance6, core in Vulkan 1.4), so no descriptor pool or long-lived
 // descriptor sets are needed.
-@(private)
 Push_Binding_Spec :: struct {
 	set:        u32,
 	binding:    u32,
@@ -36,13 +35,11 @@ Push_Binding :: struct {
 	bound:        [PUSH_DESCRIPTOR_SLOTS]bool,
 }
 
-@(private)
 Push_Descriptors :: struct {
 	gpu:      ^GPU,
 	bindings: [dynamic]Push_Binding,
 }
 
-@(private)
 push_descriptors_init :: proc(
 	gpu: ^GPU,
 	specs: []Push_Binding_Spec,
@@ -92,7 +89,6 @@ push_descriptors_init :: proc(
 	return tmp, true
 }
 
-@(private)
 push_descriptors_destroy :: proc(self: ^Push_Descriptors) {
 	if self.gpu == nil {return}
 	log.debugf("[VULKAN] Destroying Push descriptors...")
@@ -121,7 +117,6 @@ push_descriptors_buffer :: proc(self: ^Push_Descriptors, set, binding, frame: u3
 // push_descriptors_validate checks the configured bindings against the merged
 // shader interface, copies each binding's stage flags and warns about shader
 // resources that no buffer feeds.
-@(private)
 push_descriptors_validate :: proc(self: ^Push_Descriptors, pipeline: ^Pipeline) -> bool {
 	for &entry in self.bindings {
 		merged, found := pipeline_descriptor(pipeline, entry.set, entry.binding)
@@ -175,7 +170,6 @@ push_descriptors_write :: proc(
 
 // push_descriptors_bind_buffer points an external binding at a caller-owned
 // buffer for this frame. The binding is pushed on the next flush (once).
-@(private)
 push_descriptors_bind_buffer :: proc(
 	self: ^Push_Descriptors,
 	set, binding, frame: u32,
@@ -196,7 +190,6 @@ push_descriptors_bind_buffer :: proc(
 	entry.bound[frame] = true
 }
 
-@(private)
 push_descriptors_flush :: proc(
 	self: ^Push_Descriptors,
 	cmd: vulkan.CommandBuffer,

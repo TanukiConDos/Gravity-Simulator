@@ -7,7 +7,6 @@ import "vendor:vulkan"
 // Minimal block suballocator. Instead of calling vkAllocateMemory once per
 // resource, memory is carved out of large blocks per memory kind. Host-visible
 // blocks are mapped once for their whole lifetime.
-@(private)
 MemoryKind :: enum {
 	DeviceLocal,
 	HostVisible,

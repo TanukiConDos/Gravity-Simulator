@@ -24,7 +24,6 @@ Pipeline_Kind :: enum {
 	compute,
 }
 
-@(private)
 Pipeline :: struct {
 	gpu:          ^GPU,
 	kind:         Pipeline_Kind,
@@ -46,7 +45,6 @@ Pipeline :: struct {
 // Pipeline handles are indices into the registry, so a Frame_Pass can name its
 // pipeline without owning it. The registry replaces the single Renderer.pipeline
 // and is what makes a second pass mechanical to add.
-@(private)
 Pipeline_ID :: distinct u32
 
 @(private)
@@ -55,7 +53,6 @@ Pipeline_Entry :: struct {
 	pipeline: Pipeline,
 }
 
-@(private)
 Pipeline_Registry :: struct {
 	gpu:     ^GPU,
 	entries: [dynamic]Pipeline_Entry,
@@ -82,7 +79,6 @@ pipeline_registry_add :: proc(
 	return Pipeline_ID(len(self.entries) - 1), true
 }
 
-@(private)
 pipeline_registry_add_compute :: proc(
 	self: ^Pipeline_Registry,
 	name: string,
@@ -96,7 +92,6 @@ pipeline_registry_add_compute :: proc(
 	return Pipeline_ID(len(self.entries) - 1), true
 }
 
-@(private)
 pipeline_registry_get :: proc(self: ^Pipeline_Registry, id: Pipeline_ID) -> ^Pipeline {
 	assert(u32(id) < u32(len(self.entries)), "pipeline id is not registered")
 	return &self.entries[u32(id)].pipeline
@@ -460,14 +455,12 @@ pipeline_bind :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
 	vulkan.CmdBindPipeline(cmd, .GRAPHICS, self.handle)
 }
 
-@(private)
 pipeline_bind_compute :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer) {
 	assert(self.kind == .compute, "pipeline_bind_compute expects a compute pipeline")
 	vulkan.CmdBindPipeline(cmd, .COMPUTE, self.handle)
 }
 
 // pipeline_push_constants uploads a block that stays within the reflected range.
-@(private)
 pipeline_push_constants :: proc(self: ^Pipeline, cmd: vulkan.CommandBuffer, data: rawptr, size: u32) {
 	assert(size <= self.push_size, "push constant write exceeds the reflected block")
 	assert(self.push_stage != {}, "pipeline has no push constant block")

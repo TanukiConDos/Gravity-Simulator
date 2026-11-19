@@ -1,6 +1,5 @@
 package vk
 
-import phys "../../physic"
 import "base:intrinsics"
 import "vendor:vulkan"
 
@@ -46,25 +45,29 @@ instance_buffer_ensure :: proc(self: ^InstanceBuffer, count: int) {
 }
 
 // instance_buffer_write_static packs the entity-indexed radius/selection
-// columns into every frame's vertex buffer once, at init. The slot mapping
-// (`view.bodies`) is the same order the snapshot publishes positions in, so
-// the per-frame columns update the matching slots.
+// columns into every frame's vertex buffer once, at init. `bodies` is the
+// draw-slot -> entity mapping: entry `slot` names the entity whose radius and
+// selection belong in that vertex slot. The same order the snapshot publishes
+// positions in, so the per-frame columns update the matching slots.
+//
+// The backend stays engine-agnostic: the front converts its body view into these
+// plain columns.
 @(private)
-instance_buffer_write_static :: proc(self: ^InstanceBuffer, view: phys.Bodies) {
-	count := len(view.bodies)
+instance_buffer_write_static :: proc(self: ^InstanceBuffer, bodies: []u32, radii: []f32, selected: []u8) {
+	count := len(bodies)
 	if count == 0 {return}
 	instance_buffer_ensure(self, count)
 	for &buffer in self.buffers {
 		if buffer.mapped == nil {continue}
-		for idx, i in view.bodies {
-			selected := i32(0)
-			if bool(view.selected[idx]) {selected = 1}
+		for entity, slot in bodies {
+			is_selected := i32(0)
+			if selected[entity] > 0 {is_selected = 1}
 			data := InstanceData {
-				radius   = f32(view.radius[idx]) * INSTANCE_SCALE,
-				selected = selected,
+				radius   = radii[entity] * INSTANCE_SCALE,
+				selected = is_selected,
 			}
 			intrinsics.mem_copy(
-				rawptr(uintptr(buffer.mapped) + uintptr(i * size_of(InstanceData))),
+				rawptr(uintptr(buffer.mapped) + uintptr(slot * size_of(InstanceData))),
 				&data,
 				size_of(InstanceData),
 			)

@@ -2,6 +2,7 @@ package main
 
 import graphic "./Engine/Graphic/front"
 import vk "./Engine/Graphic/backend"
+import gpu "./Engine/Graphic/gpu"
 import physic "./Engine/physic"
 import ecs "./Engine/ecs"
 import foundation "./foundation"
@@ -254,7 +255,7 @@ main :: proc() {
 		window    = window,
 	}
 
-	backend, backend_ok := vk.backend_init(window, g_world)
+	backend, backend_ok := vk.backend_init(window)
 	if !backend_ok {log.errorf("Failed to create the graphics backend!"); return}
 	defer vk.backend_destroy(backend)
 
@@ -270,25 +271,29 @@ main :: proc() {
 	// GPU gravity is a backend of the selected gravity solver (brute force or
 	// octree). Install it before the world is frozen so the physics thread sees
 	// it from the first tick; on any failure the CPU solver runs instead.
-	gpu_gravity: ^vk.Gpu_Gravity
+	gpu_solver: ^gpu.Gpu_Gravity
 	if config.gravity_backend == .GPU {
 		capacity := max(g_world.capacity, physic.body_count(g_world))
-		if solver, solver_ok := vk.gpu_gravity_init(backend, config.algorithm, capacity); solver_ok {
-			gpu_gravity = solver
+		if solver, solver_ok := gpu.gpu_gravity_init(backend, g_world, config.algorithm, capacity); solver_ok {
+			gpu_solver = solver
 			// The backend draws straight from the solver's buffers (M5) instead
 			// of the front uploading the CPU columns.
-			vk.backend_set_gravity_source(backend, solver)
-			physic.physic_set_gravity_solver(g_world, vk.gpu_gravity_backend(solver))
+			graphic.renderer_set_gravity_source(renderer, solver)
+			physic.physic_set_gravity_solver(g_world, gpu.gpu_gravity_backend(solver))
 			log.infof(
 				"GPU gravity enabled (%v): %s",
 				config.algorithm,
-				vk.gpu_gravity_info(solver).device_name,
+				gpu.gpu_gravity_info(solver).device_name,
 			)
 		} else {
 			log.warnf("GPU gravity unavailable; falling back to the CPU solver")
 		}
 	}
-	defer if gpu_gravity != nil {vk.gpu_gravity_destroy(gpu_gravity)}
+	defer if gpu_solver != nil {
+		// Release the view the backend holds before the solver's sets disappear.
+		graphic.renderer_set_gravity_source(renderer, nil)
+		gpu.gpu_gravity_destroy(gpu_solver)
+	}
 
 	// Every pool and resource the threads use now exists: freeze the registries
 	// so the physics and graphics threads only ever perform concurrent reads.

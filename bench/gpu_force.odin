@@ -12,7 +12,7 @@ package main
 
 import ecs "../Engine/ecs"
 import foundation "../foundation"
-import vk "../Engine/Graphic/backend"
+import gpu "../Engine/Graphic/gpu"
 import physic "../Engine/physic"
 import "core:fmt"
 import "core:log"
@@ -88,7 +88,7 @@ _gpu_zero_velocities :: proc(w: ^ecs.World) {
 // the renderer keeps the device busy. The GPU samples in each stage run before
 // the (much longer) CPU samples, each preceded by its own warm-up, because the
 // CPU measurement is long enough for the device to clock back down.
-_gpu_warm_clocks :: proc(solver: ^vk.Gpu_Gravity, mode: foundation.Algorithm, n: int) {
+_gpu_warm_clocks :: proc(solver: ^gpu.Gpu_Gravity, mode: foundation.Algorithm, n: int) {
 	w := ecs.world_create()
 	defer ecs.world_destroy(w)
 	ecs.world_reserve(w, n)
@@ -103,7 +103,7 @@ _gpu_warm_clocks :: proc(solver: ^vk.Gpu_Gravity, mode: foundation.Algorithm, n:
 			min_half_size = MIN_HALF_SIZE,
 		},
 	)
-	physic.physic_set_gravity_solver(w, vk.gpu_gravity_backend(solver))
+	physic.physic_set_gravity_solver(w, gpu.gpu_gravity_backend(solver))
 	ecs.world_freeze(w)
 
 	dt := f32(SIM_DT)
@@ -131,18 +131,18 @@ gpu_force_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := vk.gpu_gravity_init_headless(.BRUTE_FORCE, n)
+	solver, created := gpu.gpu_gravity_init_headless(.BRUTE_FORCE, n)
 	if !created {
 		fmt.eprintfln("gpu-force: cannot create a headless GPU solver")
 		os.exit(1)
 	}
-	defer vk.gpu_gravity_destroy(solver)
-	info := vk.gpu_gravity_info(solver)
+	defer gpu.gpu_gravity_destroy(solver)
+	info := gpu.gpu_gravity_info(solver)
 
 	ensure_workers(1)
 	cpu_world := _gpu_force_world(n, {})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_force_world(n, vk.gpu_gravity_backend(solver))
+	gpu_world := _gpu_force_world(n, gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// Accuracy: one solve from rest on each backend, so the compared velocities

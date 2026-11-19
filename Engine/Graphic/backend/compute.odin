@@ -74,17 +74,18 @@ compute_init_headless :: proc() -> (result: ^Compute, ok: bool) {
 	self.device = gpu_init_headless() or_return
 	self.gpu = &self.device
 	self.owns_device = true
-	_compute_open(self) or_return
+	compute_open(self) or_return
 	log.infof("[COMPUTE] Context ready on %s", compute_info(self).device_name)
 	committed = true
 	return self, true
 }
 
-// _compute_open creates the submission machinery (pipeline registry, command
+// compute_open creates the submission machinery (pipeline registry, command
 // pool, timeline, slots) on `self.gpu`. It is the shared path of the headless
-// context and of a context attached to the renderer's device.
-@(private)
-_compute_open :: proc(self: ^Compute) -> bool {
+// context and of a context attached to the renderer's device. Exported so a
+// compute consumer in another package (GPU physics) can attach to the backend's
+// device.
+compute_open :: proc(self: ^Compute) -> bool {
 	self.pipelines = pipeline_registry_init(self.gpu)
 	self.command_pool = command_pool_init_for(self.gpu, self.gpu.compute_queue_family_index, COMPUTE_SLOTS) or_return
 	self.timeline = timeline_init(self.gpu) or_return
@@ -92,10 +93,9 @@ _compute_open :: proc(self: ^Compute) -> bool {
 	return true
 }
 
-// _compute_close waits for in-flight work and destroys the submission
+// compute_close waits for in-flight work and destroys the submission
 // machinery. The device itself is left alone: it may belong to the renderer.
-@(private)
-_compute_close :: proc(self: ^Compute) {
+compute_close :: proc(self: ^Compute) {
 	if self.gpu == nil {return}
 	gpu_wait(self.gpu)
 	timeline_destroy(&self.timeline)
@@ -106,7 +106,7 @@ _compute_close :: proc(self: ^Compute) {
 
 compute_destroy :: proc(self: ^Compute) {
 	if self == nil {return}
-	_compute_close(self)
+	compute_close(self)
 	if self.owns_device {gpu_destroy(&self.device)}
 	free(self)
 }
@@ -262,7 +262,6 @@ _median :: proc(values: []f64) -> f64 {
 // It takes `submit_mutex`, released by the matching `compute_submit`, so the
 // slot choice and the timeline advance are one atomic step even when the caller
 // is a job worker.
-@(private)
 compute_begin :: proc(self: ^Compute) -> (cmd: vulkan.CommandBuffer, slot: int) {
 	sync.mutex_lock(&self.submit_mutex)
 	slot = int(self.next_slot)
@@ -281,7 +280,6 @@ compute_begin :: proc(self: ^Compute) -> (cmd: vulkan.CommandBuffer, slot: int) 
 // signals its completion. The optional (semaphore, value) pair adds a wait, which
 // the solver uses to keep its render columns stable while the renderer reads
 // them. It releases the `submit_mutex` taken by `compute_begin`.
-@(private)
 compute_submit :: proc(
 	self: ^Compute,
 	slot: int,
@@ -329,7 +327,6 @@ compute_submit :: proc(
 	return value
 }
 
-@(private)
 compute_wait :: proc(self: ^Compute, value: u64) {
 	timeline_wait(&self.timeline, value)
 }
