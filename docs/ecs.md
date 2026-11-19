@@ -282,7 +282,7 @@ flowchart TD
 ## Threading
 
 The world is not synchronised; one thread owns it at a time. All pools and
-resources are created during `physic_init` / `backend_init` / `renderer_init` and
+resources are created during `physic_init` / `renderer_init` and
 the world is frozen before the threads start, so afterwards the graphics thread
 only performs concurrent reads of the registries. The physics thread owns all
 mutations and runs `world_flush`.

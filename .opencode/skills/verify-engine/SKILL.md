@@ -20,13 +20,16 @@ first — see the `shader-pipeline` skill.
 
 ```
 rg -n "vendor:vulkan" Engine/Graphic/front Engine/Graphic/shared   # must be empty
-rg -n "Graphic/front" Engine/Graphic/backend                       # must be empty
+rg -n '^import (ecs|physic|phys) ' Engine/Graphic/backend           # must be empty
+rg -n "Graphic/(front|gpu)" Engine/Graphic/backend                 # must be empty
 rg -n "package graphic" Engine/Graphic/backend                     # must be empty
+rg -n "Graphic/front" Engine/Graphic/gpu                           # must be empty
 ```
 
-The front (`graphic`) never imports `vendor:vulkan`; the backend (`vk`) never
-imports the front. `shared` (`gfx`) is plain data and imports neither Vulkan nor
-ECS. Both sides may import `physic`, `ecs` and `foundation`.
+The front (`graphic`) never imports `vendor:vulkan`; the backend (`vk`) imports
+no `ecs`/`physic` state and never imports the front or `gpu`; `gpu` owns the
+engine-side compute consumer (solver + render stream). `shared` (`gfx`) is plain
+data and imports neither Vulkan nor ECS.
 
 ## Engine invariants to respect
 
@@ -45,8 +48,9 @@ ECS. Both sides may import `physic`, `ecs` and `foundation`.
   don't make a field mandatory by accident.
 - **Visibility**: the engine packages expose only handles and their
   lifecycle/draw procedures; everything else is `@(private)`.
-- **Layering**: `front -> backend -> shared`. The front never imports
-  `vendor:vulkan`; the backend never imports `../front`.
+- **Layering**: `front -> {backend, gpu} -> shared`. The front never imports
+  `vendor:vulkan`; the backend imports no `ecs`/`physic` and never imports the
+  front or `gpu`.
 
 ## Don't commit
 

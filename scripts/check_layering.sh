@@ -45,17 +45,25 @@ check "Engine/Graphic/front and Engine/Graphic/shared must not import vendor:vul
       "move Vulkan code into Engine/Graphic/backend" \
       'vendor:vulkan' Engine/Graphic/front Engine/Graphic/shared
 
-check "Engine/Graphic/backend must not depend on the front package" \
-      "the dependency goes front -> backend, never backend -> front" \
-      'Graphic/front' Engine/Graphic/backend
+check "Engine/Graphic/backend must not import ecs or physic" \
+      "the backend is device-level; engine integration belongs to front/gpu" \
+      '^import (ecs|physic|phys) ' Engine/Graphic/backend
+
+check "Engine/Graphic/backend must not depend on the front or gpu packages" \
+      "the dependency goes front -> backend and gpu -> backend, never backend -> them" \
+      'Graphic/(front|gpu)' Engine/Graphic/backend
 
 check "Engine/Graphic/backend must not declare package graphic" \
       "the front's package name lives only under Engine/Graphic/front" \
       'package graphic' Engine/Graphic/backend
+
+check "Engine/Graphic/gpu must not depend on the front package" \
+      "the gpu solver is integrated by the front, not the other way round" \
+      'Graphic/front' Engine/Graphic/gpu
 
 if [ "$failed" -ne 0 ]; then
     echo "check_layering: layer violations found (see above)" >&2
     exit 1
 fi
 
-echo "check_layering: OK (front -> backend -> shared)"
+echo "check_layering: OK (front -> {backend, gpu} -> shared)"

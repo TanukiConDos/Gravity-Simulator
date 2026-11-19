@@ -61,8 +61,9 @@ Package layering is checked separately, without building:
 scripts/check_layering.sh
 ```
 
-It fails if the front or `shared` package mentions `vendor:vulkan`, or if the
-backend mentions `Graphic/front` / declares `package graphic`.
+It fails if the front or `shared` package mentions `vendor:vulkan`, if the
+backend imports `ecs`/`physic` or mentions `Graphic/front`/`Graphic/gpu`, or if
+`gpu` mentions `Graphic/front`.
 
 ## Project Structure
 
@@ -75,8 +76,9 @@ backend mentions `Graphic/front` / declares `package graphic`.
 ├── scripts/                 # check_layering.sh (front/backend dependency check)
 ├── Engine/Graphic/
 │   ├── shared/              # package gfx: plain data seam (no Vulkan, ECS or GLFW)
-│   ├── front/               # package graphic: camera, input, instancing, Renderer, ECS systems
-│   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute
+│   ├── front/               # package graphic: camera, input, instancing, Renderer, ECS integration
+│   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute (no ECS)
+│   ├── gpu/                 # package gpu: GPU gravity solver, GPU tree build, render stream
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
@@ -87,9 +89,10 @@ backend mentions `Graphic/front` / declares `package graphic`.
 └── scenes/                  # JSON scene files
 ```
 
-`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
-(`vk`): `front -> backend -> shared`, the front never imports `vendor:vulkan`,
-and the backend never imports the front.
+`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`), `backend`
+(`vk`) and `gpu` (`gpu`): `front -> {backend, gpu} -> shared`. The front never
+imports `vendor:vulkan`, the backend imports no ECS/physics state, and `gpu` is
+the only graphics package that may import `physic`/`ecs` besides the front.
 
 ## Configuration
 
@@ -117,8 +120,8 @@ missing/invalid fields fall back to defaults).
 
 - `theta` (Barnes-Hut opening angle, default 0.5) trades octree speed for accuracy.
 - `gravity_backend` ("CPU"/"GPU") swaps the gravity solve for either algorithm;
-  the GPU backend attaches to the renderer's device and falls back to CPU on
-  failure. See `docs/gpu_physics.md`.
+  the GPU backend attaches to the graphics backend's device and falls back to CPU
+  on failure. See `docs/gpu_physics.md`.
 - `tree_rebuild_interval` (sim-seconds, default 50; 0 = rebuild every tick).
 - `max_depth` (default 48, capped) and `min_half_size` (default `1e-4`) bound octree subdivision.
 - `worker_threads` (default 8) sizes the pool for the parallel gravity solver.

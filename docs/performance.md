@@ -16,7 +16,7 @@ Unless noted, numbers are from a release build
   every tick copies a `RenderSnapshot`. Dominated by the octree traversal (and,
   for `BRUTE_FORCE`, by collision).
 - **GPU backend** (`gravity_backend = GPU`): the solve dispatches on a separate
-  compute queue and the renderer draws straight from solver buffers (no snapshot
+  compute queue and the backend draws straight from the solver stream (no snapshot
   copy, no host instance fill). The floor is the host round-trip and the serial
   CPU collision pass.
 

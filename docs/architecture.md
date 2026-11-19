@@ -42,6 +42,7 @@ flowchart TD
     tests["tests/"]
     front["Engine/Graphic/front<br/>package graphic"]
     backend["Engine/Graphic/backend<br/>package vk"]
+    gpu["Engine/Graphic/gpu<br/>package gpu"]
     shared["Engine/Graphic/shared<br/>package gfx"]
     spirv["Engine/Graphic/spirv<br/>SPIR-V reflection (CPU only)"]
     physic["Engine/physic"]
@@ -50,41 +51,48 @@ flowchart TD
 
     main --> front
     main --> backend
+    main --> gpu
     main --> physic
     main --> ecs
     main --> foundation
     bench --> front
     bench --> backend
+    bench --> gpu
     bench --> physic
     bench --> ecs
     bench --> foundation
     tests --> front
     tests --> backend
+    tests --> gpu
     tests --> physic
     tests --> ecs
     tests --> foundation
 
     front --> backend
+    front --> gpu
     front --> shared
+    gpu --> backend
     backend --> shared
     backend --> spirv
+    backend --> foundation
     front --> physic
     front --> ecs
     front --> foundation
-    backend --> physic
-    backend --> ecs
-    backend --> foundation
+    gpu --> physic
+    gpu --> ecs
+    gpu --> foundation
     physic --> ecs
     physic --> foundation
     ecs --> foundation
 ```
 
 `foundation` has no engine dependencies (config, arena, file I/O, the job pool,
-the profiler). `physic` and both graphics packages sit on `ecs`; both graphics
-packages additionally depend on `physic` for the body view and snapshot types.
-The front never imports `vendor:vulkan`; the backend never imports the front.
-`shared` (`gfx`) is plain data only. The `bench/` and `tests/` packages are
-separate binaries that drive the same libraries.
+the profiler). `physic` and the front/`gpu` packages sit on `ecs`; the front and
+`gpu` additionally depend on `physic` for the body view and snapshot types. The
+front never imports `vendor:vulkan`; the backend imports no engine state (no
+`ecs`, no `physic`) and never imports the front or `gpu`. `shared` (`gfx`) is
+plain data only. The `bench/` and `tests/` packages are separate binaries that
+drive the same libraries.
 
 ## Runtime topology
 
@@ -161,13 +169,13 @@ sequenceDiagram
     M->>P: physic_init(world, config)
     M->>W: scheduler_create(job_system)
     M->>P: physic_register_systems(scheduler)
-    M->>B: vk.backend_init(window, world)
+    M->>B: vk.backend_init(window)
     M->>R: graphic.renderer_init(backend, window, world)
     M->>R: graphic.graphic_register_systems(scheduler)
     M->>W: scheduler_finalize()
     alt gravity_backend == GPU
-        M->>B: vk.gpu_gravity_init(backend, algorithm, capacity)
-        M->>B: vk.backend_set_gravity_source(backend, solver)
+        M->>B: gpu.gpu_gravity_init(backend, world, algorithm, capacity)
+        M->>R: graphic.renderer_set_gravity_source(renderer, solver)
         M->>P: physic_set_gravity_solver(hook)
     end
     M->>W: world_freeze()
@@ -211,12 +219,12 @@ sequenceDiagram
     loop every frame
         G->>W: scheduler_run(RENDER, dt)
         W->>W: graphic.input → graphic.render
-        G->>G: front: build Frame_Packet<br/>(claims snapshot in CPU mode)
+        G->>G: front: claim snapshot or solver view<br/>build Frame_Packet / Instance_Stream
         G->>V: backend_draw: resolve picks, fence, acquire
         alt GPU backend owns the world
-            G->>G: claim render view, instance_pack, wait solver timeline
+            G->>G: backend: instance_pack, wait solver timeline
         else CPU instance mode
-            G->>G: upload positions / selected columns
+            G->>G: backend: upload positions / selected columns
         end
         G->>V: frame graph, submit, present
         G->>W: store Frame_Result pick in Selection_State
@@ -267,14 +275,14 @@ flowchart LR
     pools -->|"pack + upload (GPU backend)"| sets[("render view sets ×3<br/>CONCURRENT buffers")]
 
     subgraph GT["graphics thread"]
-        pick["front: claim snapshot<br/>build Frame_Packet"]
-        pack["backend: claim view<br/>instance_pack.comp (GPU path)"]
+        pick["front: claim snapshot or view<br/>build Frame_Packet / Instance_Stream"]
+        pack["backend: instance_pack.comp (stream)"]
         draw["backend: CmdDrawIndexed"]
         pick --> pack --> draw
     end
 
     snap -->|"claim PUBLISHED"| pick
-    sets -->|"claim PUBLISHED → READING"| pack
+    sets -->|"claim PUBLISHED → READING"| pick
     draw -->|"Frame_Result.picked"| sel[("Selection_State")]
     sel -->|"physic.select (atomic exchange)"| pools
 ```

@@ -75,8 +75,9 @@ sequenceDiagram
 
 ## Backends
 
-`Engine/Graphic/backend/gpu_physics.odin` owns the backend (device attachment, staging,
-pipeline and submission ring); `gpu_tree.odin` adds the octree-specific buffers
+`Engine/Graphic/gpu/gpu_physics.odin` owns the compute consumer (device
+attachment, staging, pipeline and submission ring); `gpu/gpu_tree.odin` adds the
+octree-specific buffers
 and traversal.
 
 ### Brute force (`physics_brute.comp`)
@@ -181,8 +182,8 @@ readback per level. Only the control block comes back to the host.
 
 ## Direct rendering (M5)
 
-The renderer never reads the CPU snapshot while a GPU backend owns the world.
-The solver publishes a *render view* for the renderer thread:
+The front never reads the CPU snapshot while a GPU backend owns the world.
+The solver publishes a *render view* for the graphics thread:
 
 - `bodies`, `radii`, `selected` and `live`, all CONCURRENT buffers the compute
   and graphics queues share. `live` maps the draw slot to the entity, so the
@@ -209,8 +210,8 @@ device snapshots and a per-set state machine:
   `release_value` (`vkGetSemaphoreCounterValue`, no host block) — by a
   `FREE -> WRITING` CAS. Upload the columns into that set and dispatch against
   it, then publish (`published_value`/`published_count`, then state
-  `PUBLISHED`) and free the previously published set unless the backend claimed
-  it (`PUBLISHED -> FREE`; a `READING` set is left to the backend). When no set
+  `PUBLISHED`) and free the previously published set unless the front claimed
+  it (`PUBLISHED -> FREE`; a `READING` set is left to the front). When no set
   is usable the solve still runs against the backend's working copy and simply
   skips the render view; physics never blocks.
 - Backend, per frame: claim the published set (`PUBLISHED -> READING`), pack the
@@ -228,7 +229,7 @@ zero and the sets cycle freely.
 Measured at 100k bodies: the per-frame instance work drops from 1.14 ms of CPU
 time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
 dispatch), and the solver's positions are one integration step behind the CPU
-snapshot - the backend draws what the solve used. A CPU backend, or a GPU
+snapshot - the backend draws what the solve produced. A CPU backend, or a GPU
 backend that failed and was uninstalled, keeps the snapshot path unchanged.
 
 ```mermaid
@@ -236,8 +237,8 @@ stateDiagram-v2
     [*] --> FREE
     FREE --> WRITING: solver acquire<br/>(CAS, reader done)
     WRITING --> PUBLISHED: solver publish<br/>(published_value, published_count)
-    PUBLISHED --> READING: renderer claim<br/>(CAS)
-    READING --> FREE: renderer release<br/>(store release_value first)
+    PUBLISHED --> READING: front claim<br/>(CAS)
+    READING --> FREE: front release<br/>(store release_value first)
     PUBLISHED --> FREE: solver frees its<br/>previous, unclaimed set
 ```
 
@@ -252,8 +253,8 @@ flowchart LR
 ```
 
 Solver-side ownership: only `FREE` sets whose reader has completed are written;
-`PUBLISHED → READING` is the backend's claim, and the backend stores the frame
-timeline value on the set before releasing it `READING → FREE`, so the solver
+`PUBLISHED → READING` is the front's claim, and the front releases it with the
+backend's last frame timeline value before releasing `READING → FREE`, so the solver
 cannot acquire a set an in-flight frame still reads.
 
 ## Measurements
@@ -322,7 +323,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
 - **Timeline semaphores, not fences, for GPU work.** A compute context owns one
   timeline semaphore and a ring of command slots. A submission signals the next
   timeline value; the host waits with `vkWaitSemaphores` and later consumers
-  (the renderer, when it draws GPU-produced state) wait on a value in
+  (the backend, when it draws a GPU-produced stream) wait on a value in
   `vkQueueSubmit2`. Binary semaphores stay where the window system requires
   them: swapchain acquire and present.
 - **One submission at a time per compute context, whichever thread calls.**
@@ -393,7 +394,8 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
 - **M5 — direct rendering (done).** The solver publishes a render view as one of
-  three vended device snapshots; the backend claims the published set, packs the
+  three vended device snapshots; the front claims the published set and hands the
+  backend an `Instance_Stream`, which packs the
   per-frame instance data from it with a compute pass, and the frame submission
   waits on that set's solve value. A set is only written once the frame that last
   read it has completed (per-set `release_value` on the frame timeline), so
