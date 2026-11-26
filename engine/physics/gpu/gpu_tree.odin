@@ -25,8 +25,9 @@ import "core:log"
 // waits, scatters the velocities and appends the contacts (collision needs them
 // before the narrow phase).
 
+// Manifest job name (`engine/graphics/shader/manifest.odin`).
 @(private)
-GPU_TREE_SHADER :: "engine/graphics/shader/physics_tree.spv"
+GPU_TREE_SHADER :: "physics_tree"
 
 // Must match the tree shader's local_size_x; used only to size the dispatch.
 @(private)

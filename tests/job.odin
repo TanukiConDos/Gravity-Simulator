@@ -1,6 +1,6 @@
 package tests
 
-import found "../foundation"
+import found "engine:foundation"
 import "core:sync"
 import "core:testing"
 

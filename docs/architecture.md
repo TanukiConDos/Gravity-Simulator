@@ -37,24 +37,43 @@ runs until the window closes.
 
 ```mermaid
 flowchart TD
-    main["main.odin / parallel.odin<br/>frame_source.odin (orchestrator)"]
+    main["main.odin<br/>planet scene + entry point"]
+    app["engine/app<br/>runtime assembly"]
     bench["bench/"]
     tests["tests/"]
+    game["game/ (shared library)"]
     front["engine/graphics/front<br/>package graphic"]
     backend["engine/graphics/backend<br/>package vk"]
     shared["engine/graphics/shared<br/>package gfx"]
     pgpu["engine/physics/gpu<br/>package physics_gpu"]
     spirv["engine/graphics/spirv<br/>SPIR-V reflection (CPU only)"]
+    shader["engine/graphics/shader<br/>manifest"]
     physics["engine/physics"]
     ecs["engine/ecs"]
-    foundation["foundation"]
+    hot["engine/hot"]
+    gapi["engine/game_api"]
+    foundation["engine/foundation"]
 
+    main --> app
     main --> physics
-    main --> front
-    main --> backend
-    main --> shared
     main --> ecs
     main --> foundation
+    app --> physics
+    app --> front
+    app --> backend
+    app --> ecs
+    app --> hot
+    app --> pgpu
+    app --> foundation
+    hot --> front
+    hot --> pgpu
+    hot --> ecs
+    hot --> gapi
+    hot --> shader
+    hot --> foundation
+    game --> gapi
+    game --> physics
+    game --> ecs
     bench --> physics
     bench --> pgpu
     bench --> front
@@ -75,6 +94,7 @@ flowchart TD
     front --> shared
     backend --> shared
     backend --> spirv
+    backend --> shader
     backend --> foundation
     pgpu --> ecs
     pgpu --> foundation
@@ -83,17 +103,19 @@ flowchart TD
     ecs --> foundation
 ```
 
-`foundation` has no engine dependencies (config, arena, file I/O, the job pool,
-the profiler). `main` is the orchestrator: it owns the frame source
-(`frame_source.odin`: CPU columns, snapshot claim, pick handoff) and registers the
-GPU producer through the front. The front never imports a physics package (or
-`vendor:vulkan`); physics depends on the front, which owns the compute context and
-proxies GPU work to the backend, and on `gfx` for the plain handles. No physics
-package imports the backend or `vendor:vulkan`. The backend imports no engine
-state and never imports the front. `main` also bootstraps the window, backend and
-renderer for the app shell. `shared` (`gfx`) is plain data only. The `bench/` and
-`tests/` packages are separate binaries that drive the same libraries; they open
-a headless compute context from the backend directly.
+`engine/foundation` has no engine dependencies (config, arena, file I/O, the job
+pool, the profiler and the fixed-step/free-running loop). `engine/app` is the
+runtime orchestrator: it owns the frame source (`engine/app/frame_source.odin`:
+CPU columns, snapshot claim, pick handoff), the step/frame callbacks
+(`engine/app/loop.odin`), and the window/backend/front bootstrap. `main` supplies
+only the planet scene/setup and the entry point, and calls `app.run`. The front
+never imports a physics package (or `vendor:vulkan`); physics depends on the front,
+which owns the compute context and proxies GPU work to the backend, and on `gfx`
+for the plain handles. No physics package imports the backend or `vendor:vulkan`.
+The backend imports no engine state and never imports the front. `shared` (`gfx`)
+is plain data only. The `bench/` and `tests/` packages are separate binaries that
+drive the same libraries; they open a headless compute context from the backend
+directly.
 
 ## Runtime topology
 
@@ -155,6 +177,7 @@ flowchart TB
 sequenceDiagram
     autonumber
     participant M as main()
+    participant A as engine/app
     participant F as foundation
     participant W as ecs.World
     participant P as physics
@@ -163,31 +186,35 @@ sequenceDiagram
     participant PG as physics_gpu
     participant T as physics + graphics threads
 
-    M->>F: config_load("config.json")
-    M->>F: parallel_init(worker_threads)
-    M->>B: vk.window_init(1280, 720)
-    M->>W: world_create()
-    M->>P: body_spawn(...) — scene / random
-    M->>P: physics_init(world, config)
-    M->>W: scheduler_create(job_system)
-    M->>P: physics_register_systems(scheduler)
-    M->>B: vk.backend_init(window)
-    M->>R: graphic.renderer_init(backend, window, world)
-    M->>M: frame_source_init(renderer, world)<br/>registers the app frame source
-    M->>R: graphic.graphic_register_systems(scheduler)
-    M->>W: scheduler_finalize()
+    M->>A: app.run(Desc{title, config_path, setup})
+    A->>F: config_load(config_path)
+    A->>F: parallel_init(worker_threads)
+    A->>W: world_create()
+    A->>M: setup(world, config)
+    M->>P: world_reserve + body_spawn(...) — scene / random
+    A->>W: world_reserve(... + game headroom)
+    A->>P: physics_init(world, config)
+    A->>W: scheduler_create(job_system)
+    A->>P: physics_register_systems(scheduler)
+    A->>B: vk.window_init(1280, 720)
+    A->>B: vk.backend_init(window)
+    A->>R: graphic.renderer_init(backend, window, world)
+    A->>A: frame_source_init(renderer, world)
+    A->>R: graphic.graphic_register_systems(scheduler)
+    A->>W: scheduler_finalize()
     alt gravity_backend == GPU
-        M->>R: renderer_compute() (attaches on first use) -> gfx.Compute
-        M->>PG: gpu_gravity_init(compute, world, algorithm, capacity)
-        M->>R: renderer_set_stream_producer(handle, ops)
-        M->>P: physics_set_gravity_solver(hook)
+        A->>R: renderer_compute() (attaches on first use) -> gfx.Compute
+        A->>PG: gpu_gravity_init(compute, world, algorithm, capacity)
+        A->>R: renderer_set_stream_producer(handle, ops)
+        A->>P: physics_set_gravity_solver(hook)
     end
-    M->>W: world_freeze()
-    M->>T: parallel_start()
+    A->>A: hot.reload_init + hot.game_init
+    A->>W: world_freeze()
+    A->>T: foundation.loop_start(callbacks)
     loop until the window closes
-        M->>M: wait_events + pump
+        A->>A: wait_events + pump
     end
-    M->>T: ctx.exit = true, then parallel_stop()
+    A->>T: loop_request_exit(), then loop_stop()
 ```
 
 All pools and resources must exist before `world_freeze`; after it the registries
@@ -223,7 +250,7 @@ sequenceDiagram
     loop every frame
         G->>W: scheduler_run(RENDER, dt)
         W->>W: graphic.input → graphic.render
-        G->>G: front: main's frame source columns, pump the producer handle<br/>build Frame_Packet
+        G->>G: front: runtime frame-source columns, pump the producer handle<br/>build Frame_Packet
         G->>V: backend_draw: resolve picks, fence, acquire
         alt GPU backend owns the world
             G->>G: backend: instance_pack, wait producer timeline

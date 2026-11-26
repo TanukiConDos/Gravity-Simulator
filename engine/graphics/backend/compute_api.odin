@@ -1,6 +1,8 @@
 package vk
 
 import gfx "engine:graphics/shared"
+import "core:log"
+import "core:strings"
 import "vendor:vulkan"
 
 // Neutral compute entry points for a producer that must not import the Vulkan
@@ -127,10 +129,11 @@ compute_buffer_destroy :: proc(c: gfx.Compute, buffer: ^gfx.Buffer) {
 
 // compute_pipeline_create registers a compute pipeline together with the
 // external push-descriptor bindings the producer fills per pass. `bindings` are
-// the shader's storage-buffer binding indices (set 0).
+// the shader's storage-buffer binding indices (set 0); `job` is the manifest job
+// name so the pipeline can be rebuilt on hot reload.
 compute_pipeline_create :: proc(
 	c: gfx.Compute,
-	name, shader: string,
+	name, job: string,
 	bindings: []u32,
 ) -> (
 	result: gfx.Pipeline,
@@ -147,7 +150,7 @@ compute_pipeline_create :: proc(
 	id, built := pipeline_registry_add_compute(
 		&self.pipelines,
 		name,
-		Compute_Config{shaders = []Shader_Spec{{path = shader}}},
+		Compute_Config{shaders = []Shader_Spec{{job = job}}},
 	)
 	if !built {return 0, false}
 
@@ -159,8 +162,59 @@ compute_pipeline_create :: proc(
 		return 0, false
 	}
 
-	append(&self.producers, Producer_Pipeline{id = id, push = push})
+	append(
+		&self.producers,
+		Producer_Pipeline{id = id, name = strings.clone(name), push = push},
+	)
 	return gfx.Pipeline(len(self.producers) - 1), true
+}
+
+@(private)
+_compute_validate_rebuilt_pipeline :: proc(
+	user: rawptr,
+	name: string,
+	pipeline: ^Pipeline,
+) -> bool {
+	self := cast(^Compute)user
+	for &producer in self.producers {
+		if producer.name != name {continue}
+		if !push_descriptors_validate(&producer.push, pipeline) {
+			_ = push_descriptors_validate(
+				&producer.push,
+				pipeline_registry_get(&self.pipelines, producer.id),
+			)
+			return false
+		}
+		return true
+	}
+	// Entry points registered without a producer (the bench probe) declare no
+	// external push descriptors; their reflection is self-contained.
+	return true
+}
+
+// compute_reload_pipelines rebuilds every pipeline registered on this context
+// from the current SPIR-V. It waits on the context's timeline first, so it must
+// be called from the thread that submits to the context and when no other
+// submission is in flight. On failure the live pipelines are kept.
+compute_reload_pipelines :: proc(c: gfx.Compute) -> bool {
+	self := _compute_of(c)
+	if self == nil || self.gpu == nil {return false}
+	timeline_wait(&self.timeline, self.timeline.value)
+	rebuilt, failed := pipeline_registry_rebuild_all(
+		&self.pipelines,
+		_compute_validate_rebuilt_pipeline,
+		self,
+	)
+	if failed > 0 {
+		log.errorf(
+			"[HOT] Compute shaders: %d rebuilt, %d kept the previous pipeline",
+			rebuilt,
+			failed,
+		)
+	} else {
+		log.infof("[HOT] Compute shaders reloaded (%d pipelines)", rebuilt)
+	}
+	return failed == 0
 }
 
 @(private)

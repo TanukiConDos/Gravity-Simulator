@@ -7,7 +7,10 @@ import "vendor:vulkan"
 // CPU struct layout (see vertex_input.odin), and descriptor set layouts come
 // from the shader interface (see pipeline.odin).
 Shader_Spec :: struct {
-	path: string,
+	// Name of the job in `engine/graphics/shader/manifest.odin`. The manifest
+	// resolves the source, defines and compiled `.spv` path, so a pipeline can be
+	// rebuilt from the same description the build tool uses.
+	job: string,
 }
 
 // A CPU-side vertex stream. `type` is the packed struct written to the buffer;

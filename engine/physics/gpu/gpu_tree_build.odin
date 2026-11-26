@@ -27,13 +27,14 @@ import "core:log"
 TREE_BUILD_STAGES :: 6
 
 @(private)
+// Manifest job names (`engine/graphics/shader/manifest.odin`).
 TREE_BUILD_SHADERS: [TREE_BUILD_STAGES]string = {
-	"engine/graphics/shader/tree_build_0.spv",
-	"engine/graphics/shader/tree_build_1.spv",
-	"engine/graphics/shader/tree_build_2.spv",
-	"engine/graphics/shader/tree_build_3.spv",
-	"engine/graphics/shader/tree_build_4.spv",
-	"engine/graphics/shader/tree_build_5.spv",
+	"tree_build_0",
+	"tree_build_1",
+	"tree_build_2",
+	"tree_build_3",
+	"tree_build_4",
+	"tree_build_5",
 }
 
 @(private)

@@ -8,3 +8,6 @@ Gravity-Simulator
 bench/results/
 perf.data*
 *.spall
+
+# hot-reloaded gameplay libraries
+/build/

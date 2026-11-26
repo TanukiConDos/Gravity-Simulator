@@ -252,7 +252,7 @@ affinities.
 `scheduler_run` drives one phase to completion: a system becomes **ready** when
 all of its predecessors have finished. Ready `.CALLER` systems run inline on the
 phase thread; ready `.ANY` systems are submitted to the shared job pool
-(`foundation/job.odin`). Each completion releases its successors and wakes the
+(`engine/foundation/job.odin`). Each completion releases its successors and wakes the
 runner, which dispatches the newly ready work. The phase finishes when the
 remaining count reaches zero.
 

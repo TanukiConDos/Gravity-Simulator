@@ -1,33 +1,18 @@
 package main
 
-import graphic "engine:graphics/front"
-import vk "engine:graphics/backend"
-import physics_gpu "engine:physics/gpu"
-import physics "engine:physics"
+import app "engine:app"
 import ecs "engine:ecs"
-import foundation "./foundation"
+import foundation "engine:foundation"
+import physics "engine:physics"
 import "core:log"
 import "core:math/rand"
 import "core:os"
 import "core:strconv"
 import "core:strings"
-import "core:sync"
-import "core:time"
 
-@(private)
-g_world: ^ecs.World
-@(private)
-g_scheduler: ^ecs.Scheduler
-
-// Main-loop event wait. The loop has nothing to do between events, so it blocks
-// instead of polling; the timeout keeps input latency bounded if the window
-// stays idle. The physics thread paces itself and the graphics thread is
-// independent, so this only affects event handling.
-MAIN_LOOP_TIMEOUT_SEC :: 1.0 / 60.0
-
-// Built with `-define:PROFILE=true`, the whole app (physics, graphics and main
-// threads) is traced to this file. Without the flag it is never touched.
-PROFILE_TRACE_PATH :: "trace_app.spall"
+// Application entry point: a gravity/planet simulation. Everything reusable
+// (window, Vulkan, renderer, ECS/physics assembly, hot reload, loops) lives
+// under `engine/`; this package only describes the planets to simulate.
 
 // Initial conditions read from a scene file, before they become ECS bodies.
 @(private)
@@ -157,30 +142,22 @@ _skip_value :: proc(text: string, pos: ^int) {_skip_whitespace(text, pos); if po
 			   c == '\r' {break}
 			pos^ += 1}}}
 
+// setup populates the world from the configured scene or the random generator.
+// It runs before physics_init, so body pools are created on demand and the render
+// snapshot is sized from the final body count.
 @(private)
-_sim_init :: proc() {
-	config := foundation.config_get()
-	g_world = ecs.world_create()
+_setup :: proc(world: ^ecs.World, config: ^foundation.Config) -> bool {
 	switch config.system_creation_mode {
 	case .RANDOM:
-		sim_random_init()
+		sim_random_init(world, config)
 	case .FILE:
-		sim_file_init()
+		sim_file_init(world, config)
 	}
-	physics.physics_init(g_world, config^)
-	g_scheduler = ecs.scheduler_create(foundation.default_job_system())
-	physics.physics_register_systems(g_scheduler)
+	return true
 }
 
 @(private)
-_sim_end :: proc() {
-	ecs.scheduler_destroy(g_scheduler); g_scheduler = nil
-	ecs.world_destroy(g_world); g_world = nil
-}
-
-@(private)
-sim_file_init :: proc() {
-	config := foundation.config_get()
+sim_file_init :: proc(world: ^ecs.World, config: ^foundation.Config) {
 	path := strings.concatenate({"./scenes/", config.filename}, context.temp_allocator)
 	bodies, success := _read_json_scene(path)
 	if !success || bodies == nil {
@@ -188,10 +165,10 @@ sim_file_init :: proc() {
 		bodies = new([dynamic]_Scene_Body)
 	}
 	defer {delete(bodies^); free(bodies)}
-	ecs.world_reserve(g_world, len(bodies^) + 1)
+	ecs.world_reserve(world, len(bodies^) + 1)
 	for body in bodies {
 		physics.body_spawn(
-			g_world,
+			world,
 			body.position,
 			body.velocity,
 			body.mass,
@@ -201,143 +178,27 @@ sim_file_init :: proc() {
 }
 
 @(private)
-sim_random_init :: proc() {
-	config := foundation.config_get()
-	ecs.world_reserve(g_world, config.num_objects + 2)
-	physics.body_spawn(g_world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
-	physics.body_spawn(g_world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
+sim_random_init :: proc(world: ^ecs.World, config: ^foundation.Config) {
+	ecs.world_reserve(world, config.num_objects + 2)
+	physics.body_spawn(world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
+	physics.body_spawn(world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
 	for i in 0 ..< config.num_objects {
 		x := rand.float32_range(
 			-1e10,
 			1e10,
 		); y := rand.float32_range(-1e10, 1e10); z := rand.float32_range(-1e10, 1e10)
-		physics.body_spawn(g_world, {x, y, z}, {0, 0, 0}, 6e27, 12371e3)
+		physics.body_spawn(world, {x, y, z}, {0, 0, 0}, 6e27, 12371e3)
 	}
 }
 
 main :: proc() {
-	lowest := log.Level.Info
-	when ODIN_DEBUG {
-		lowest = log.Level.Debug
+	if !app.run(
+		app.Desc {
+			title = "Gravity Simulator - Odin Edition",
+			config_path = "./config.json",
+			setup = _setup,
+		},
+	) {
+		log.errorf("Simulation exited with an error")
 	}
-	logger := log.create_console_logger(lowest)
-	context.logger = logger
-	g_sim_logger = logger
-	log.infof("Gravity Simulator - Odin Edition")
-
-	config := foundation.config_load("./config.json")
-	defer foundation.config_destroy()
-
-	// Start tracing before the worker pool so that, at exit, parallel_destroy
-	// runs first (LIFO defers) and the workers can release their buffers while
-	// the context is still alive.
-	when foundation.PROFILE_ENABLED {
-		foundation.profile_start(PROFILE_TRACE_PATH)
-		foundation.profile_process_name("Gravity-Simulator")
-		foundation.profile_thread_name("main")
-		defer foundation.profile_stop()
-		log.infof("profiling to %s (open it in the spall viewer)", PROFILE_TRACE_PATH)
-	}
-
-	foundation.parallel_init(config.worker_threads)
-	defer foundation.parallel_destroy()
-
-	window, window_ok := vk.window_init(1280, 720)
-	if !window_ok {log.errorf("Failed to create window!"); return}
-	defer vk.window_destroy(window)
-
-	_sim_init()
-	defer _sim_end()
-
-	ctx := SimulationContext {
-		world     = g_world,
-		scheduler = g_scheduler,
-		window    = window,
-	}
-
-	backend, backend_ok := vk.backend_init(window)
-	if !backend_ok {log.errorf("Failed to create the graphics backend!"); return}
-	defer vk.backend_destroy(backend)
-
-	renderer, renderer_ok := graphic.renderer_init(backend, window, g_world)
-	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
-	defer graphic.renderer_destroy(renderer)
-
-	frame_source: Frame_Source
-	frame_source_init(&frame_source, renderer, g_world)
-	defer frame_source_destroy(&frame_source)
-
-	graphic.graphic_register_systems(g_scheduler)
-	if !ecs.scheduler_finalize(g_scheduler) {
-		log.errorf("Failed to resolve the system schedule!")
-		return
-	}
-
-	// GPU gravity is a backend of the selected gravity solver (brute force or
-	// octree). Install it before the world is frozen so the physics thread sees
-	// it from the first tick; on any failure the CPU solver runs instead.
-	gpu_solver: ^physics_gpu.Gpu_Gravity
-	if config.gravity_backend == .GPU {
-		capacity := max(g_world.capacity, physics.body_count(g_world))
-		// The front owns the compute context (attached to the backend's device);
-		// main hands it to the solver and keeps it alive past the solver.
-		compute := graphic.renderer_compute(renderer)
-		if solver, solver_ok := physics_gpu.gpu_gravity_init(compute, g_world, config.algorithm, capacity); solver_ok {
-			gpu_solver = solver
-			// main orchestrates: the front receives the opaque producer handle and
-			// ops and forwards them to the backend.
-			graphic.renderer_set_stream_producer(
-				renderer,
-				physics_gpu.stream_handle(solver),
-				physics_gpu.stream_ops(),
-			)
-			physics.physics_set_gravity_solver(g_world, physics_gpu.gpu_gravity_backend(solver))
-			log.infof(
-				"GPU gravity enabled (%v): %s",
-				config.algorithm,
-				physics_gpu.gpu_gravity_info(solver).device_name,
-			)
-		} else {
-			log.warnf("GPU gravity unavailable; falling back to the CPU solver")
-		}
-	}
-	defer if gpu_solver != nil {
-		// Release the stream the backend holds, then destroy the solver.
-		graphic.renderer_set_stream_producer(renderer, nil, {})
-		physics_gpu.gpu_gravity_destroy(gpu_solver)
-	}
-
-	// Every pool and resource the threads use now exists: freeze the registries
-	// so the physics and graphics threads only ever perform concurrent reads.
-	ecs.world_freeze(g_world)
-
-	physics_thread, graphics_thread := parallel_start(&ctx)
-
-	last_log := time.tick_now()
-	for !vk.window_should_close(window) {
-		{
-			foundation.profile_scope("main.wait_events")
-			vk.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
-		}
-
-		{
-			// GLFW is only touched on this thread: refresh the input/window
-			// snapshot the render phase consumes.
-			foundation.profile_scope("main.pump")
-			vk.window_pump(window)
-		}
-
-		{
-			foundation.profile_scope("main.tick")
-			if time.duration_seconds(time.tick_diff(last_log, time.tick_now())) >= 1.0 {
-				last_log = time.tick_now()
-				frame := sync.atomic_load(&ctx.frame_time)
-				tick := sync.atomic_load(&ctx.tick_time)
-				log.infof("[DEBUG] frametime: %.2f ms | ticktime: %.2f µs", frame, tick)
-			}
-		}
-	}
-
-	sync.atomic_store(&ctx.exit, true)
-	parallel_stop(physics_thread, graphics_thread)
 }

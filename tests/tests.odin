@@ -2,7 +2,7 @@ package tests
 
 import physics "engine:physics"
 import ecs "engine:ecs"
-import foundation "../foundation"
+import foundation "engine:foundation"
 import "core:log"
 import "core:math"
 import "core:math/rand"

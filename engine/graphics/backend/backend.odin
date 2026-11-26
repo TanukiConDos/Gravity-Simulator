@@ -1,7 +1,7 @@
 package vk
 
 import gfx "engine:graphics/shared"
-import found "../../../foundation"
+import found "engine:foundation"
 import "core:log"
 import "core:sync"
 import "core:time"
@@ -57,6 +57,10 @@ Backend :: struct {
 	pick_readback:   [MAX_FRAMES_IN_FLIGHT]Buffer,
 	pick_pending:    [MAX_FRAMES_IN_FLIGHT]bool,
 	current_frame:   u32,
+	// Hot reload: the main thread sets these, the graphics thread consumes them
+	// at the top of a frame. Kept out of the frame path until requested.
+	shader_reload_requested:      u32,
+	frame_graph_reload_requested: u32,
 }
 
 // backend_init creates the whole Vulkan side for a window. It reads no engine
@@ -117,6 +121,15 @@ backend_destroy :: proc(self: ^Backend) {
 // owns the packed vertex layout and the GPU buffers.
 backend_instances_seed :: proc(self: ^Backend, bodies: []u32, radii: []f32, selected: []u8) {
 	if self == nil {return}
+	instance_buffer_write_static(&self.instances, bodies, radii, selected)
+}
+
+// backend_instances_reseed replaces the static columns while frames may still be
+// in flight (a hot-reloaded gameplay layer spawned bodies). It waits for the
+// frame timeline because `instance_buffer_ensure` may reallocate the buffers.
+backend_instances_reseed :: proc(self: ^Backend, bodies: []u32, radii: []f32, selected: []u8) {
+	if self == nil {return}
+	timeline_wait(&self.frame_timeline, self.frame_timeline.value)
 	instance_buffer_write_static(&self.instances, bodies, radii, selected)
 }
 
@@ -181,6 +194,149 @@ backend_instance_mode :: proc(self: ^Backend) -> gfx.Instance_Mode {
 	return .CPU
 }
 
+// backend_request_shader_reload asks the graphics thread to rebuild every
+// registered pipeline from the current SPIR-V on its next frame. Safe to call
+// from the main thread.
+backend_request_shader_reload :: proc(self: ^Backend) {
+	if self == nil {return}
+	sync.atomic_store(&self.shader_reload_requested, u32(1))
+}
+
+// _backend_validate_rebuilt_pipeline checks a freshly built pipeline against the
+// push-descriptor interface the renderer has already allocated. A shader that
+// changes those bindings is rejected: the live pipeline keeps drawing instead of
+// crashing the next frame. Validation mutates the cached stage flags, so a
+// failure restores them from the old pipeline.
+@(private)
+_backend_validate_rebuilt_pipeline :: proc(
+	user: rawptr,
+	name: string,
+	pipeline: ^Pipeline,
+) -> bool {
+	self := cast(^Backend)user
+	switch name {
+	case "main":
+		if !push_descriptors_validate(&self.push, pipeline) {
+			_ = push_descriptors_validate(
+				&self.push,
+				pipeline_registry_get(&self.pipelines, self.main_pipeline),
+			)
+			return false
+		}
+	case "instance_pack":
+		if !push_descriptors_validate(&self.direct_push, pipeline) {
+			_ = push_descriptors_validate(
+				&self.direct_push,
+				pipeline_registry_get(&self.pipelines, self.direct_pipeline),
+			)
+			return false
+		}
+	}
+	return true
+}
+
+// _backend_reload_shaders rebuilds the backend's graphics pipelines in place.
+// It waits only for the frame timeline the backend itself advances: commands
+// that could reference the live handles have completed, while the physics
+// thread's compute queue is untouched.
+@(private)
+_backend_reload_shaders :: proc(self: ^Backend) {
+	if sync.atomic_load(&self.shader_reload_requested) == 0 {return}
+	sync.atomic_store(&self.shader_reload_requested, u32(0))
+
+	{
+		found.profile_scope("graphics.shader_reload")
+		timeline_wait(&self.frame_timeline, self.frame_timeline.value)
+		rebuilt, failed := pipeline_registry_rebuild_all(
+			&self.pipelines,
+			_backend_validate_rebuilt_pipeline,
+			self,
+		)
+		if failed > 0 {
+			log.errorf(
+				"[HOT] Graphics shaders: %d rebuilt, %d kept the previous pipeline",
+				rebuilt,
+				failed,
+			)
+		} else {
+			log.infof("[HOT] Graphics shaders reloaded (%d pipelines)", rebuilt)
+		}
+	}
+}
+
+// backend_request_frame_graph_reload asks the graphics thread to re-parse
+// `frame_graph.json` on its next frame. Safe to call from the main thread.
+backend_request_frame_graph_reload :: proc(self: ^Backend) {
+	if self == nil {return}
+	sync.atomic_store(&self.frame_graph_reload_requested, u32(1))
+}
+
+// _backend_validate_frame_graph rejects a reloaded graph that names an import or
+// pass this backend has no implementation for, and checks that each external
+// resource has the texture/buffer shape its resolver produces.
+@(private)
+_backend_validate_frame_graph :: proc(fg: ^Frame_Graph) -> bool {
+	if fg == nil {return false}
+	for &res in fg.resources {
+		if len(res.external) == 0 {continue}
+		switch res.external {
+		case "swapchain", "depth":
+			if res.kind != .texture {
+				log.errorf("[FG] Import %q must be a texture", res.external)
+				return false
+			}
+		case "pick_readback", "camera":
+			if res.kind != .buffer {
+				log.errorf("[FG] Import %q must be a buffer", res.external)
+				return false
+			}
+		case:
+			log.errorf("[FG] Unknown import %q", res.external)
+			return false
+		}
+	}
+	for &pass in fg.passes {
+		switch pass.name {
+		case "main", "pick_copy":
+		case:
+			log.errorf("[FG] No recording proc for pass %q", pass.name)
+			return false
+		}
+	}
+	return true
+}
+
+// _backend_reload_frame_graph swaps in a freshly parsed graph. The old graph owns
+// its transients, so it is destroyed only after the frame timeline shows that no
+// submitted frame still reads them.
+@(private)
+_backend_reload_frame_graph :: proc(self: ^Backend) {
+	if sync.atomic_load(&self.frame_graph_reload_requested) == 0 {return}
+	sync.atomic_store(&self.frame_graph_reload_requested, u32(0))
+
+	timeline_wait(&self.frame_timeline, self.frame_timeline.value)
+	next, loaded := frame_graph_load(&self.gpu, FRAME_GRAPH_PATH, &self.pipelines)
+	if !loaded {return}
+	if !_backend_validate_frame_graph(&next) {
+		frame_graph_destroy(&next)
+		log.errorf("[HOT] Frame graph reload rejected; keeping the live graph")
+		return
+	}
+	next.resolve = _backend_resolve_import
+	next.resolve_user = self
+	next.record = _backend_record_pass
+	next.record_user = self
+
+	old := self.frame_graph
+	self.frame_graph = next
+	frame_graph_destroy(&old)
+	log.infof(
+		"[HOT] Frame graph reloaded (%d resources, %d passes)",
+		len(self.frame_graph.resources),
+		len(self.frame_graph.passes),
+	)
+}
+
 // backend_draw runs one frame: resize/acquire, pick resolution, the optional
 // direct instance pack, the frame graph, submit and present. A RETRY result
 // means no frame slot was consumed; the caller keeps its state and calls again.
@@ -194,6 +350,9 @@ backend_draw :: proc(
 	if self == nil || packet == nil {return .FATAL, result}
 	self.packet = packet
 	defer {self.packet = nil}
+
+	_backend_reload_shaders(self)
+	_backend_reload_frame_graph(self)
 
 	if sync.atomic_load(&self.window.framebuffer_resized) {
 		sync.atomic_store(&self.window.framebuffer_resized, false)
@@ -311,7 +470,7 @@ _backend_init_direct :: proc(self: ^Backend) -> bool {
 	pipeline, built := pipeline_registry_add_compute(
 		&self.pipelines,
 		"instance_pack",
-		Compute_Config{shaders = []Shader_Spec{{path = DIRECT_SHADER}}},
+		Compute_Config{shaders = []Shader_Spec{{job = DIRECT_SHADER}}},
 	)
 	if !built {return false}
 	self.direct_pipeline = pipeline

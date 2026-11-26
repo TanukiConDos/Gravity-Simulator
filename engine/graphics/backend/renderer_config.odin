@@ -19,8 +19,8 @@ CAMERA_BINDING :: u32(0)
 
 @(private)
 RENDERER_SHADERS := [?]Shader_Spec{
-	{path = "engine/graphics/shader/vert.spv"},
-	{path = "engine/graphics/shader/frag.spv"},
+	{job = "main.vert"},
+	{job = "main.frag"},
 }
 
 // Second color output of the main pass: the instance ID (1-based), so a zero
@@ -50,7 +50,7 @@ RENDERER_PUSH_BINDINGS := [?]Push_Binding_Spec{
 // CPU reading the snapshot. The pass runs on the frame's graphics queue and the
 // frame submission waits on the solver's timeline value before it.
 @(private)
-DIRECT_SHADER :: "engine/graphics/shader/instance_pack.spv"
+DIRECT_SHADER :: "instance_pack"
 
 // Must match the shader's local_size_x; used only to size the dispatch.
 @(private)

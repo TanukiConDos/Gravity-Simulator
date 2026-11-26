@@ -20,7 +20,7 @@ package main
 
 import ecs "engine:ecs"
 import physics "engine:physics"
-import foundation "../foundation"
+import foundation "engine:foundation"
 import "core:fmt"
 import "core:math"
 import "core:math/rand"

@@ -4,6 +4,7 @@ import "core:log"
 import "core:os"
 import "core:strings"
 import "vendor:vulkan"
+import shader "engine:graphics/shader"
 import spirv "engine:graphics/spirv"
 
 // A descriptor binding merged across every shader stage of the pipeline. The
@@ -47,10 +48,33 @@ Pipeline :: struct {
 // and is what makes a second pass mechanical to add.
 Pipeline_ID :: distinct u32
 
+// A registered pipeline plus the recipe needed to rebuild it in place. The
+// shader arrays are cloned at registration so a caller's slice literal can go
+// away; hot reload re-runs `pipeline_init`/`pipeline_init_compute` from here.
 @(private)
 Pipeline_Entry :: struct {
-	name:     string,
-	pipeline: Pipeline,
+	name:          string,
+	pipeline:      Pipeline,
+	kind:          Pipeline_Kind,
+	graphics:      Pipeline_Config,
+	compute:       Compute_Config,
+	color_formats: [MAX_COLOR_ATTACHMENTS]vulkan.Format,
+	color_count:   int,
+	depth_format:  vulkan.Format,
+}
+
+// Validation hook for a rebuild. Called with the freshly built pipeline before
+// it replaces the live one; returning false keeps the old pipeline. Used to
+// check push-descriptor compatibility against the new reflection.
+@(private)
+Pipeline_Validate_Proc :: proc(user: rawptr, name: string, pipeline: ^Pipeline) -> bool
+
+@(private)
+_clone_shaders :: proc(specs: []Shader_Spec) -> []Shader_Spec {
+	if len(specs) == 0 {return nil}
+	out := make([]Shader_Spec, len(specs))
+	copy(out, specs)
+	return out
 }
 
 Pipeline_Registry :: struct {
@@ -74,8 +98,23 @@ pipeline_registry_add :: proc(
 	id: Pipeline_ID,
 	ok: bool,
 ) {
-	pipeline := pipeline_init(self.gpu, cfg, color_formats, depth_format) or_return
-	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
+	entry := Pipeline_Entry {
+		name         = name,
+		kind         = .graphics,
+		graphics     = cfg,
+		color_count  = len(color_formats),
+		depth_format = depth_format,
+	}
+	entry.graphics.shaders = _clone_shaders(cfg.shaders)
+	committed := false
+	defer if !committed {delete(entry.graphics.shaders)}
+	for format, i in color_formats {
+		if i >= MAX_COLOR_ATTACHMENTS {break}
+		entry.color_formats[i] = format
+	}
+	entry.pipeline = pipeline_init(self.gpu, entry.graphics, entry.color_formats[:entry.color_count], entry.depth_format) or_return
+	append(&self.entries, entry)
+	committed = true
 	return Pipeline_ID(len(self.entries) - 1), true
 }
 
@@ -87,8 +126,13 @@ pipeline_registry_add_compute :: proc(
 	id: Pipeline_ID,
 	ok: bool,
 ) {
-	pipeline := pipeline_init_compute(self.gpu, cfg) or_return
-	append(&self.entries, Pipeline_Entry{name = name, pipeline = pipeline})
+	entry := Pipeline_Entry{name = name, kind = .compute, compute = cfg}
+	entry.compute.shaders = _clone_shaders(cfg.shaders)
+	committed := false
+	defer if !committed {delete(entry.compute.shaders)}
+	entry.pipeline = pipeline_init_compute(self.gpu, entry.compute) or_return
+	append(&self.entries, entry)
+	committed = true
 	return Pipeline_ID(len(self.entries) - 1), true
 }
 
@@ -107,9 +151,69 @@ pipeline_registry_find :: proc(self: ^Pipeline_Registry, name: string) -> (Pipel
 
 @(private)
 pipeline_registry_destroy :: proc(self: ^Pipeline_Registry) {
-	for &entry in self.entries {pipeline_destroy(&entry.pipeline)}
+	for &entry in self.entries {
+		pipeline_destroy(&entry.pipeline)
+		delete(entry.graphics.shaders)
+		delete(entry.compute.shaders)
+	}
 	delete(self.entries)
 	self.entries = nil
+}
+
+// pipeline_registry_rebuild rebuilds one entry from its stored recipe and swaps
+// it in place, preserving the Pipeline_ID the frame graph and callers hold. On
+// any failure the live pipeline is left untouched.
+@(private)
+pipeline_registry_rebuild :: proc(
+	self: ^Pipeline_Registry,
+	id: Pipeline_ID,
+	validate: Pipeline_Validate_Proc = nil,
+	user: rawptr = nil,
+) -> bool {
+	if u32(id) >= u32(len(self.entries)) {return false}
+	entry := &self.entries[u32(id)]
+	rebuilt: Pipeline
+	ok: bool
+	switch entry.kind {
+	case .graphics:
+		rebuilt, ok = pipeline_init(
+			self.gpu,
+			entry.graphics,
+			entry.color_formats[:entry.color_count],
+			entry.depth_format,
+		)
+	case .compute:
+		rebuilt, ok = pipeline_init_compute(self.gpu, entry.compute)
+	}
+	if !ok {return false}
+	if validate != nil && !validate(user, entry.name, &rebuilt) {
+		pipeline_destroy(&rebuilt)
+		return false
+	}
+	pipeline_destroy(&entry.pipeline)
+	entry.pipeline = rebuilt
+	return true
+}
+
+// pipeline_registry_rebuild_all rebuilds every registered pipeline. It reports
+// per-entry success so callers can log and keep the rest running.
+@(private)
+pipeline_registry_rebuild_all :: proc(
+	self: ^Pipeline_Registry,
+	validate: Pipeline_Validate_Proc = nil,
+	user: rawptr = nil,
+) -> (
+	rebuilt: int,
+	failed: int,
+) {
+	for _, i in self.entries {
+		if pipeline_registry_rebuild(self, Pipeline_ID(i), validate, user) {
+			rebuilt += 1
+		} else {
+			failed += 1
+		}
+	}
+	return
 }
 
 // pipeline_init builds the whole pipeline from a declarative config: shader
@@ -384,15 +488,21 @@ _load_shaders :: proc(gpu: ^GPU, specs: []Shader_Spec) -> (result: _Loaded_Shade
 	}
 
 	for spec in specs {
-		code, read_err := os.read_entire_file(spec.path, context.temp_allocator)
+		job, found := shader.find(spec.job)
+		if !found {
+			log.errorf("[VULKAN] Unknown shader job %q", spec.job)
+			return {}, false
+		}
+		path := shader.output_path(job)
+		code, read_err := os.read_entire_file(path, context.temp_allocator)
 		if read_err != nil {
-			log.errorf("[VULKAN] Failed to load shader %s", spec.path)
+			log.errorf("[VULKAN] Failed to load shader %s (%s)", spec.job, path)
 			return {}, false
 		}
 
 		reflection, reflected := spirv.reflect_with_allocator(code, context.allocator)
 		if !reflected {
-			log.errorf("[VULKAN] Failed to reflect shader %s", spec.path)
+			log.errorf("[VULKAN] Failed to reflect shader %s (%s)", spec.job, path)
 			return {}, false
 		}
 		append(&result.reflections, reflection)
@@ -408,7 +518,7 @@ _load_shaders :: proc(gpu: ^GPU, specs: []Shader_Spec) -> (result: _Loaded_Shade
 		})
 		log.debugf(
 			"[VULKAN]     %s: %s (%d bytes)",
-			spec.path,
+			spec.job,
 			reflection.entry_point,
 			len(code),
 		)

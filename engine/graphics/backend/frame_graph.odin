@@ -5,7 +5,7 @@ import "core:log"
 import "core:os"
 import "core:slice"
 import "core:strings"
-import found "../../../foundation"
+import found "engine:foundation"
 import "vendor:vulkan"
 
 // Path to the declarative frame graph, loaded once at renderer init.
@@ -337,10 +337,15 @@ frame_graph_load :: proc(
 		pass_index     = make(map[string]Fg_Pass_Id),
 		disabled       = make(map[string]bool),
 	}
+	// Hot reload re-parses this file while the app runs: a malformed graph must
+	// release whatever it allocated before returning to the caller.
+	committed := false
+	defer if !committed {frame_graph_destroy(&fg)}
 
 	// Resources. Names are sorted so the runtime order (and thus barrier order)
 	// is deterministic regardless of map iteration order.
 	names := make([dynamic]string, 0, len(def.resources))
+	defer delete(names)
 	for name in def.resources {append(&names, name)}
 	slice.sort(names[:])
 	for name in names {
@@ -386,7 +391,6 @@ frame_graph_load :: proc(
 		append(&fg.resources, res)
 		fg.resource_index[res.name] = Fg_Resource_Id(len(fg.resources) - 1)
 	}
-	delete(names)
 
 	// Passes.
 	for pdef in def.passes {
@@ -531,6 +535,7 @@ frame_graph_load :: proc(
 	for i in 0 ..< len(fg.transients) {fg.transients[i] = Fg_Transient{}}
 
 	log.infof("[FG] Loaded %d resources and %d passes from %s", len(fg.resources), len(fg.passes), path)
+	committed = true
 	result = fg
 	return result, true
 }

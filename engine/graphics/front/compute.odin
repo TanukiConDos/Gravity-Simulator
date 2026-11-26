@@ -62,13 +62,20 @@ compute_buffer_destroy :: proc(c: gfx.Compute, buffer: ^gfx.Buffer) {
 // shader's storage-buffer binding indices: the producer binds those per pass.
 compute_pipeline_create :: proc(
 	c: gfx.Compute,
-	name, shader: string,
+	name, job: string,
 	bindings: []u32,
 ) -> (
 	result: gfx.Pipeline,
 	ok: bool,
 ) {
-	return vk.compute_pipeline_create(c, name, shader, bindings)
+	return vk.compute_pipeline_create(c, name, job, bindings)
+}
+
+// compute_reload_pipelines rebuilds the context's pipelines from the current
+// SPIR-V. It must run on the context's submitting thread (the physics thread for
+// the GPU gravity solver) and waits for the context timeline first.
+compute_reload_pipelines :: proc(c: gfx.Compute) -> bool {
+	return vk.compute_reload_pipelines(c)
 }
 
 // compute_begin reserves a submission slot and opens its command buffer.

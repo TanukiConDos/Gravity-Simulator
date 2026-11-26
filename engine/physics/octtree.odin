@@ -1,6 +1,6 @@
 package physics
 
-import found "../../foundation"
+import found "engine:foundation"
 import "core:log"
 import "core:math"
 import "core:mem"

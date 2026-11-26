@@ -2,7 +2,7 @@ package tests
 
 import ecs "engine:ecs"
 import physics "engine:physics"
-import foundation "../foundation"
+import foundation "engine:foundation"
 import "core:sync"
 import "core:testing"
 import "core:thread"

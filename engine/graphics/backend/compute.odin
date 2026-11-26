@@ -2,6 +2,7 @@ package vk
 
 import "core:log"
 import "core:slice"
+import "core:strings"
 import "core:sync"
 import "core:time"
 import "vendor:vulkan"
@@ -24,7 +25,7 @@ import "vendor:vulkan"
 
 // The bench probe shader; also the smallest end-to-end compute path.
 @(private)
-COMPUTE_PROBE_SHADER :: "engine/graphics/shader/compute_probe.spv"
+COMPUTE_PROBE_SHADER :: "compute_probe"
 
 Compute :: struct {
 	// `gpu` is borrowed: it points at `device` for a headless context, or at the
@@ -51,6 +52,9 @@ Compute :: struct {
 // its producer fills per pass.
 Producer_Pipeline :: struct {
 	id:   Pipeline_ID,
+	// Registry entry name, cloned so a reload can find the matching pipeline
+	// when validating its push descriptors.
+	name: string,
 	push: Push_Descriptors,
 }
 
@@ -110,7 +114,10 @@ compute_open :: proc(self: ^Compute) -> bool {
 compute_close :: proc(self: ^Compute) {
 	if self.gpu == nil {return}
 	gpu_wait(self.gpu)
-	for &producer in self.producers {push_descriptors_destroy(&producer.push)}
+	for &producer in self.producers {
+		push_descriptors_destroy(&producer.push)
+		delete(producer.name)
+	}
 	delete(self.producers)
 	self.producers = nil
 	timeline_destroy(&self.timeline)
@@ -149,7 +156,7 @@ compute_probe :: proc(self: ^Compute, elements, iterations, samples: int) -> (re
 	pipeline_id, built := pipeline_registry_add_compute(
 		&self.pipelines,
 		"probe",
-		Compute_Config{shaders = []Shader_Spec{{path = COMPUTE_PROBE_SHADER}}},
+		Compute_Config{shaders = []Shader_Spec{{job = COMPUTE_PROBE_SHADER}}},
 	)
 	if !built {return {}, false}
 	pipeline := pipeline_registry_get(&self.pipelines, pipeline_id)

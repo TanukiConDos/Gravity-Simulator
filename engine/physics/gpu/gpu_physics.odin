@@ -4,7 +4,7 @@ import graphic "engine:graphics/front"
 import gfx "engine:graphics/shared"
 import physics "engine:physics"
 import ecs "engine:ecs"
-import found "../../../foundation"
+import found "engine:foundation"
 import "core:log"
 import "core:sync"
 
@@ -31,8 +31,9 @@ import "core:sync"
 // no Vulkan, no backend device, no graphic handles. All GPU sequencing goes
 // through `graphic.compute_*`.
 
+// Manifest job name (`engine/graphics/shader/manifest.odin`).
 @(private)
-GPU_GRAVITY_BRUTE_SHADER :: "engine/graphics/shader/physics_brute.spv"
+GPU_GRAVITY_BRUTE_SHADER :: "physics_brute"
 
 // Must match the brute shader's local_size_x; used only to size the dispatch.
 @(private)
@@ -132,6 +133,9 @@ Gpu_Gravity :: struct {
 	// Submission in flight between `submit` and `finish`.
 	pending:       bool,
 	pending_value: u64,
+	// Hot reload: set by the main thread, consumed by the physics thread before
+	// the next solve so the live pipelines are never rebuilt under a dispatch.
+	shader_reload_requested: u32,
 	// Barnes-Hut only (mode == .OCTREE).
 	tree: Gpu_Tree,
 	// Optional debug verification: the backend asks the solver to check the
@@ -640,12 +644,36 @@ _gpu_gravity_reserve :: proc(self: ^Gpu_Gravity, count: int) -> bool {
 	return true
 }
 
+// gpu_gravity_request_shader_reload asks the solver to rebuild its compute
+// pipelines. The request is consumed by the physics thread before the next
+// solve; safe to call from the main thread.
+gpu_gravity_request_shader_reload :: proc(self: ^Gpu_Gravity) {
+	if self == nil {return}
+	sync.atomic_store(&self.shader_reload_requested, u32(1))
+}
+
+// _gpu_gravity_reload_shaders consumes a pending request. Any submission still
+// in flight is waited on (not discarded): `finish` will still scatter it after
+// the pipeline swap.
+@(private)
+_gpu_gravity_reload_shaders :: proc(self: ^Gpu_Gravity) {
+	if sync.atomic_load(&self.shader_reload_requested) == 0 {return}
+	sync.atomic_store(&self.shader_reload_requested, u32(0))
+	if self.pending {
+		graphic.compute_wait(self.compute, self.pending_value)
+	}
+	if !graphic.compute_reload_pipelines(self.compute) {
+		log.errorf("[GPU PHYSICS] Compute shader reload failed; keeping the live pipelines")
+	}
+}
+
 // _gpu_gravity_submit and _gpu_gravity_finish are the `physics.Gravity_Solver`
 // hook: they dispatch to the backend selected by `mode`. The pools are only
 // touched in `finish`, so a failed submission leaves the tick untouched.
 @(private)
 _gpu_gravity_submit :: proc(user: rawptr, w: ^ecs.World, bodies: []u32, seconds: f64) -> bool {
 	self := cast(^Gpu_Gravity)user
+	_gpu_gravity_reload_shaders(self)
 	switch self.mode {
 	case .BRUTE_FORCE:
 		return _gpu_brute_submit(self, w, bodies, seconds)

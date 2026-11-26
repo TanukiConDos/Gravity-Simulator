@@ -3,7 +3,7 @@ package graphic
 import gfx "engine:graphics/shared"
 import vk "engine:graphics/backend"
 import ecs "engine:ecs"
-import found "../../../foundation"
+import found "engine:foundation"
 import "core:log"
 
 // Frame_Source_Handle names the module that supplies this frame's simulation
@@ -95,10 +95,32 @@ renderer_set_frame_source :: proc(self: ^Renderer, handle: Frame_Source_Handle, 
 	self.frame_ops = ops
 }
 
+// renderer_request_shader_reload asks the backend to rebuild its graphics
+// pipelines on the next frame. Safe to call from the main thread.
+renderer_request_shader_reload :: proc(self: ^Renderer) {
+	if self == nil {return}
+	vk.backend_request_shader_reload(self.backend)
+}
+
+// renderer_request_frame_graph_reload asks the backend to re-parse
+// `frame_graph.json` on the next frame.
+renderer_request_frame_graph_reload :: proc(self: ^Renderer) {
+	if self == nil {return}
+	vk.backend_request_frame_graph_reload(self.backend)
+}
+
 // renderer_seed_instances uploads the static per-body instance columns once.
 renderer_seed_instances :: proc(self: ^Renderer, bodies: []u32, radii: []f32, selected: []u8) {
 	if self == nil {return}
 	vk.backend_instances_seed(self.backend, bodies, radii, selected)
+}
+
+// renderer_reseed_instances refreshes the static columns after the body list
+// changed. It is called on the graphics thread before a frame and waits for the
+// frame timeline before touching buffers a previous frame may still read.
+renderer_reseed_instances :: proc(self: ^Renderer, bodies: []u32, radii: []f32, selected: []u8) {
+	if self == nil {return}
+	vk.backend_instances_reseed(self.backend, bodies, radii, selected)
 }
 
 // renderer_set_stream_producer installs (or clears) the GPU stream producer.

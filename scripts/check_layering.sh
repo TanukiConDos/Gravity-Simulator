@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Enforce the engine package boundaries.
 #
-#   main orchestrates: main -> physics -> front -> backend
+#   engine/app orchestrates: app -> physics -> front -> backend
+#   main supplies the application scene/setup and uses engine:app.
 #   physics/gpu records compute work through the front's proxy (graphic.compute_*)
 #   and speaks only the plain seam types of engine/graphics/shared.
 #
 # The front never imports physics; the backend imports no ECS/physics; physics
-# never touches the backend or Vulkan.
+# never touches the backend or Vulkan. `engine/foundation` is the base layer and
+# imports no engine modules.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -44,12 +46,20 @@ check() {
     esac
 }
 
+check "package main must not assemble graphics or hot reload itself" \
+      "engine/app owns the runtime; main only supplies the scene/setup" \
+      '^import .*"engine:(graphics|hot|physics/gpu)' main.odin
+
+check "engine/foundation must stay the base layer" \
+      "foundation must not import engine modules; move the integration above it" \
+      '^import .*"engine:' engine/foundation
+
 check "engine/graphics/front and engine/graphics/shared must not import vendor:vulkan" \
       "move Vulkan code into engine/graphics/backend; the front proxies it with plain handles" \
       'vendor:vulkan' engine/graphics/front engine/graphics/shared
 
 check "engine/graphics/front must not import the physics packages" \
-      "main orchestrates and owns the frame source; physics never points at the front" \
+      "engine/app owns the frame source; physics never points at the front" \
       '^import .*"engine:physics' engine/graphics/front
 
 check "engine/physics must not import the graphics backend" \
@@ -77,4 +87,4 @@ if [ "$failed" -ne 0 ]; then
     exit 1
 fi
 
-echo "check_layering: OK (main orchestrates: physics -> front -> backend, physics speaks gfx only)"
+echo "check_layering: OK (engine/app orchestrates: physics -> front -> backend; main supplies the scene)"

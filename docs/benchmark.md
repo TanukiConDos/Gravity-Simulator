@@ -85,7 +85,7 @@ odin build . -collection:engine=engine -o:speed -disable-assert -microarch:nativ
 ```
 
 A flat `profiler` API would need `when` gates at every call site, so the wrapper
-(`foundation/profiler.odin`) exposes only the `profile_*` procedures, which fold
+(`engine/foundation/profiler.odin`) exposes only the `profile_*` procedures, which fold
 to nothing when the flag is off. `profile_scope`/`profile_scope_args` open a span
 closed at the end of the enclosing scope; `profile_scope_args` formats its
 printf-style args only under the flag (the call site just builds a stack `[]any`),

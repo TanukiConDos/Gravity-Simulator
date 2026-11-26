@@ -1,6 +1,6 @@
 package ecs
 
-import found "../../foundation"
+import found "engine:foundation"
 import "core:log"
 import "core:slice"
 import "core:sync"

@@ -1,6 +1,6 @@
 package ecs
 
-import found "../../foundation"
+import found "engine:foundation"
 import "core:log"
 
 // The world owns the entity registry and every component pool and resource.

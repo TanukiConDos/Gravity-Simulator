@@ -17,7 +17,7 @@
 package main
 
 import ecs "engine:ecs"
-import foundation "../foundation"
+import foundation "engine:foundation"
 import vk "engine:graphics/backend"
 import physics_gpu "engine:physics/gpu"
 import physics "engine:physics"

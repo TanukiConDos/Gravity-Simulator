@@ -18,9 +18,10 @@ odin run bench -collection:engine=engine -o:speed -define:PROFILE=true -- profil
 - Requires Odin compiler (dev-2025-08+) in PATH
 - Requires Vulkan SDK installed (vendor:vulkan)
 - Engine packages import by subpackage name through the `engine` collection,
-  e.g. `import graphic "engine:graphics/front"`. Pass
+  e.g. `import graphic "engine:graphics/front"` or
+  `import foundation "engine:foundation"`. Pass
   `-collection:engine=engine` from the repo root; `engine/` is the collection
-  root. `foundation` stays a relative import (`../foundation`).
+  root.
 
 ### CPU features / AVX
 
@@ -73,7 +74,7 @@ imports a physics package, if the backend imports `ecs`/`physics` or mentions
 
 ```
 .
-├── main.odin                # App entry point + scene JSON loader
+├── main.odin                # Planet app: scene JSON loader, initial bodies, entry point
 ├── config.json              # Simulation configuration (edit by hand)
 ├── bench/                   # Octree parameter sweep (results in bench/results/)
 ├── docs/                    # Deeper design notes (read on demand)
@@ -85,21 +86,27 @@ imports a physics package, if the backend imports `ecs`/`physics` or mentions
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
+├── engine/app/              # Runtime assembly: window/backend/front, frame source, loops
 ├── engine/ecs/              # Entity-component-system core
+├── engine/hot/              # package hot: reload watchers + gameplay .so loader
+├── engine/game_api/         # Game_Context/Game_Api ABI for hot gameplay
+├── engine/foundation/       # Base layer: config, arena, file I/O, timers, job pool, main loop
 ├── engine/physics/          # Physics components + systems
 │   └── gpu/                 # package physics_gpu: GPU gravity solver, GPU tree build, stream
-├── foundation/              # Config, arena, file I/O, timers
+├── game/                    # User gameplay package (built to build/*.so)
+├── tools/                   # shader_build helper
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
 ```
 
 `engine/graphics` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
-(`vk`): `front -> backend -> shared`. `main` is the orchestrator: it owns the
-frame-source adapter (`frame_source.odin`), registers it and the optional GPU
-producer with the front, and runs the modules. The front never imports a physics
-package; the backend imports no ECS/physics state. `physics/gpu` records its GPU
-work through the front's compute proxy (`graphic.compute_*`) using only the plain
-`gfx` handles: no physics package imports the backend or `vendor:vulkan`.
+(`vk`): `front -> backend -> shared`. `engine/app` is the runtime orchestrator: it
+owns the frame-source adapter, registers it and the optional GPU producer with the
+front, and runs the fixed-step/free-running loops. `main` supplies only the
+application scene/initial bodies and the entry point. The front never imports a
+physics package; the backend imports no ECS/physics state. `physics/gpu` records
+its GPU work through the front's compute proxy (`graphic.compute_*`) using only
+the plain `gfx` handles: no physics package imports the backend or `vendor:vulkan`.
 
 ## Configuration
 
@@ -121,7 +128,9 @@ missing/invalid fields fall back to defaults).
     "auto_adjust": false,             // adaptive theta + rebuild interval
     "target_tickrate": 60,            // target physics updates/sec when auto_adjust
     "theta_min": 0.2,                 // adaptive theta lower bound
-    "theta_max": 1.2                  // adaptive theta upper bound
+    "theta_max": 1.2,                 // adaptive theta upper bound
+    "hot_reload": true,               // shaders/frame graph/config (default: ODIN_DEBUG)
+    "hot_game": false                 // rebuild+swap the game/ shared library
 }
 ```
 
@@ -134,6 +143,9 @@ missing/invalid fields fall back to defaults).
 - `worker_threads` (default 8) sizes the pool for the parallel gravity solver.
 - `auto_adjust` drives `theta` and the rebuild interval from measured cost and
   body motion; see `docs/physics.md`.
+- `hot_reload` watches shaders, `frame_graph.json` and `config.json`; `hot_game`
+  rebuilds `game/` into a shared library and swaps it in. See
+  `docs/hot_reload.md` for the gameplay ABI and limitations.
 
 ## Deeper docs (read on demand)
 
@@ -144,6 +156,7 @@ missing/invalid fields fall back to defaults).
 - `docs/gpu_physics.md` — compute context, timeline semaphores, GPU physics roadmap.
 - `docs/benchmark.md` — bench harness, spall profiling, measured results.
 - `docs/performance.md` — performance model, measured optimizations, open directions.
+- `docs/hot_reload.md` — shader/frame-graph/config/gameplay reload, ABI and contract.
 
 ## Skills
 

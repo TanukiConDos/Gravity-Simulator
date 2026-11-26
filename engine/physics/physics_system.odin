@@ -1,6 +1,6 @@
 package physics
 
-import found "../../foundation"
+import found "engine:foundation"
 import ecs "engine:ecs"
 import "base:intrinsics"
 import "core:log"
@@ -259,6 +259,24 @@ physics_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	sel.picked = SELECTION_NONE
 	s := ecs.world_resource(w, Physic_State, _state_destroy)
 	s.algorithm = config.algorithm
+	_physics_configure(s, config)
+	s.ema_cost_ms = ADAPTIVE_HEADROOM * (1000.0 / max(config.target_tickrate, 1.0))
+	s.warmup_left = ADAPTIVE_WARMUP
+	_ = ecs.world_pool(w, Body)
+	_ = ecs.world_pool(w, Position)
+	_ = ecs.world_pool(w, Velocity)
+	_ = ecs.world_pool(w, Acceleration)
+	_ = ecs.world_pool(w, Mass)
+	_ = ecs.world_pool(w, Radius)
+	_ = ecs.world_pool(w, Selected)
+	return s
+}
+
+// _physics_configure copies the live-tunable fields from `config`. The solver
+// keeps its algorithmic choices (algorithm, depth) here too, but `algorithm` is
+// set only at init because switching it needs a different solver hook.
+@(private)
+_physics_configure :: proc(s: ^Physic_State, config: found.Config) {
 	s.theta = config.theta
 	s.rebuild_interval = config.tree_rebuild_interval
 	s.max_depth =
@@ -269,20 +287,27 @@ physics_init :: proc(w: ^ecs.World, config: found.Config) -> ^Physic_State {
 	s.target_cost_ms = ADAPTIVE_HEADROOM * (1000.0 / max(config.target_tickrate, 1.0))
 	s.theta_min = config.theta_min
 	s.theta_max = config.theta_max
-	s.ema_cost_ms = ADAPTIVE_HEADROOM * (1000.0 / max(config.target_tickrate, 1.0))
-	s.warmup_left = ADAPTIVE_WARMUP
-
 	if s.auto_adjust {
 		s.theta = clamp(s.theta, s.theta_min, s.theta_max)
 	}
-	_ = ecs.world_pool(w, Body)
-	_ = ecs.world_pool(w, Position)
-	_ = ecs.world_pool(w, Velocity)
-	_ = ecs.world_pool(w, Acceleration)
-	_ = ecs.world_pool(w, Mass)
-	_ = ecs.world_pool(w, Radius)
-	_ = ecs.world_pool(w, Selected)
-	return s
+}
+
+// physics_reload_config applies a hot-reloaded config on the physics thread and
+// invalidates the octree so the next gravity tick rebuilds with the new theta /
+// depth / cell size even when the body count and world revision are unchanged.
+physics_reload_config :: proc(w: ^ecs.World, config: found.Config) {
+	s := physics_state(w)
+	_physics_configure(s, config)
+	s.warmup_left = ADAPTIVE_WARMUP
+	s.tree_body_count = -1
+	s.tree_revision = 0
+	log.infof(
+		"[PHYSIC] Reloaded tunables: theta=%.3f, rebuild=%.1f, max_depth=%d, auto_adjust=%v",
+		s.theta,
+		s.rebuild_interval,
+		s.max_depth,
+		s.auto_adjust,
+	)
 }
 
 // Registers the physics systems as the PHYSICS phase. Dependencies are declared

@@ -1,29 +1,16 @@
 @echo off
 setlocal
-rem Compiles the GLSL sources into SPIR-V for the Vulkan 1.4 graphic engine.
-rem Requires the VULKAN_SDK environment variable (set by the Vulkan SDK installer).
+rem Compiles the GLSL sources into SPIR-V through the shared job table in
+rem engine/graphics/shader/manifest.odin. Requires the Odin compiler and glslc
+rem (the Vulkan SDK installer adds it to PATH or VULKAN_SDK\Bin).
 
 if not defined VULKAN_SDK (
-    echo error: VULKAN_SDK environment variable is not set
-    exit /b 1
+    rem Keep the manifest's default tool lookup; glslc may still be on PATH.
+    echo warning: VULKAN_SDK is not set, relying on glslc in PATH
+) else (
+    set "PATH=%VULKAN_SDK%\Bin;%PATH%"
 )
 
-set "GLSLC=%VULKAN_SDK%\Bin\glslc.exe"
-if not exist "%GLSLC%" (
-    echo error: glslc not found at "%GLSLC%"
-    exit /b 1
-)
-
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0vertexShader.vert" -o "%~dp0vert.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0fragmentShader.frag" -o "%~dp0frag.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0compute_probe.comp" -o "%~dp0compute_probe.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0physics_brute.comp" -o "%~dp0physics_brute.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0physics_tree.comp" -o "%~dp0physics_tree.spv"
-"%GLSLC%" --target-env=vulkan1.4 "%~dp0instance_pack.comp" -o "%~dp0instance_pack.spv"
-
-rem The GPU tree build is one GLSL source compiled per pass.
-for %%S in (0 1 2 3 4 5) do (
-    "%GLSLC%" --target-env=vulkan1.4 -DTREE_BUILD_STAGE=%%S "%~dp0tree_build.comp" -o "%~dp0tree_build_%%S.spv"
-)
-
-echo shaders compiled ^(target-env=vulkan1.4^) -^> %~dp0
+cd /d "%~dp0..\..\.."
+odin run tools/shader_build -collection:engine=engine -- %*
+exit /b %ERRORLEVEL%
