@@ -1,7 +1,7 @@
 package main
 
-import vk "./Engine/Graphic/backend"
-import ecs "./Engine/ecs"
+import vk "engine:graphics/backend"
+import ecs "engine:ecs"
 import foundation "./foundation"
 import "core:log"
 import "core:sync"

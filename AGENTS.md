@@ -3,20 +3,24 @@
 ## Build & Run
 
 ```
-odin run . -debug          # Run main app
-odin test tests -debug     # Run tests
-odin build . -o:speed -disable-assert   # Optimized build (asserts compiled out)
-odin run bench -o:speed    # Physics benchmark
-odin run bench -o:speed -- 1k   # Single sweep stage (all | 1k | 10k | 100k)
-odin run bench -o:speed -- gpu [elements] [dispatches] [samples]  # Headless compute probe
-odin run bench -o:speed -- gpu-force [n] [ticks] [samples]  # GPU vs CPU gravity
-odin run bench -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]  # GPU vs CPU Barnes-Hut
-odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]  # whole-tick CPU vs GPU
-odin run bench -o:speed -define:PROFILE=true -- profile   # Record bench/results/trace_*.spall
+odin run . -collection:engine=engine -debug          # Run main app
+odin test tests -collection:engine=engine -debug     # Run tests
+odin build . -collection:engine=engine -o:speed -disable-assert   # Optimized build (asserts compiled out)
+odin run bench -collection:engine=engine -o:speed    # Physics benchmark
+odin run bench -collection:engine=engine -o:speed -- 1k   # Single sweep stage (all | 1k | 10k | 100k)
+odin run bench -collection:engine=engine -o:speed -- gpu [elements] [dispatches] [samples]  # Headless compute probe
+odin run bench -collection:engine=engine -o:speed -- gpu-force [n] [ticks] [samples]  # GPU vs CPU gravity
+odin run bench -collection:engine=engine -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]  # GPU vs CPU Barnes-Hut
+odin run bench -collection:engine=engine -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]  # whole-tick CPU vs GPU
+odin run bench -collection:engine=engine -o:speed -define:PROFILE=true -- profile   # Record bench/results/trace_*.spall
 ```
 
 - Requires Odin compiler (dev-2025-08+) in PATH
 - Requires Vulkan SDK installed (vendor:vulkan)
+- Engine packages import by subpackage name through the `engine` collection,
+  e.g. `import graphic "engine:graphics/front"`. Pass
+  `-collection:engine=engine` from the repo root; `engine/` is the collection
+  root. `foundation` stays a relative import (`../foundation`).
 
 ### CPU features / AVX
 
@@ -24,8 +28,8 @@ By default LLVM targets generic x86-64 (SSE2 only). Adding `-microarch:native`
 lets it use the host ISA (AVX2/AVX-512 here) and is worth ~1.5–4.6% on the bench:
 
 ```
-odin build . -o:speed -disable-assert -microarch:native
-odin run bench -o:speed -microarch:native
+odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native
+odin run bench -collection:engine=engine -o:speed -microarch:native
 ```
 
 Use `-microarch:haswell` for a portable AVX2 build, or omit the flag for a
@@ -33,8 +37,8 @@ generic binary that runs anywhere (a `native` binary faults on older CPUs).
 
 ### Shaders
 
-GLSL sources live in `Engine/Graphic/shader/` and compile to SPIR-V 1.6. Re-run
-`Engine/Graphic/shader/build.sh` (Linux; `compilar.bat` on Windows) after editing
+GLSL sources live in `engine/graphics/shader/` and compile to SPIR-V 1.6. Re-run
+`engine/graphics/shader/build.sh` (Linux; `compilar.bat` on Windows) after editing
 them. The `shader-pipeline` skill covers the full edit/rebuild workflow.
 
 ## Validation
@@ -49,7 +53,7 @@ For headless/scripted runs (no GUI), the equivalent fallback is:
 
 ```
 VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation \
-VK_LAYER_SETTINGS_PATH=/path/to/vk_layer_settings.txt odin run . -debug
+VK_LAYER_SETTINGS_PATH=/path/to/vk_layer_settings.txt odin run . -collection:engine=engine -debug
 ```
 
 A `vk_layer_settings.txt` enabling best practices is generated with
@@ -62,8 +66,8 @@ scripts/check_layering.sh
 ```
 
 It fails if the front or `shared` package mentions `vendor:vulkan`, if the front
-imports a physics package, if the backend imports `ecs`/`physic` or mentions
-`Graphic/front`, or if the physics core imports the graphics front.
+imports a physics package, if the backend imports `ecs`/`physics` or mentions
+`graphics/front`, or if the physics core imports the graphics front.
 
 ## Project Structure
 
@@ -74,26 +78,26 @@ imports a physics package, if the backend imports `ecs`/`physic` or mentions
 ├── bench/                   # Octree parameter sweep (results in bench/results/)
 ├── docs/                    # Deeper design notes (read on demand)
 ├── scripts/                 # check_layering.sh (front/backend dependency check)
-├── Engine/Graphic/
+├── engine/graphics/
 │   ├── shared/              # package gfx: plain data seam (no Vulkan, ECS or GLFW)
 │   ├── front/               # package graphic: camera, input, Renderer, compute proxy, ECS integration
 │   ├── backend/             # package vk: window, GPU, swapchain, pipelines, frame graph, compute (no ECS)
 │   ├── spirv/               # SPIR-V reflection (CPU only, no Vulkan calls)
 │   ├── shader/              # GLSL sources, compiled SPIR-V + build scripts
 │   └── frame_graph.json     # Frame graph structure (loaded by the backend)
-├── Engine/ecs/              # Entity-component-system core
-├── Engine/physic/           # Physics components + systems
-│   └── gpu/                 # package physic_gpu: GPU gravity solver, GPU tree build, stream
+├── engine/ecs/              # Entity-component-system core
+├── engine/physics/          # Physics components + systems
+│   └── gpu/                 # package physics_gpu: GPU gravity solver, GPU tree build, stream
 ├── foundation/              # Config, arena, file I/O, timers
 ├── tests/                   # Odin test suite (+ fixtures/)
 └── scenes/                  # JSON scene files
 ```
 
-`Engine/Graphic` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
+`engine/graphics` is split into `shared` (`gfx`), `front` (`graphic`) and `backend`
 (`vk`): `front -> backend -> shared`. `main` is the orchestrator: it owns the
 frame-source adapter (`frame_source.odin`), registers it and the optional GPU
 producer with the front, and runs the modules. The front never imports a physics
-package; the backend imports no ECS/physics state. `physic/gpu` records its GPU
+package; the backend imports no ECS/physics state. `physics/gpu` records its GPU
 work through the front's compute proxy (`graphic.compute_*`) using only the plain
 `gfx` handles: no physics package imports the backend or `vendor:vulkan`.
 
@@ -149,6 +153,6 @@ is always in context): `shader-pipeline`, `physics-bench`, `verify-engine`,
 
 ## Tests
 
-Run `odin test tests -debug`. The `verify-engine` skill lists the pre-commit
+Run `odin test tests -collection:engine=engine -debug`. The `verify-engine` skill lists the pre-commit
 checks; `octree-tuning` and `shader-pipeline` name the tests that pin each
 subsystem.

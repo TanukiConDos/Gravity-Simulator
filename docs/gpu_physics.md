@@ -14,17 +14,17 @@ from SPIR-V, run dispatch chains against storage buffers and synchronize them
 with a timeline semaphore. `gravity_backend = GPU` replaces either gravity solve
 with its compute path: the octree backend builds its tree on the GPU, traverses
 it, applies the velocity update (`vel += acc * dt`) and returns the collision
-contacts, while physic keeps collision resolution, the position update,
+contacts, while physics keeps collision resolution, the position update,
 selection, snapshot publishing and the adaptive controller. The renderer draws
 those GPU buffers directly instead of reading the CPU snapshot. All of it is
 verified by the bench and pinned by tests.
 
 ## Solve pipeline (M3)
 
-The `physic.Gravity_Solver` hook is asynchronous: a tick submits a solve early
+The `physics.Gravity_Solver` hook is asynchronous: a tick submits a solve early
 and applies its results only when a consumer needs them.
 
-1. `physic_system_gravity` calls `submit`, which packs, uploads, dispatches and
+1. `physics_system_gravity` calls `submit`, which packs, uploads, dispatches and
    submits without waiting. Results stay in the backend's buffers; the pools are
    untouched.
 2. The first consumer calls `finish`, which waits on the submission's timeline
@@ -32,25 +32,25 @@ and applies its results only when a consumer needs them.
    contacts it found. `finish` is idempotent.
 3. `finish_at_collision` picks that consumer:
    - the octree backend sets it: its traversal produces the contacts the narrow
-     phase resolves, so `physic.collision` finishes first;
+     phase resolves, so `physics.collision` finishes first;
    - the brute-force backend leaves it false: its serial collision pass reads
      positions and masses only, so the dispatch stays in flight across it and
-     `physic.integrate` finishes before the position update.
+     `physics.integrate` finishes before the position update.
 
 A failed `submit` (over capacity, no tree) falls back to the CPU solver in the
 same tick, exactly like a failing hook in M1. A failed `finish` (device loss, or
 the Barnes-Hut contact list exceeding its fixed capacity) is detected before the
-pools are touched, so `physic` uninstalls the hook and re-runs the CPU solver for
+pools are touched, so `physics` uninstalls the hook and re-runs the CPU solver for
 that tick.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant G as physic.gravity
+    participant G as physics.gravity
     participant S as Gpu_Gravity.submit
     participant Q as compute queue
-    participant C as physic.collision
-    participant I as physic.integrate
+    participant C as physics.collision
+    participant I as physics.integrate
     participant F as Gpu_Gravity.finish
 
     G->>S: submit(bodies, dt)
@@ -76,11 +76,11 @@ sequenceDiagram
 ## Compute seam
 
 The solver never imports the graphics backend. It records work through the front's
-compute proxy (`Engine/Graphic/front/compute.odin`) using the plain handles of
-`Engine/Graphic/shared/compute.odin`:
+compute proxy (`engine/graphics/front/compute.odin`) using the plain handles of
+`engine/graphics/shared/compute.odin`:
 
 ```odin
-// Engine/physic/gpu (physic_gpu): imports graphic + gfx, no vk/vulkan
+// engine/physics/gpu (physics_gpu): imports graphic + gfx, no vk/vulkan
 compute  := graphic.renderer_compute(renderer)          // or a headless handle
 pipeline, ok := graphic.compute_pipeline_create(compute, "physics_brute", shader, []u32{0, 1})
 cmd      := graphic.compute_begin(compute)
@@ -104,7 +104,7 @@ and `gpu_gravity_destroy` never touches it.
 
 ## Backends
 
-`Engine/physic/gpu/gpu_physics.odin` owns the compute consumer (staging, pipelines
+`engine/physics/gpu/gpu_physics.odin` owns the compute consumer (staging, pipelines
 and submission ring); `gpu_tree.odin` adds the octree-specific buffers
 and traversal.
 
@@ -127,7 +127,7 @@ CPU brute-force softening (`r² >= 1e-6`).
 
 ### Barnes-Hut (`physics_tree.comp`)
 
-1. when physic rebuilt the tree (tracked through `PhysicState.rebuild_count`),
+1. when physics rebuilt the tree (tracked through `PhysicState.rebuild_count`),
    the nodes are widened into a std430 record and the tree's permuted body list
    (`order`) is uploaded. The body columns (position, mass, velocity, radius) are
    pool-indexed and uploaded every tick;
@@ -183,7 +183,7 @@ the parity test pins cell by cell.
    to the host for the tree metrics (`Physic_State.tree_info`). The tree itself
    never leaves the GPU.
 
-Physic keeps the rebuild decision (interval, adaptive drift) and calls the
+Physics keeps the rebuild decision (interval, adaptive drift) and calls the
 backend's `build_tree` hook; the CPU tree is only built when the backend fails
 and the run falls back to the CPU solver.
 
@@ -291,7 +291,7 @@ reads.
 
 Dev machine: RTX 4070 Ti SUPER, 16 CPU workers, `theta = 0.8`, depth 16.
 
-Solve-level, `odin run bench -o:speed -- gpu-force` (includes the GPU velocity
+Solve-level, `odin run bench -collection:engine=engine -o:speed -- gpu-force` (includes the GPU velocity
 update, so the CPU column includes its inline `vel += acc * dt`):
 
 | bodies | cpu ms/solve | gpu ms/solve | speedup | max rel. error |
@@ -300,7 +300,7 @@ update, so the CPU column includes its inline `vel += acc * dt`):
 | 4 096  |        34.22 |        0.125 |   275×  | 6.0e-07        |
 | 16 384 |       542.29 |        0.410 | 1 324×  | 1.5e-06        |
 
-Solve-level, `odin run bench -o:speed -- gpu-tree`:
+Solve-level, `odin run bench -collection:engine=engine -o:speed -- gpu-tree`:
 
 | bodies | tree | cpu ms/solve | gpu ms/solve | speedup |
 |-------:|------|-------------:|-------------:|--------:|
@@ -314,7 +314,7 @@ max ≈ 5.5e-06) and the contact sets match exactly. The "rebuilt each tick" row
 includes the CPU tree build (≈7 ms at 100k) plus the structure upload (≈12 MB at
 100k nodes), which only happens on rebuild.
 
-Full tick, `odin run bench -o:speed -- gpu-tick` (the whole PHYSICS phase:
+Full tick, `odin run bench -collection:engine=engine -o:speed -- gpu-tick` (the whole PHYSICS phase:
 begin, gravity, collision, integrate, select, publish, adapt; octree rows rebuild
 the tree every tick):
 
@@ -360,7 +360,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   A context's slot ring and timeline counter are plain fields, so `compute_begin`
   takes a mutex and the matching `compute_submit` releases it; a slot reservation
   and its timeline advance become one atomic step. Submission is still *not*
-  pinned to one thread: `physic.integrate` is `.ANY`, so the scheduler may run a
+  pinned to one thread: `physics.integrate` is `.ANY`, so the scheduler may run a
   solver's `finish` (and its second readback submission) on a job worker while
   another thread enters the context. Before this, safety relied on the graph
   serialising the systems that call it.
@@ -371,7 +371,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   "nothing happened yet" (submit) and "results are unusable" (finish).
 - **Compute pipelines follow the data-driven pipeline.** Workgroup size comes
   from the shader's `LocalSize` execution mode; descriptor set layouts and push
-  constant ranges come from SPIR-V reflection (`Engine/Graphic/spirv`).
+  constant ranges come from SPIR-V reflection (`engine/graphics/spirv`).
   Storage buffers are bound through external push descriptors
   (`push_descriptors_bind_buffer`), so no descriptor pools are involved.
 - **f32, rewritten to avoid overflow.** The CPU computes `G * m1 * m2` in f64
@@ -419,7 +419,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   CPU (they need the positions the next dispatch consumes, so moving them to the
   GPU would not remove the readback).
 - **M4 — GPU tree build (done).** `tree_build.comp` (six passes in one
-  submission) rebuilds the octree on the GPU, produces the metrics physic needs
+  submission) rebuilds the octree on the GPU, produces the metrics physics needs
   as a small readback, and leaves the tree in the traversal's buffers. The CPU
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
@@ -447,10 +447,10 @@ flowchart LR
 ## Bench
 
 ```
-odin run bench -o:speed -- gpu [elements] [dispatches] [samples]
-odin run bench -o:speed -- gpu-force [n] [ticks] [samples]
-odin run bench -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]
-odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]
+odin run bench -collection:engine=engine -o:speed -- gpu [elements] [dispatches] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-force [n] [ticks] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]
 ```
 
 `gpu` creates a windowless compute context, runs the transfer → dispatch →

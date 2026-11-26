@@ -1,4 +1,4 @@
-# ECS (`Engine/ecs`)
+# ECS (`engine/ecs`)
 
 The engine is built around a small entity-component-system core. There is no
 archetype graph: storage is a struct-of-arrays column per component, indexed by
@@ -100,7 +100,7 @@ owner thread applies them at the end of the step.
 
 ```mermaid
 flowchart TD
-    sys["system iterating a view<br/>(e.g. physic.collision)"] --> despawn["world_despawn(e)"]
+    sys["system iterating a view<br/>(e.g. physics.collision)"] --> despawn["world_despawn(e)"]
     sys --> set["world_defer_set(e, T)"]
     sys --> rem["world_defer_remove(e, T)"]
     despawn --> q[("world.deferred<br/>(owned copies, submission order)")]
@@ -125,7 +125,7 @@ views safe to hold across a system and across the two threads:
   automatically.
 - `world_freeze(w)` marks the registries read-only. After this point all pools and
   resources must already exist: `world_pool`/`world_resource` log an error and
-  return `nil` for a new type (the typed accessors such as `physic_state` and
+  return `nil` for a new type (the typed accessors such as `physics_state` and
   `body_view` assert on the `nil` in debug), because creating one would race with
   the other thread. Spawning past the reserved capacity returns `ENTITY_NONE` and
   logs; writing a component past capacity is a no-op + warning.
@@ -141,7 +141,7 @@ variadic list of distinct type parameters, and a `typeid` is a value rather than
 a type: a query cannot statically name an arbitrary set of component types, so a
 generic query API is not practical. A **view** is instead declared by the package
 that owns the components: a struct of borrowed column slices plus the driver
-`dense` list, always indexed by entity index. `physic.Bodies` is the only one.
+`dense` list, always indexed by entity index. `physics.Bodies` is the only one.
 
 The view's contract is that every entity in the driver list carries *all* the
 columns. `body_spawn` is the only constructor and adds them together, and
@@ -159,7 +159,7 @@ state, including the index-based `OctTree`. The `PHYSICS` phase runs, in order:
 `begin` (reset acceleration, ensure tree), `gravity`, `collision`, `integrate`,
 `select` (apply a picked instance from the graphics thread to `Selected`),
 `publish` (copy positions and selection into `RenderSnapshot`), `adapt`
-(adaptive controller). `physic_register_systems` wires them up.
+(adaptive controller). `physics_register_systems` wires them up.
 
 ## Graphics as ECS
 
@@ -178,7 +178,7 @@ cursor, framebuffer size) on `Window`. `graphic.input` consumes that snapshot to
 move the camera and to turn a left-click edge into a `Pick_Request`, and the
 swapchain reads the snapshot's cached framebuffer size when it is recreated.
 
-The frame itself is data-driven. `Engine/Graphic/frame_graph.json` (path
+The frame itself is data-driven. `engine/graphics/frame_graph.json` (path
 unchanged) declares the resources (imported or transient) and the passes
 (`inputs`/`outputs`, `bindings`, `optional`). The backend's `frame_graph.odin`
 loads it, resolves pipelines, builds the dependency edges and, every frame, culls
@@ -193,7 +193,7 @@ The main pass writes both the swapchain color and, as a second output (MRT), a
 mouse press the optional `pick_copy` pass records a one-pixel copy of that ID into
 the frame command buffer (no separate draw and no extra submission), so the result
 is read once the frame's fence signals. The resolved index is handed to the
-physics thread through the atomic `Selection_State`; `physic.select` consumes it
+physics thread through the atomic `Selection_State`; `physics.select` consumes it
 with an atomic exchange (so a pick stored between a load and a clear is never
 lost), applies it to `Selected`, and the next snapshot publishes the flags.
 
@@ -231,13 +231,13 @@ dispatched to the pool):
 ```mermaid
 flowchart LR
     subgraph PHYSICS["PHYSICS phase"]
-        begin["physic.begin"] --> gravity["physic.gravity"]
-        gravity --> collision["physic.collision"]
-        collision --> integrate["physic.integrate (.ANY)"]
-        collision --> select["physic.select (.ANY)"]
-        integrate --> publish["physic.publish"]
+        begin["physics.begin"] --> gravity["physics.gravity"]
+        gravity --> collision["physics.collision"]
+        collision --> integrate["physics.integrate (.ANY)"]
+        collision --> select["physics.select (.ANY)"]
+        integrate --> publish["physics.publish"]
         select --> publish
-        publish --> adapt["physic.adapt"]
+        publish --> adapt["physics.adapt"]
     end
 
     subgraph RENDER["RENDER phase"]
@@ -245,7 +245,7 @@ flowchart LR
     end
 ```
 
-`physic.integrate` and `physic.select` touch disjoint columns and share a wave;
+`physics.integrate` and `physics.select` touch disjoint columns and share a wave;
 their access declarations serialise them against conflicting systems across
 affinities.
 
@@ -282,7 +282,7 @@ flowchart TD
 ## Threading
 
 The world is not synchronised; one thread owns it at a time. All pools and
-resources are created during `physic_init` / `renderer_init` and
+resources are created during `physics_init` / `renderer_init` and
 the world is frozen before the threads start, so afterwards the graphics thread
 only performs concurrent reads of the registries. The physics thread owns all
 mutations and runs `world_flush`.

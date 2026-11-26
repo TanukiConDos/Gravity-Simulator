@@ -52,35 +52,37 @@ La documentación técnica está en `docs/` (en inglés) e incluye diagramas Mer
 
 2. **Preparación del entorno:**
 
-   Asegúrate de que el compilador de Odin y el Vulkan SDK están disponibles en el PATH. Para compilar los shaders, edita el script `compilar.bat` en la carpeta `Engine/Graphic/shader` cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK.
+   Asegúrate de que el compilador de Odin y el Vulkan SDK están disponibles en el PATH. Para compilar los shaders, edita el script `compilar.bat` en la carpeta `engine/graphics/shader` cambiando la ruta del compilador de shaders de Vulkan a la ruta en la que hallas instalado el SDK.
 
 3. **Compilación y ejecución:**
 
-   Ejecuta `odin run . -debug` desde la raíz del proyecto para compilar y lanzar la aplicación. La simulación se ejecuta en tiempo real hasta que se cierra la ventana.
+   Ejecuta `odin run . -collection:engine=engine -debug` desde la raíz del proyecto para compilar y lanzar la aplicación. La simulación se ejecuta en tiempo real hasta que se cierra la ventana.
+
+   El flag `-collection:engine=engine` registra la carpeta `engine/` como colección, de modo que los paquetes se importan por su ruta de subpaquete (por ejemplo `import graphic "engine:graphics/front"`). Todos los comandos de compilación, tests y benchmark lo necesitan.
 
    Para builds optimizadas puedes añadir `-microarch:native`, que permite al compilador usar las instrucciones SIMD (AVX) de tu CPU. Por defecto Odin solo apunta a SSE2. Usa `-microarch:haswell` si quieres un binario AVX2 portable, u omite el flag para un binario genérico:
 
    ```
-   odin build . -o:speed -disable-assert -microarch:native
+   odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native
    ```
 
 4. **Ejecución de los tests:**
 
-   Ejecuta `odin test tests -debug` desde la raíz del proyecto para compilar y lanzar la suite de tests.
+   Ejecuta `odin test tests -collection:engine=engine -debug` desde la raíz del proyecto para compilar y lanzar la suite de tests.
 
 5. **Benchmark del octree:**
 
    El directorio `bench/` barre los parámetros del octree (profundidad máxima, `theta`, intervalo de reconstrucción y número de hilos) midiendo tiempo por tick y error de precisión frente a una referencia exacta. Los resultados se escriben en `bench/results/`:
 
    ```
-   odin run bench -o:speed -disable-assert -microarch:native            # todas las etapas
-   odin run bench -o:speed -disable-assert -microarch:native -- 10k     # sólo una etapa (1k | 10k | 100k)
+   odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native            # todas las etapas
+   odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -- 10k     # sólo una etapa (1k | 10k | 100k)
    ```
 
    Para generar una traza de perfilado con [`spall`](https://gravitymoth.com/spall/) (`core:prof`), compila con `-define:PROFILE=true` y usa la etapa `profile` (o la app, que vuelca a `trace_app.spall`):
 
    ```
-   odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile 100000 16 0.5 50 16
+   odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile 100000 16 0.5 50 16
    ```
 
    Escribe `bench/results/trace_*.spall`, que puede abrirse en el visor de spall o en Perfetto. Cada hilo (main, physics, graphics, `worker.0`…) aparece con su propio timeline y nombre de proceso, y los spans llevan datos adjuntos (`n`, `theta`, nodos del octree, pares de colisión, tamaño de chunk, pases del frame graph, etc.); los eventos puntuales se registran como marcadores de duración cero. El visor solo entiende Begin/End y nombres, así que no hay contadores ni eventos instantáneos. No uses `-define:PROFILE=true` para medir tiempos: deja las llamadas de instrumentación en el binario y altera los resultados.

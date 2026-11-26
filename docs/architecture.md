@@ -40,35 +40,35 @@ flowchart TD
     main["main.odin / parallel.odin<br/>frame_source.odin (orchestrator)"]
     bench["bench/"]
     tests["tests/"]
-    front["Engine/Graphic/front<br/>package graphic"]
-    backend["Engine/Graphic/backend<br/>package vk"]
-    shared["Engine/Graphic/shared<br/>package gfx"]
-    pgpu["Engine/physic/gpu<br/>package physic_gpu"]
-    spirv["Engine/Graphic/spirv<br/>SPIR-V reflection (CPU only)"]
-    physic["Engine/physic"]
-    ecs["Engine/ecs"]
+    front["engine/graphics/front<br/>package graphic"]
+    backend["engine/graphics/backend<br/>package vk"]
+    shared["engine/graphics/shared<br/>package gfx"]
+    pgpu["engine/physics/gpu<br/>package physics_gpu"]
+    spirv["engine/graphics/spirv<br/>SPIR-V reflection (CPU only)"]
+    physics["engine/physics"]
+    ecs["engine/ecs"]
     foundation["foundation"]
 
-    main --> physic
+    main --> physics
     main --> front
     main --> backend
     main --> shared
     main --> ecs
     main --> foundation
-    bench --> physic
+    bench --> physics
     bench --> pgpu
     bench --> front
     bench --> backend
     bench --> ecs
     bench --> foundation
-    tests --> physic
+    tests --> physics
     tests --> pgpu
     tests --> front
     tests --> backend
     tests --> ecs
     tests --> foundation
 
-    physic --> pgpu
+    physics --> pgpu
     pgpu --> front
     pgpu --> shared
     front --> backend
@@ -78,8 +78,8 @@ flowchart TD
     backend --> foundation
     pgpu --> ecs
     pgpu --> foundation
-    physic --> ecs
-    physic --> foundation
+    physics --> ecs
+    physics --> foundation
     ecs --> foundation
 ```
 
@@ -157,10 +157,10 @@ sequenceDiagram
     participant M as main()
     participant F as foundation
     participant W as ecs.World
-    participant P as physic
+    participant P as physics
     participant B as vk backend
     participant R as graphic front (Renderer)
-    participant PG as physic_gpu
+    participant PG as physics_gpu
     participant T as physics + graphics threads
 
     M->>F: config_load("config.json")
@@ -168,9 +168,9 @@ sequenceDiagram
     M->>B: vk.window_init(1280, 720)
     M->>W: world_create()
     M->>P: body_spawn(...) — scene / random
-    M->>P: physic_init(world, config)
+    M->>P: physics_init(world, config)
     M->>W: scheduler_create(job_system)
-    M->>P: physic_register_systems(scheduler)
+    M->>P: physics_register_systems(scheduler)
     M->>B: vk.backend_init(window)
     M->>R: graphic.renderer_init(backend, window, world)
     M->>M: frame_source_init(renderer, world)<br/>registers the app frame source
@@ -180,7 +180,7 @@ sequenceDiagram
         M->>R: renderer_compute() (attaches on first use) -> gfx.Compute
         M->>PG: gpu_gravity_init(compute, world, algorithm, capacity)
         M->>R: renderer_set_stream_producer(handle, ops)
-        M->>P: physic_set_gravity_solver(hook)
+        M->>P: physics_set_gravity_solver(hook)
     end
     M->>W: world_freeze()
     M->>T: parallel_start()
@@ -275,7 +275,7 @@ flowchart LR
         pools[("component pools<br/>Position · Velocity · Mass · Radius · Selected")]
     end
 
-    pools -->|"physic.publish"| snap[("RenderSnapshot<br/>3 buffers · atomic state")]
+    pools -->|"physics.publish"| snap[("RenderSnapshot<br/>3 buffers · atomic state")]
     pools -->|"pack + upload (GPU backend)"| sets[("render view sets ×3<br/>CONCURRENT buffers")]
 
     subgraph GT["graphics thread"]
@@ -288,7 +288,7 @@ flowchart LR
     snap -->|"claim PUBLISHED"| pick
     sets -->|"claim via Stream_Ops"| pack
     draw -->|"Frame_Result.picked"| sel[("Selection_State")]
-    sel -->|"physic.select (atomic exchange)"| pools
+    sel -->|"physics.select (atomic exchange)"| pools
 ```
 
 The triple buffer is latest-wins and lock-free: the writer never blocks, the

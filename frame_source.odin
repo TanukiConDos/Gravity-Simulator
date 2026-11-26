@@ -1,9 +1,9 @@
 package main
 
-import graphic "./Engine/Graphic/front"
-import gfx "./Engine/Graphic/shared"
-import physic "./Engine/physic"
-import ecs "./Engine/ecs"
+import graphic "engine:graphics/front"
+import gfx "engine:graphics/shared"
+import physics "engine:physics"
+import ecs "engine:ecs"
 import "core:sync"
 
 // Frame_Source is main's adapter between the simulation and the graphics front.
@@ -14,7 +14,7 @@ import "core:sync"
 Frame_Source :: struct {
 	renderer:  ^graphic.Renderer,
 	world:     ^ecs.World,
-	snapshot:  ^physic.RenderSnapshot,
+	snapshot:  ^physics.RenderSnapshot,
 	positions: [dynamic]gfx.Vec3,
 	selected:  [dynamic]u8,
 }
@@ -23,14 +23,14 @@ Frame_Source :: struct {
 frame_source_init :: proc(self: ^Frame_Source, renderer: ^graphic.Renderer, world: ^ecs.World) {
 	self.renderer = renderer
 	self.world = world
-	self.snapshot = physic.physic_snapshot(world)
+	self.snapshot = physics.physics_snapshot(world)
 
-	count := physic.body_count(world)
+	count := physics.body_count(world)
 	if count > 0 {
 		self.positions = make([dynamic]gfx.Vec3, count)
 		self.selected = make([dynamic]u8, count)
 
-		view := physic.body_view(world)
+		view := physics.body_view(world)
 		radii := make([]f32, count, context.temp_allocator)
 		selected := make([]u8, count, context.temp_allocator)
 		for entity in view.bodies {
@@ -57,7 +57,7 @@ frame_source_destroy :: proc(self: ^Frame_Source) {
 	delete(self.selected)
 }
 
-// _frame_source_instances runs on the graphics thread. `physic_snapshot_read` is
+// _frame_source_instances runs on the graphics thread. `physics_snapshot_read` is
 // the lock-free triple-buffer handoff; the slices stay valid until the next call.
 // `gpu_active` is the producer liveness signal the front uses to pump/clear the
 // stream.
@@ -70,13 +70,13 @@ _frame_source_instances :: proc(
 	gpu_active: bool,
 ) {
 	self := cast(^Frame_Source)rawptr(handle)
-	n := physic.physic_snapshot_read(
+	n := physics.physics_snapshot_read(
 		self.snapshot,
 		raw_data(self.positions),
 		raw_data(self.selected),
 		len(self.positions),
 	)
-	return self.positions[:n], self.selected[:n], physic.physic_gravity_backend_active(self.world)
+	return self.positions[:n], self.selected[:n], physics.physics_gravity_backend_active(self.world)
 }
 
 // _frame_source_pick hands a resolved pick to the physics thread through the
@@ -84,5 +84,5 @@ _frame_source_instances :: proc(
 @(private)
 _frame_source_pick :: proc(handle: graphic.Frame_Source_Handle, picked: i32) {
 	self := cast(^Frame_Source)rawptr(handle)
-	sync.atomic_store(&physic.selection_state(self.world).picked, picked)
+	sync.atomic_store(&physics.selection_state(self.world).picked, picked)
 }

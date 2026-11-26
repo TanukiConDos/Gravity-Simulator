@@ -1,7 +1,7 @@
 package tests
 
-import ecs "../Engine/ecs"
-import physics "../Engine/physic"
+import ecs "engine:ecs"
+import physics "engine:physics"
 import foundation "../foundation"
 import "core:sync"
 import "core:testing"
@@ -22,7 +22,7 @@ _snapshot_writer_main :: proc(t: ^thread.Thread) {
 			pos := ecs.world_get(ctx.w, e, physics.Position)
 			pos.x = f32(v)
 		}
-		physics.physic_snapshot_publish(ctx.w)
+		physics.physics_snapshot_publish(ctx.w)
 	}
 }
 
@@ -40,7 +40,7 @@ _Snapshot_Reader :: struct {
 _snapshot_reader_main :: proc(t: ^thread.Thread) {
 	ctx := cast(^_Snapshot_Reader)t.data
 	for sync.atomic_load(ctx.done) == 0 {
-		n := physics.physic_snapshot_read(
+		n := physics.physics_snapshot_read(
 			ctx.snapshot,
 			raw_data(ctx.buf),
 			nil,
@@ -74,16 +74,16 @@ test_snapshot_roundtrip :: proc(t: ^testing.T) {
 	for i in 0 ..< len(entities) {
 		entities[i] = physics.body_spawn(w, {f32(i), 0, 0}, {0, 0, 0}, 1, 1)
 	}
-	physics.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
+	physics.physics_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
 
 	for e in entities {
 		ecs.world_get(w, e, physics.Position).x = 7
 	}
-	physics.physic_snapshot_publish(w)
+	physics.physics_snapshot_publish(w)
 
 	buf: [4]physics.Vec3
-	snapshot := physics.physic_snapshot(w)
-	n := physics.physic_snapshot_read(snapshot, raw_data(buf[:]), nil, len(buf))
+	snapshot := physics.physics_snapshot(w)
+	n := physics.physics_snapshot_read(snapshot, raw_data(buf[:]), nil, len(buf))
 	testing.expect_value(t, n, 4)
 	for i in 0 ..< n {
 		testing.expect_value(t, buf[i].x, f32(7))
@@ -92,7 +92,7 @@ test_snapshot_roundtrip :: proc(t: ^testing.T) {
 	// A second read with no new publish must still report the version (and leave
 	// the caller's data intact) so the renderer can re-upload it instead of
 	// drawing a stale buffer.
-	n2 := physics.physic_snapshot_read(snapshot, raw_data(buf[:]), nil, len(buf))
+	n2 := physics.physics_snapshot_read(snapshot, raw_data(buf[:]), nil, len(buf))
 	testing.expect_value(t, n2, 4)
 	testing.expect_value(t, buf[3].x, f32(7))
 }
@@ -110,14 +110,14 @@ test_snapshot_concurrent_reader :: proc(t: ^testing.T) {
 	for i in 0 ..< N {
 		entities[i] = physics.body_spawn(w, {0, 0, 0}, {0, 0, 0}, 1, 1)
 	}
-	physics.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
+	physics.physics_init(w, foundation.Config{algorithm = .BRUTE_FORCE})
 
 	done: i32
 	reads: i32
 	had_data: i32
 	bad := false
 	reader_ctx := _Snapshot_Reader {
-		snapshot = physics.physic_snapshot(w),
+		snapshot = physics.physics_snapshot(w),
 		buf      = make([]physics.Vec3, N),
 		done     = &done,
 		reads    = &reads,

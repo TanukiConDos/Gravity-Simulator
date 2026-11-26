@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Enforce the engine package boundaries.
 #
-#   main orchestrates: main -> physic -> front -> backend
-#   physic/gpu records compute work through the front's proxy (graphic.compute_*)
-#   and speaks only the plain seam types of Engine/Graphic/shared.
+#   main orchestrates: main -> physics -> front -> backend
+#   physics/gpu records compute work through the front's proxy (graphic.compute_*)
+#   and speaks only the plain seam types of engine/graphics/shared.
 #
 # The front never imports physics; the backend imports no ECS/physics; physics
 # never touches the backend or Vulkan.
@@ -44,37 +44,37 @@ check() {
     esac
 }
 
-check "Engine/Graphic/front and Engine/Graphic/shared must not import vendor:vulkan" \
-      "move Vulkan code into Engine/Graphic/backend; the front proxies it with plain handles" \
-      'vendor:vulkan' Engine/Graphic/front Engine/Graphic/shared
+check "engine/graphics/front and engine/graphics/shared must not import vendor:vulkan" \
+      "move Vulkan code into engine/graphics/backend; the front proxies it with plain handles" \
+      'vendor:vulkan' engine/graphics/front engine/graphics/shared
 
-check "Engine/Graphic/front must not import the physics packages" \
+check "engine/graphics/front must not import the physics packages" \
       "main orchestrates and owns the frame source; physics never points at the front" \
-      '^import (phys|physic|physic_gpu) ' Engine/Graphic/front
+      '^import .*"engine:physics' engine/graphics/front
 
-check "Engine/physic must not import the graphics backend" \
+check "engine/physics must not import the graphics backend" \
       "physics records GPU work through the front's compute API, never through vk" \
-      '^import .*Graphic/backend' Engine/physic Engine/physic/gpu
+      '^import .*"engine:graphics/backend' engine/physics engine/physics/gpu
 
-check "Engine/physic must not import vendor:vulkan" \
-      "Vulkan types stay behind Engine/Graphic/backend; physics uses gfx handles" \
-      'vendor:vulkan' Engine/physic Engine/physic/gpu
+check "engine/physics must not import vendor:vulkan" \
+      "Vulkan types stay behind engine/graphics/backend; physics uses gfx handles" \
+      'vendor:vulkan' engine/physics engine/physics/gpu
 
-check "Engine/Graphic/backend must not import ecs or physic" \
+check "engine/graphics/backend must not import ecs or physics" \
       "the backend is device-level; engine integration belongs to the front" \
-      '^import (ecs|physic|phys) ' Engine/Graphic/backend
+      '^import .*"engine:(ecs|physics)' engine/graphics/backend
 
-check "Engine/Graphic/backend must not depend on the front package" \
+check "engine/graphics/backend must not depend on the front package" \
       "the dependency goes front -> backend, never backend -> front" \
-      'Graphic/front' Engine/Graphic/backend
+      'engine:graphics/front' engine/graphics/backend
 
-check "Engine/Graphic/backend must not declare package graphic" \
-      "the front's package name lives only under Engine/Graphic/front" \
-      'package graphic' Engine/Graphic/backend
+check "engine/graphics/backend must not declare package graphic" \
+      "the front's package name lives only under engine/graphics/front" \
+      'package graphic' engine/graphics/backend
 
 if [ "$failed" -ne 0 ]; then
     echo "check_layering: layer violations found (see above)" >&2
     exit 1
 fi
 
-echo "check_layering: OK (main orchestrates: physic -> front -> backend, physics speaks gfx only)"
+echo "check_layering: OK (main orchestrates: physics -> front -> backend, physics speaks gfx only)"

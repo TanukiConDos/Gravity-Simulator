@@ -1,6 +1,6 @@
 package tests
 
-import spirv "../Engine/Graphic/spirv"
+import spirv "engine:graphics/spirv"
 import "core:os"
 import "core:testing"
 import "vendor:vulkan"
@@ -27,7 +27,7 @@ _expect_input :: proc(t: ^testing.T, inputs: []spirv.Input, location: u32, forma
 
 @(test)
 test_spirv_vertex_reflection :: proc(t: ^testing.T) {
-	code := _load_spirv(t, "Engine/Graphic/shader/vert.spv")
+	code := _load_spirv(t, "engine/graphics/shader/vert.spv")
 	if code == nil {return}
 	defer delete(code, context.allocator)
 
@@ -60,7 +60,7 @@ test_spirv_vertex_reflection :: proc(t: ^testing.T) {
 
 @(test)
 test_spirv_fragment_reflection :: proc(t: ^testing.T) {
-	code := _load_spirv(t, "Engine/Graphic/shader/frag.spv")
+	code := _load_spirv(t, "engine/graphics/shader/frag.spv")
 	if code == nil {return}
 	defer delete(code, context.allocator)
 

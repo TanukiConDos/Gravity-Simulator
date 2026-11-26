@@ -1,7 +1,7 @@
 package tests
 
-import graphic "../Engine/Graphic/front"
-import gfx "../Engine/Graphic/shared"
+import graphic "engine:graphics/front"
+import gfx "engine:graphics/shared"
 import "core:testing"
 
 // The front's camera math and the seam layout are backend-agnostic, so they are

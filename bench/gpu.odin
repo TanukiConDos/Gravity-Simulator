@@ -9,7 +9,7 @@
 //   odin run bench -o:speed -- gpu [elements] [dispatches] [samples]
 package main
 
-import vk "../Engine/Graphic/backend"
+import vk "engine:graphics/backend"
 import "core:fmt"
 import "core:log"
 import "core:os"

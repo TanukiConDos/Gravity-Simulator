@@ -18,8 +18,8 @@
 // spall trace to bench/results/trace_*.spall (open it in the spall viewer).
 package main
 
-import ecs "../Engine/ecs"
-import physic "../Engine/physic"
+import ecs "engine:ecs"
+import physics "engine:physics"
 import foundation "../foundation"
 import "core:fmt"
 import "core:math"
@@ -98,7 +98,7 @@ ensure_workers :: proc(workers: int) {
 spawn_bodies :: proc(w: ^ecs.World, n: int) {
 	rand.reset_u64(42)
 	for _ in 0 ..< n {
-		physic.body_spawn(
+		physics.body_spawn(
 			w,
 			{
 				rand.float32_range(-1e10, 1e10),
@@ -129,10 +129,10 @@ make_world :: proc(p: Params) -> (^ecs.World, ^ecs.Scheduler) {
 		worker_threads        = p.workers,
 		auto_adjust           = false,
 	}
-	physic.physic_init(w, config)
+	physics.physics_init(w, config)
 	ecs.world_freeze(w)
 	s := ecs.scheduler_create(foundation.default_job_system())
-	physic.physic_register_systems(s)
+	physics.physics_register_systems(s)
 	_ = ecs.scheduler_finalize(s)
 	return w, s
 }
@@ -156,7 +156,7 @@ measure :: proc(p: Params, warmup, ticks, repeats: int) -> RunStats {
 		t1 := time.tick_now()
 		append(&times, time.duration_milliseconds(time.tick_diff(t0, t1)) / f64(ticks))
 
-		state := physic.physic_state(w)
+		state := physics.physics_state(w)
 		if state.tree != nil {
 			stats.rebuilds = state.rebuild_count
 			stats.nodes = state.tree.node_count
@@ -191,27 +191,27 @@ make_query :: proc(bodies: []u32, k: int) -> []u32 {
 }
 
 _ExactData :: struct {
-	view:  physic.Bodies,
+	view:  physics.Bodies,
 	query: []u32,
-	out:   []physic.Vec3,
+	out:   []physics.Vec3,
 }
 
 @(private)
 _exact_worker :: proc(i: int, data: rawptr) {
 	d := cast(^_ExactData)data
 	qi := d.query[i]
-	px := physic.Vec3(d.view.position[qi])
+	px := physics.Vec3(d.view.position[qi])
 	ax, ay, az: f64
 	for jj in 0 ..< len(d.view.bodies) {
 		j := d.view.bodies[jj]
 		if j == qi {continue}
-		pj := physic.Vec3(d.view.position[j])
+		pj := physics.Vec3(d.view.position[j])
 		dx := f64(pj.x) - f64(px.x)
 		dy := f64(pj.y) - f64(px.y)
 		dz := f64(pj.z) - f64(px.z)
 		dist_sq := dx * dx + dy * dy + dz * dz
 		if dist_sq < 1e-6 {dist_sq = 1e-6}
-		inv := f64(physic.GRAVITY_CONSTANT) * f64(d.view.mass[j]) / (dist_sq * math.sqrt(dist_sq))
+		inv := f64(physics.GRAVITY_CONSTANT) * f64(d.view.mass[j]) / (dist_sq * math.sqrt(dist_sq))
 		ax += dx * inv
 		ay += dy * inv
 		az += dz * inv
@@ -219,7 +219,7 @@ _exact_worker :: proc(i: int, data: rawptr) {
 	d.out[i] = {f32(ax), f32(ay), f32(az)}
 }
 
-exact_accel :: proc(view: physic.Bodies, query: []u32, out: []physic.Vec3) {
+exact_accel :: proc(view: physics.Bodies, query: []u32, out: []physics.Vec3) {
 	data := _ExactData {
 		view  = view,
 		query = query,
@@ -229,29 +229,29 @@ exact_accel :: proc(view: physic.Bodies, query: []u32, out: []physic.Vec3) {
 }
 
 _OctreeQueryData :: struct {
-	tree:  ^physic.OctTree,
+	tree:  ^physics.OctTree,
 	query: []u32,
 }
 
 @(private)
 _octree_query_worker :: proc(i: int, data: rawptr) {
 	d := cast(^_OctreeQueryData)data
-	physic.octtree_calc_force(d.tree, d.query[i], 1.0)
+	physics.octtree_calc_force(d.tree, d.query[i], 1.0)
 }
 
 // Per-body acceleration from one octree solve, measured as the velocity delta
 // with dt = 1. The query bodies' velocities are zeroed first.
 octree_accel :: proc(
-	view: physic.Bodies,
+	view: physics.Bodies,
 	query: []u32,
 	theta: f32,
 	max_depth: int,
-	out: []physic.Vec3,
+	out: []physics.Vec3,
 ) {
-	tree := physic.octtree_create_ex(view, theta, max_depth, MIN_HALF_SIZE)
-	defer physic.octtree_destroy(tree)
+	tree := physics.octtree_create_ex(view, theta, max_depth, MIN_HALF_SIZE)
+	defer physics.octtree_destroy(tree)
 	for q in query {
-		view.velocity[q] = physic.Velocity{0, 0, 0}
+		view.velocity[q] = physics.Velocity{0, 0, 0}
 	}
 	data := _OctreeQueryData {
 		tree  = tree,
@@ -259,11 +259,11 @@ octree_accel :: proc(
 	}
 	foundation.parallel_for(_octree_query_worker, &data, len(query))
 	for q, i in query {
-		out[i] = physic.Vec3(view.velocity[q])
+		out[i] = physics.Vec3(view.velocity[q])
 	}
 }
 
-compare_accel :: proc(approx, exact: []physic.Vec3) -> CompareResult {
+compare_accel :: proc(approx, exact: []physics.Vec3) -> CompareResult {
 	sum: f64
 	worst: f64
 	worst_abs: f64
@@ -290,9 +290,9 @@ compare_accel :: proc(approx, exact: []physic.Vec3) -> CompareResult {
 
 accuracy_for :: proc(
 	cache: ^[dynamic]AccuracyEntry,
-	view: physic.Bodies,
+	view: physics.Bodies,
 	query: []u32,
-	exact, acc: []physic.Vec3,
+	exact, acc: []physics.Vec3,
 	depth: int,
 	theta: f32,
 ) -> CompareResult {
@@ -321,12 +321,12 @@ run_stage :: proc(st: Stage) {
 	ref_w, ref_s := make_world(
 		{ n = st.n, max_depth = 48, theta = 0.5, interval = 0, workers = REF_WORKERS },
 	)
-	view := physic.body_view(ref_w)
+	view := physics.body_view(ref_w)
 	query := make_query(view.bodies, st.query)
 	defer delete(query)
-	exact := make([]physic.Vec3, len(query))
+	exact := make([]physics.Vec3, len(query))
 	defer delete(exact)
-	acc := make([]physic.Vec3, len(query))
+	acc := make([]physics.Vec3, len(query))
 	defer delete(acc)
 	exact_accel(view, query, exact)
 
@@ -491,14 +491,14 @@ contacts_run :: proc(args: []string) {
 
 	for _ in 0 ..< warmup {ecs.scheduler_run(s, .PHYSICS, w, SIM_DT)}
 
-	view := physic.body_view(w)
-	tree := physic.physic_state(w).tree
+	view := physics.body_view(w)
+	tree := physics.physics_state(w).tree
 	owned := false
 	if tree == nil {
-		tree = physic.octtree_create_ex(view, theta, depth, MIN_HALF_SIZE)
+		tree = physics.octtree_create_ex(view, theta, depth, MIN_HALF_SIZE)
 		owned = true
 	}
-	defer if owned {physic.octtree_destroy(tree)}
+	defer if owned {physics.octtree_destroy(tree)}
 
 	max_radius: f32
 	for idx in view.bodies {
@@ -514,9 +514,9 @@ contacts_run :: proc(args: []string) {
 	start := time.tick_now()
 	for a in view.bodies {
 		count := 0
-		physic.octtree_collect_nearby(
+		physics.octtree_collect_nearby(
 			tree,
-			physic.Vec3(view.position[a]),
+			physics.Vec3(view.position[a]),
 			(f32(view.radius[a]) + max_radius) * scale,
 			scratch,
 			&count,
@@ -525,7 +525,7 @@ contacts_run :: proc(args: []string) {
 		for j in 0 ..< count {
 			b := scratch[j]
 			if b <= a {continue}
-			dir := physic.Vec3(view.position[b]) - physic.Vec3(view.position[a])
+			dir := physics.Vec3(view.position[b]) - physics.Vec3(view.position[a])
 			dist_sq := dir.x * dir.x + dir.y * dir.y + dir.z * dir.z
 			radius_sum := f32(view.radius[a]) + f32(view.radius[b])
 			if dist_sq < radius_sum * radius_sum && dist_sq > 0.000001 {contacts += 1}
@@ -574,18 +574,18 @@ interactions_run :: proc(args: []string) {
 
 	for _ in 0 ..< warmup {ecs.scheduler_run(s, .PHYSICS, w, SIM_DT)}
 
-	view := physic.body_view(w)
-	tree := physic.physic_state(w).tree
+	view := physics.body_view(w)
+	tree := physics.physics_state(w).tree
 	owned := false
 	if tree == nil {
-		tree = physic.octtree_create_ex(view, theta, depth, MIN_HALF_SIZE)
+		tree = physics.octtree_create_ex(view, theta, depth, MIN_HALF_SIZE)
 		owned = true
 	}
-	defer if owned {physic.octtree_destroy(tree)}
+	defer if owned {physics.octtree_destroy(tree)}
 
-	stats := physic.SolveStats{}
+	stats := physics.SolveStats{}
 	start := time.tick_now()
-	for idx in view.bodies {physic.octtree_stats(tree, idx, &stats)}
+	for idx in view.bodies {physics.octtree_stats(tree, idx, &stats)}
 	elapsed := time.duration_milliseconds(time.tick_diff(start, time.tick_now()))
 
 	apps := f64(stats.node_accept + stats.body_accept)
