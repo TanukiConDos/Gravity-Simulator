@@ -8,12 +8,35 @@ description: Use before committing or finishing a change in Gravity-Simulator to
 ## Always
 
 ```
-odin test tests -debug                     # ECS, physics and SPIR-V reflection
-odin build . -o:speed -disable-assert      # catches issues only hidden by debug asserts
+odin test tests -collection:engine=engine -debug                     # ECS, physics and SPIR-V reflection
+odin build . -collection:engine=engine -o:speed -disable-assert      # catches issues only hidden by debug asserts
+scripts/check_layering.sh                  # front/backend/shared dependency rules
 ```
 
-If you edited anything under `Engine/Graphic/shader/`, recompile the shaders
+If you edited anything under `engine/graphics/shader/`, recompile the shaders
 first — see the `shader-pipeline` skill.
+
+`scripts/check_layering.sh` runs the package boundary checks:
+
+```
+rg -n "vendor:vulkan" engine/graphics/front engine/graphics/shared   # must be empty
+rg -n '^import .*"engine:physics' engine/graphics/front             # must be empty
+rg -n '^import .*"engine:graphics/backend' engine/physics engine/physics/gpu  # must be empty
+rg -n "vendor:vulkan" engine/physics engine/physics/gpu              # must be empty
+rg -n '^import .*"engine:(ecs|physics)' engine/graphics/backend      # must be empty
+rg -n "engine:graphics/front" engine/graphics/backend                # must be empty
+rg -n "package graphic" engine/graphics/backend                     # must be empty
+```
+
+The front (`graphic`) never imports `vendor:vulkan` and never imports a physics
+package: it holds opaque handles (`Frame_Source_Handle`, `gfx.Stream_Handle`,
+`gfx.Compute`). `main` orchestrates: it owns the frame source
+(`frame_source.odin`) and registers it and the optional GPU producer with the
+front. `physics/gpu` records GPU work through the front's compute proxy
+(`graphic.compute_*`) and speaks only `gfx` handles, so physics never imports the
+backend or Vulkan. The backend (`vk`) imports no `ecs`/`physics` state and never
+imports the front. `shared` (`gfx`) is plain data and imports neither Vulkan nor
+ECS.
 
 ## Engine invariants to respect
 
@@ -32,6 +55,11 @@ first — see the `shader-pipeline` skill.
   don't make a field mandatory by accident.
 - **Visibility**: the engine packages expose only handles and their
   lifecycle/draw procedures; everything else is `@(private)`.
+- **Layering**: `main` orchestrates (`main -> physics -> front -> backend`). It
+  owns the frame source and registers it plus the optional GPU producer with the
+  front. The front never imports a physics package or `vendor:vulkan`; the backend
+  imports no `ecs`/`physics` and never imports the front; physics imports neither
+  the backend nor `vendor:vulkan` (it calls `graphic.compute_*`).
 
 ## Don't commit
 

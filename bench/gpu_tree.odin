@@ -11,10 +11,11 @@
 //   odin run bench -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]
 package main
 
-import ecs "../Engine/ecs"
+import ecs "engine:ecs"
 import foundation "../foundation"
-import graphic "../Engine/Graphic"
-import physic "../Engine/physic"
+import vk "engine:graphics/backend"
+import physics_gpu "engine:physics/gpu"
+import physics "engine:physics"
 import "core:fmt"
 import "core:log"
 import "core:math"
@@ -25,12 +26,12 @@ import "core:time"
 _gpu_tree_world :: proc(
 	n, depth: int,
 	theta, interval: f32,
-	solver: physic.Gravity_Solver,
+	solver: physics.Gravity_Solver,
 ) -> ^ecs.World {
 	w := ecs.world_create()
 	ecs.world_reserve(w, n)
 	spawn_bodies(w, n)
-	physic.physic_init(
+	physics.physics_init(
 		w,
 		foundation.Config {
 			algorithm = .OCTREE,
@@ -42,7 +43,7 @@ _gpu_tree_world :: proc(
 			auto_adjust = false,
 		},
 	)
-	if solver.submit != nil {physic.physic_set_gravity_solver(w, solver)}
+	if solver.submit != nil {physics.physics_set_gravity_solver(w, solver)}
 	ecs.world_freeze(w)
 	return w
 }
@@ -51,9 +52,9 @@ _gpu_tree_world :: proc(
 // the finish is what reads back the velocities and the contacts; the app's
 // collision pass triggers it the same way.
 _gpu_tree_step :: proc(w: ^ecs.World, dt: f32) {
-	physic.physic_system_begin(w, dt)
-	physic.physic_system_gravity(w, dt)
-	physic.physic_finish_gravity(w)
+	physics.physics_system_begin(w, dt)
+	physics.physics_system_gravity(w, dt)
+	physics.physics_finish_gravity(w)
 }
 
 
@@ -69,7 +70,7 @@ _gpu_tree_measure :: proc(w: ^ecs.World, ticks: int) -> f64 {
 	return time.duration_milliseconds(time.tick_diff(start, time.tick_now())) / f64(ticks)
 }
 
-_gpu_tree_contact_less :: proc(x, y: physic.Contact) -> bool {
+_gpu_tree_contact_less :: proc(x, y: physics.Contact) -> bool {
 	if x.a != y.a {return x.a < y.a}
 	return x.b < y.b
 }
@@ -80,7 +81,7 @@ _gpu_tree_contact_less :: proc(x, y: physic.Contact) -> bool {
 _gpu_tree_measure_median :: proc(
 	w: ^ecs.World,
 	ticks, samples: int,
-	solver: ^graphic.Gpu_Gravity = nil,
+	solver: ^physics_gpu.Gpu_Gravity = nil,
 	warm_n: int = 0,
 ) -> f64 {
 	times := make([dynamic]f64, 0, samples)
@@ -96,16 +97,16 @@ _gpu_tree_measure_median :: proc(
 // Both solve outputs live in Velocity when dt = 1, so the same comparison as the
 // brute-force stage applies.
 _gpu_tree_compare :: proc(approx_world, exact_world: ^ecs.World) -> CompareResult {
-	approx_view := physic.body_view(approx_world)
-	exact_view := physic.body_view(exact_world)
+	approx_view := physics.body_view(approx_world)
+	exact_view := physics.body_view(exact_world)
 	count := min(len(approx_view.bodies), len(exact_view.bodies))
-	approx := make([]physic.Vec3, count)
+	approx := make([]physics.Vec3, count)
 	defer delete(approx)
-	exact := make([]physic.Vec3, count)
+	exact := make([]physics.Vec3, count)
 	defer delete(exact)
 	for i in 0 ..< count {
-		approx[i] = physic.Vec3(approx_view.velocity[approx_view.bodies[i]])
-		exact[i] = physic.Vec3(exact_view.velocity[exact_view.bodies[i]])
+		approx[i] = physics.Vec3(approx_view.velocity[approx_view.bodies[i]])
+		exact[i] = physics.Vec3(exact_view.velocity[exact_view.bodies[i]])
 	}
 	return compare_accel(approx, exact)
 }
@@ -128,18 +129,25 @@ gpu_tree_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := graphic.gpu_gravity_init_headless(.OCTREE, n)
-	if !created {
-		fmt.eprintfln("gpu-tree: cannot create a headless GPU solver")
+	// The bench owns the headless compute context; the solver borrows it.
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {
+		fmt.eprintfln("gpu-tree: cannot create a headless compute context")
 		os.exit(1)
 	}
-	defer graphic.gpu_gravity_destroy(solver)
-	info := graphic.gpu_gravity_info(solver)
+	defer vk.compute_destroy(compute)
+	solver, created := physics_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .OCTREE, n)
+	if !created {
+		fmt.eprintfln("gpu-tree: cannot create the GPU solver")
+		os.exit(1)
+	}
+	defer physics_gpu.gpu_gravity_destroy(solver)
+	info := physics_gpu.gpu_gravity_info(solver)
 
 	ensure_workers(REF_WORKERS)
 	cpu_world := _gpu_tree_world(n, depth, theta, 1000, {})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_tree_world(n, depth, theta, 1000, graphic.gpu_gravity_backend(solver))
+	gpu_world := _gpu_tree_world(n, depth, theta, 1000, physics_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// Accuracy: one solve with dt = 1 from rest, so the velocity update is the
@@ -150,8 +158,8 @@ gpu_tree_run :: proc(args: []string) {
 	_gpu_tree_step(gpu_world, 1.0)
 	accuracy := _gpu_tree_compare(gpu_world, cpu_world)
 
-	cpu_contacts := physic.physic_state(cpu_world).collision_contacts
-	gpu_contacts := physic.physic_state(gpu_world).collision_contacts
+	cpu_contacts := physics.physics_state(cpu_world).collision_contacts
+	gpu_contacts := physics.physics_state(gpu_world).collision_contacts
 	contacts_match := len(cpu_contacts) == len(gpu_contacts)
 	if contacts_match {
 		slice.sort_by(cpu_contacts[:], _gpu_tree_contact_less)
@@ -175,15 +183,15 @@ gpu_tree_run :: proc(args: []string) {
 	cached_cpu := _gpu_tree_measure_median(cpu_world, ticks, samples)
 	cached_gpu := _gpu_tree_measure_median(gpu_world, ticks, samples, solver, n)
 
-	// Worst case: physic rebuilds the tree every tick, so the GPU path also
+	// Worst case: physics rebuilds the tree every tick, so the GPU path also
 	// re-uploads the structure before each solve.
-	physic.physic_state(cpu_world).rebuild_interval = 0
-	physic.physic_state(gpu_world).rebuild_interval = 0
+	physics.physics_state(cpu_world).rebuild_interval = 0
+	physics.physics_state(gpu_world).rebuild_interval = 0
 	rebuild_cpu := _gpu_tree_measure_median(cpu_world, ticks, samples)
 	rebuild_gpu := _gpu_tree_measure_median(gpu_world, ticks, samples, solver, n)
 
-	cpu_info := physic.physic_state(cpu_world).tree_info
-	gpu_info := physic.physic_state(gpu_world).tree_info
+	cpu_info := physics.physics_state(cpu_world).tree_info
+	gpu_info := physics.physics_state(gpu_world).tree_info
 	fmt.printfln(
 		"=== gpu tree: n=%d depth=%d theta=%.2f ticks=%d samples=%d ===",
 		n,

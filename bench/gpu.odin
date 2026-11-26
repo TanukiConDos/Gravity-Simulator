@@ -9,7 +9,7 @@
 //   odin run bench -o:speed -- gpu [elements] [dispatches] [samples]
 package main
 
-import graphic "../Engine/Graphic"
+import vk "engine:graphics/backend"
 import "core:fmt"
 import "core:log"
 import "core:os"
@@ -25,15 +25,15 @@ gpu_run :: proc(args: []string) {
 	if len(args) > 1 {iterations = _arg_int(args[1], iterations)}
 	if len(args) > 2 {samples = _arg_int(args[2], samples)}
 
-	compute, created := graphic.compute_init_headless()
+	compute, created := vk.compute_init_headless()
 	if !created {
 		fmt.eprintln("gpu: cannot create a headless compute context")
 		os.exit(1)
 	}
-	defer graphic.compute_destroy(compute)
+	defer vk.compute_destroy(compute)
 
-	info := graphic.compute_info(compute)
-	probe, ran := graphic.compute_probe(compute, elements, iterations, samples)
+	info := vk.compute_info(compute)
+	probe, ran := vk.compute_probe(compute, elements, iterations, samples)
 	if !ran {
 		fmt.eprintln("gpu: compute probe failed")
 		os.exit(1)

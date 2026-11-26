@@ -1,6 +1,6 @@
 ---
 name: Octree Tuning
-description: Use when changing or tuning the Barnes-Hut octree solver in Engine/physic (theta, depth, rebuild interval, collision fold).
+description: Use when changing or tuning the Barnes-Hut octree solver in engine/physics (theta, depth, rebuild interval, collision fold).
 ---
 
 # Octree tuning

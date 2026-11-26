@@ -11,8 +11,8 @@ numbers live in `docs/benchmark.md`.
 ## Run
 
 ```
-odin run bench -o:speed -disable-assert -microarch:native            # all stages
-odin run bench -o:speed -disable-assert -microarch:native -- 100k    # one stage: all | 1k | 10k | 100k
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native            # all stages
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -- 100k    # one stage: all | 1k | 10k | 100k
 ```
 
 Per config it times the `PHYSICS` phase over `repeats` independent worlds
@@ -26,9 +26,9 @@ per run).
 The profiler is compiled out without `-define:PROFILE=true`.
 
 ```
-odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile [n] [depth] [theta] [interval] [workers]
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile [n] [depth] [theta] [interval] [workers]
 
-odin build . -o:speed -disable-assert -microarch:native -define:PROFILE=true
+odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native -define:PROFILE=true
 ./Gravity-Simulator          # app traces to trace_app.spall; close the window to flush
 ```
 
@@ -38,9 +38,9 @@ https://gravitymoth.com/spall/ or Perfetto.
 
 ## Diagnostics
 
-- `odin run bench -- contacts [n] [depth] [theta] [warmup] [scale]` — collision
+- `odin run bench -collection:engine=engine -- contacts [n] [depth] [theta] [warmup] [scale]` — collision
   candidate quality.
-- `odin run bench -- interactions [n] [depth] [theta] [warmup] [workers]` —
+- `odin run bench -collection:engine=engine -- interactions [n] [depth] [theta] [warmup] [workers]` —
   force-application tally (near/far field).
 
 ## Interpreting

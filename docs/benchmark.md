@@ -4,13 +4,13 @@
 `bench/results/` (gitignored). Run all stages or one:
 
 ```
-odin run bench -o:speed -disable-assert -microarch:native          # all
-odin run bench -o:speed -disable-assert -microarch:native -- 100k  # one stage
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native          # all
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -- 100k  # one stage
 ```
 
 ```mermaid
 flowchart TD
-    run(["odin run bench"]) --> arg{"stage argument"}
+    run(["odin run bench -collection:engine=engine"]) --> arg{"stage argument"}
     arg -->|"1k / 10k / 100k"| sweep["octree config grid<br/>(depth, theta, interval, workers)"]
     arg -->|"contacts / interactions"| diag["diagnostics<br/>(candidate counts, force applications)"]
     arg -->|"profile"| spall["one config → spall trace<br/>(warmup untraced, then 5 ticks)"]
@@ -29,7 +29,7 @@ against an exact O(N) sum, measured on one gravity solve from the
 deterministic (seed 42) initial conditions. Stages: `1k` (full grid),
 `10k` and `100k` (reduced grids).
 
-A separate `gpu` stage (`odin run bench -o:speed -- gpu [elements] [dispatches]
+A separate `gpu` stage (`odin run bench -collection:engine=engine -o:speed -- gpu [elements] [dispatches]
 [samples]`) creates a windowless compute context and runs the compute plumbing
 probe, verifying the output and reporting GPU dispatch time plus the host
 submit→wait round trip. `gpu-force [n] [ticks] [samples]` solves deterministic
@@ -58,20 +58,20 @@ point-in-time facts (`adaptive.theta`, `octree.built`, `graphics.acquired`,
 trace of one config (warmup untraced, then 5 ticks). Spans cover the `PHYSICS`
 systems (named by the scheduler), `tree.ensure`/`octree.build` (with node/leaf
 metrics), `octree.solve` (with `n`, `theta`, worker count and contact count),
-`collision.narrow`, `snapshot.publish`, `physic.adapt`, and one `parallel_for`
+`collision.narrow`, `snapshot.publish`, `physics.adapt`, and one `parallel_for`
 span per worker with its job size/chunking. Each worker records to its own named
 timeline (`worker.0`...). Open the file at https://gravitymoth.com/spall/ or
 Perfetto.
 
 ```
-odin run bench -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile [n] [depth] [theta] [interval] [workers]
+odin run bench -collection:engine=engine -o:speed -disable-assert -microarch:native -define:PROFILE=true -- profile [n] [depth] [theta] [interval] [workers]
 ```
 
 **App.** With the flag the app traces its whole run to `trace_app.spall`
 (gitignored). It covers every thread, each named in the viewer: the main loop
 (`main.wait_events`/`main.tick`), the physics thread (`physics.step` plus the
 per-system spans, `tree.ensure`, `octree.build`/`octree.solve`,
-`collision.narrow`, `snapshot.publish`, `physic.adapt`), the graphics thread
+`collision.narrow`, `snapshot.publish`, `physics.adapt`), the graphics thread
 (`graphics.frame`, `graphics.wait_frame`/`acquire`/`framegraph`/`submit`/`present`,
 one span per frame-graph pass named by pass, and `graphics.draw`/`draw_indexed`,
 `graphics.snapshot_read`, `graphics.instances`, `graphics.push_descriptors`), and
@@ -80,7 +80,7 @@ the worker pool (`parallel_for` per worker). The process is named
 on each launch.
 
 ```
-odin build . -o:speed -disable-assert -microarch:native -define:PROFILE=true
+odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native -define:PROFILE=true
 ./Gravity-Simulator          # then close the window
 ```
 
@@ -121,14 +121,14 @@ stage.
   `theta=1.0` (8 workers), and ~53% at `theta=1.0` with 16 workers; at
   `theta=0.5` it is neutral because the deep traversal dominates. Gravity is
   bit-identical and the contact set is identical (see
-  `test_octree_force_collect_equivalence`). `odin run bench -- contacts [n]
+  `test_octree_force_collect_equivalence`). `odin run bench -collection:engine=engine -- contacts [n]
   [depth] [theta] [warmup] [scale]` measures why the separate pass was not worth
   keeping: at 100k it returns ~121–143k candidates (one per body is the body
   itself) for only 42 overlaps at t=0, rising to ~1.1k after 150 ticks — over
   96% of non-self candidates are false, because the query radius (~2.5e7) is an
   order of magnitude smaller than the leaf cell size (~3e8).
 - **Third-law sharing is a dead end at the app's settings.** The `interactions`
-  diagnostic (`odin run bench -- interactions [n] [depth] [theta] [warmup]
+  diagnostic (`odin run bench -collection:engine=engine -- interactions [n] [depth] [theta] [warmup]
   [workers]`) tallies the gravity traversal's force applications. At 100k,
   leaves hold **exactly one body**, and every close pair is reached from *both*
   sides (measured asymmetry 1.00), so a third-law scheme would be exactly

@@ -5,7 +5,7 @@ A performance companion to [`architecture.md`](architecture.md),
 model, the measured optimization results (2026-10), and the open directions.
 
 Unless noted, numbers are from a release build
-`odin build -o:speed -disable-assert -microarch:native` on the dev host
+`odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native` on the dev host
 (8 physical / 16 SMT cores, RTX 4070 Ti SUPER, 96 MB L3). Absolute times drift
 ~10–20% between sessions; **re-measure before acting**.
 
@@ -16,7 +16,7 @@ Unless noted, numbers are from a release build
   every tick copies a `RenderSnapshot`. Dominated by the octree traversal (and,
   for `BRUTE_FORCE`, by collision).
 - **GPU backend** (`gravity_backend = GPU`): the solve dispatches on a separate
-  compute queue and the renderer draws straight from solver buffers (no snapshot
+  compute queue and the backend draws straight from the solver stream (no snapshot
   copy, no host instance fill). The floor is the host round-trip and the serial
   CPU collision pass.
 
@@ -26,7 +26,7 @@ work is already near-zero.
 
 ## Where CPU octree time goes
 
-`_calc_force` / `_calc_force_collect` (`Engine/physic/octtree.odin`) walks the
+`_calc_force` / `_calc_force_collect` (`engine/physics/octtree.odin`) walks the
 tree per body with an explicit stack. On this host the traversal is
 **throughput/branch-bound, not memory-latency-bound**: a field-layout change that
 cut L1 misses by 27% left cycles and IPC unchanged, because the whole tree fits
@@ -38,12 +38,12 @@ rebuild-every-tick solve).
 
 | Change | Effect |
 |---|---|
-| **Squared opening-angle test** (`4·half² ≤ θ²·dist²` instead of `sqrt`), plus a cancelled far-field form. `Engine/physic/octtree.odin` | CPU traversal −7…−19% (`interactions` 100k θ0.5 462→404 ms; `10k` −13…−19%) |
-| **Per-chunk contact collection** (each work chunk owns its `[dynamic]Contact`; no per-pair mutex). `octtree.odin`, `physic_system.odin` | 3.5× on a dense 186 814-contact scene (22.7→6.5 ms); neutral when sparse |
+| **Squared opening-angle test** (`4·half² ≤ θ²·dist²` instead of `sqrt`), plus a cancelled far-field form. `engine/physics/octtree.odin` | CPU traversal −7…−19% (`interactions` 100k θ0.5 462→404 ms; `10k` −13…−19%) |
+| **Per-chunk contact collection** (each work chunk owns its `[dynamic]Contact`; no per-pair mutex). `octtree.odin`, `physics_system.odin` | 3.5× on a dense 186 814-contact scene (22.7→6.5 ms); neutral when sparse |
 | **Build `keys` alongside `order`** so the octree partition scatters without recomputing octants. `octtree.odin` | build −24% (9.5→7.2 ms @100k); rebuild tick −5.9% |
-| **Tiled SIMD all-pairs brute force** (`core:simd`, 8×f32 SoA scratch, GPU's cancelled form). `physic_system.odin` | CPU brute solve 3.4× (32.5→9.5 ms @4096); CPU brute tick 2.2× (42.6→19.2 ms) |
-| **Parallel brute-collision broad phase** with an exact serial replay in dense-list order. `physic_system.odin` | GPU brute tick 3.9× (9.9→2.55 ms @4096); bit-identical collision result |
-| **Skip the snapshot copy on the GPU render path** + a liveness flag that returns the renderer to the snapshot after a mid-run GPU failure. `physic_system.odin`, `renderer.odin` | perf-neutral (~0.05 ms copy), but fixes the "stale GPU buffers forever" gap |
+| **Tiled SIMD all-pairs brute force** (`core:simd`, 8×f32 SoA scratch, GPU's cancelled form). `physics_system.odin` | CPU brute solve 3.4× (32.5→9.5 ms @4096); CPU brute tick 2.2× (42.6→19.2 ms) |
+| **Parallel brute-collision broad phase** with an exact serial replay in dense-list order. `physics_system.odin` | GPU brute tick 3.9× (9.9→2.55 ms @4096); bit-identical collision result |
+| **Skip the snapshot copy on the GPU render path** + a liveness flag that returns the renderer to the snapshot after a mid-run GPU failure. `physics_system.odin`, `renderer.odin` | perf-neutral (~0.05 ms copy), but fixes the "stale GPU buffers forever" gap |
 
 ### Investigated, no change
 
@@ -59,24 +59,24 @@ rebuild-every-tick solve).
 
 ```sh
 # perf build
-odin build . -o:speed -disable-assert -microarch:native
+odin build . -collection:engine=engine -o:speed -disable-assert -microarch:native
 
 # octree sweeps (per-tick ms + accuracy vs an exact reference)
-odin run bench -o:speed -microarch:native -- 1k
-odin run bench -o:speed -microarch:native -- 10k
+odin run bench -collection:engine=engine -o:speed -microarch:native -- 1k
+odin run bench -collection:engine=engine -o:speed -microarch:native -- 10k
 
 # isolated traversal (serial, single config: n depth theta warmup workers)
-odin run bench -o:speed -microarch:native -- interactions 100000 16 0.5 0 16
+odin run bench -collection:engine=engine -o:speed -microarch:native -- interactions 100000 16 0.5 0 16
 
 # GPU CPU-vs-GPU comparison (solve / whole tick / tree)
-odin run bench -o:speed -microarch:native -- gpu-force 4096 3 3
-odin run bench -o:speed -microarch:native -- gpu-tree 100000 16 0.8 2 2
-odin run bench -o:speed -microarch:native -- gpu-tick 100000 16 0.8 3 2 octree
+odin run bench -collection:engine=engine -o:speed -microarch:native -- gpu-force 4096 3 3
+odin run bench -collection:engine=engine -o:speed -microarch:native -- gpu-tree 100000 16 0.8 2 2
+odin run bench -collection:engine=engine -o:speed -microarch:native -- gpu-tick 100000 16 0.8 3 2 octree
 
 # profiling
-odin run bench -o:speed -define:PROFILE=true -- profile   # -> bench/results/trace_*.spall
-perf stat -d  odin run bench -o:speed -microarch:native -- 10k
-perf record -g odin run bench -o:speed -microarch:native -- 10k
+odin run bench -collection:engine=engine -o:speed -define:PROFILE=true -- profile   # -> bench/results/trace_*.spall
+perf stat -d  odin run bench -collection:engine=engine -o:speed -microarch:native -- 10k
+perf record -g odin run bench -collection:engine=engine -o:speed -microarch:native -- 10k
 ```
 
 Rules of thumb learned here: measure medians of ≥3 samples; pair every speedup
@@ -93,7 +93,7 @@ parallel win.
   lock-step.
 - **One-tick-ahead GPU pipeline.** The only way to remove the octree `finish`
   dependency: run the solve one tick ahead (move `p += v·dt` into the kernel, or
-  reorder `gravity(T+1)` before `integrate(T)`). Needs shader + `physic` changes
+  reorder `gravity(T+1)` before `integrate(T)`). Needs shader + `physics` changes
   and a double-buffered readback.
 - **Occasional allocations.** The SIMD brute solve allocates a per-tick scratch,
   and the octree solve allocates per-chunk contact lists; a reusable buffer pool

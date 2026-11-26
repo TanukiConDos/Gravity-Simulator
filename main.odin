@@ -1,8 +1,10 @@
 package main
 
-import graphic "./Engine/Graphic"
-import physic "./Engine/physic"
-import ecs "./Engine/ecs"
+import graphic "engine:graphics/front"
+import vk "engine:graphics/backend"
+import physics_gpu "engine:physics/gpu"
+import physics "engine:physics"
+import ecs "engine:ecs"
 import foundation "./foundation"
 import "core:log"
 import "core:math/rand"
@@ -165,9 +167,9 @@ _sim_init :: proc() {
 	case .FILE:
 		sim_file_init()
 	}
-	physic.physic_init(g_world, config^)
+	physics.physics_init(g_world, config^)
 	g_scheduler = ecs.scheduler_create(foundation.default_job_system())
-	physic.physic_register_systems(g_scheduler)
+	physics.physics_register_systems(g_scheduler)
 }
 
 @(private)
@@ -188,7 +190,7 @@ sim_file_init :: proc() {
 	defer {delete(bodies^); free(bodies)}
 	ecs.world_reserve(g_world, len(bodies^) + 1)
 	for body in bodies {
-		physic.body_spawn(
+		physics.body_spawn(
 			g_world,
 			body.position,
 			body.velocity,
@@ -202,14 +204,14 @@ sim_file_init :: proc() {
 sim_random_init :: proc() {
 	config := foundation.config_get()
 	ecs.world_reserve(g_world, config.num_objects + 2)
-	physic.body_spawn(g_world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
-	physic.body_spawn(g_world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
+	physics.body_spawn(g_world, {0, 0, 0}, {0, 0, 0}, 6e27, 12371e3)
+	physics.body_spawn(g_world, {0, 383400e3, 0}, {20e3, 0, 0}, 7.35e25, 6737e3)
 	for i in 0 ..< config.num_objects {
 		x := rand.float32_range(
 			-1e10,
 			1e10,
 		); y := rand.float32_range(-1e10, 1e10); z := rand.float32_range(-1e10, 1e10)
-		physic.body_spawn(g_world, {x, y, z}, {0, 0, 0}, 6e27, 12371e3)
+		physics.body_spawn(g_world, {x, y, z}, {0, 0, 0}, 6e27, 12371e3)
 	}
 }
 
@@ -240,9 +242,9 @@ main :: proc() {
 	foundation.parallel_init(config.worker_threads)
 	defer foundation.parallel_destroy()
 
-	window, window_ok := graphic.window_init(1280, 720)
+	window, window_ok := vk.window_init(1280, 720)
 	if !window_ok {log.errorf("Failed to create window!"); return}
-	defer graphic.window_destroy(window)
+	defer vk.window_destroy(window)
 
 	_sim_init()
 	defer _sim_end()
@@ -253,9 +255,18 @@ main :: proc() {
 		window    = window,
 	}
 
-	renderer, renderer_ok := graphic.renderer_init(window, g_world)
+	backend, backend_ok := vk.backend_init(window)
+	if !backend_ok {log.errorf("Failed to create the graphics backend!"); return}
+	defer vk.backend_destroy(backend)
+
+	renderer, renderer_ok := graphic.renderer_init(backend, window, g_world)
 	if !renderer_ok {log.errorf("Failed to create renderer!"); return}
 	defer graphic.renderer_destroy(renderer)
+
+	frame_source: Frame_Source
+	frame_source_init(&frame_source, renderer, g_world)
+	defer frame_source_destroy(&frame_source)
+
 	graphic.graphic_register_systems(g_scheduler)
 	if !ecs.scheduler_finalize(g_scheduler) {
 		log.errorf("Failed to resolve the system schedule!")
@@ -265,25 +276,36 @@ main :: proc() {
 	// GPU gravity is a backend of the selected gravity solver (brute force or
 	// octree). Install it before the world is frozen so the physics thread sees
 	// it from the first tick; on any failure the CPU solver runs instead.
-	gpu_gravity: ^graphic.Gpu_Gravity
+	gpu_solver: ^physics_gpu.Gpu_Gravity
 	if config.gravity_backend == .GPU {
-		capacity := max(g_world.capacity, physic.body_count(g_world))
-		if solver, solver_ok := graphic.gpu_gravity_init(renderer, config.algorithm, capacity); solver_ok {
-			gpu_gravity = solver
-			// The renderer draws straight from the solver's buffers (M5) instead
-			// of reading the CPU snapshot.
-			graphic.renderer_set_gravity_source(renderer, solver)
-			physic.physic_set_gravity_solver(g_world, graphic.gpu_gravity_backend(solver))
+		capacity := max(g_world.capacity, physics.body_count(g_world))
+		// The front owns the compute context (attached to the backend's device);
+		// main hands it to the solver and keeps it alive past the solver.
+		compute := graphic.renderer_compute(renderer)
+		if solver, solver_ok := physics_gpu.gpu_gravity_init(compute, g_world, config.algorithm, capacity); solver_ok {
+			gpu_solver = solver
+			// main orchestrates: the front receives the opaque producer handle and
+			// ops and forwards them to the backend.
+			graphic.renderer_set_stream_producer(
+				renderer,
+				physics_gpu.stream_handle(solver),
+				physics_gpu.stream_ops(),
+			)
+			physics.physics_set_gravity_solver(g_world, physics_gpu.gpu_gravity_backend(solver))
 			log.infof(
 				"GPU gravity enabled (%v): %s",
 				config.algorithm,
-				graphic.gpu_gravity_info(solver).device_name,
+				physics_gpu.gpu_gravity_info(solver).device_name,
 			)
 		} else {
 			log.warnf("GPU gravity unavailable; falling back to the CPU solver")
 		}
 	}
-	defer if gpu_gravity != nil {graphic.gpu_gravity_destroy(gpu_gravity)}
+	defer if gpu_solver != nil {
+		// Release the stream the backend holds, then destroy the solver.
+		graphic.renderer_set_stream_producer(renderer, nil, {})
+		physics_gpu.gpu_gravity_destroy(gpu_solver)
+	}
 
 	// Every pool and resource the threads use now exists: freeze the registries
 	// so the physics and graphics threads only ever perform concurrent reads.
@@ -292,17 +314,17 @@ main :: proc() {
 	physics_thread, graphics_thread := parallel_start(&ctx)
 
 	last_log := time.tick_now()
-	for !graphic.window_should_close(window) {
+	for !vk.window_should_close(window) {
 		{
 			foundation.profile_scope("main.wait_events")
-			graphic.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
+			vk.window_wait_events_timeout(MAIN_LOOP_TIMEOUT_SEC)
 		}
 
 		{
 			// GLFW is only touched on this thread: refresh the input/window
 			// snapshot the render phase consumes.
 			foundation.profile_scope("main.pump")
-			graphic.window_pump(window)
+			vk.window_pump(window)
 		}
 
 		{

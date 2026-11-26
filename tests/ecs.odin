@@ -1,6 +1,6 @@
 package tests
 
-import ecs "../Engine/ecs"
+import ecs "engine:ecs"
 import found "../foundation"
 import "core:log"
 import "core:sync"

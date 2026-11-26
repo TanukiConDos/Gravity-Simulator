@@ -1,6 +1,6 @@
 ---
 name: Shader Pipeline
-description: Use when editing GLSL shaders or the data-driven Vulkan pipeline (vertex attributes, descriptors, frame graph) under Engine/Graphic.
+description: Use when editing GLSL shaders or the data-driven Vulkan pipeline (vertex attributes, descriptors, frame graph) under engine/graphics.
 ---
 
 # Shader pipeline
@@ -10,12 +10,12 @@ The renderer is built from data, not hand-written Vulkan structs. Read
 
 ## After editing any shader
 
-GLSL sources live in `Engine/Graphic/shader/`. The app loads the committed
+GLSL sources live in `engine/graphics/shader/`. The app loads the committed
 SPIR-V, so a `.vert`/`.frag` edit does nothing until you recompile:
 
 ```
-Engine/Graphic/shader/build.sh        # Linux
-Engine/Graphic/shader/compilar.bat    # Windows (needs VULKAN_SDK)
+engine/graphics/shader/build.sh        # Linux
+engine/graphics/shader/compilar.bat    # Windows (needs VULKAN_SDK)
 ```
 
 Targets SPIR-V 1.6 (`--target-env=vulkan1.4`). Rebuild before running or testing.
@@ -35,26 +35,27 @@ non-`_` fields consume the shader input locations in ascending order.
 ## Adding a resource / binding
 
 1. Add it to the GLSL interface.
-2. Register it in `renderer_config.odin` (single source of truth; types live in
-   `pipeline_config.odin`).
+2. Register it in `backend/renderer_config.odin` (single source of truth; types
+   live in `backend/pipeline_config.odin`).
 
-`descriptors.odin` pushes bindings with `vkCmdPushDescriptorSet2`, and
+`backend/descriptors.odin` pushes bindings with `vkCmdPushDescriptorSet2`, and
 `push_descriptors_validate` checks each configured binding against the shader
 interface.
 
 ## Frame graph
 
-`Engine/Graphic/frame_graph.json` owns the structure (resources, passes,
-`inputs`/`outputs`, `bindings`, `optional`). `frame_graph.odin` culls, topo-sorts
-and executes it; passes bind to code by name in `_renderer_record_pass`. Add a
-pass in the JSON and implement its record callback in the renderer.
+`engine/graphics/frame_graph.json` owns the structure (resources, passes,
+`inputs`/`outputs`, `bindings`, `optional`). `engine/graphics/backend/frame_graph.odin`
+culls, topo-sorts and executes it; passes bind to code by name in
+`_backend_record_pass`. Add a pass in the JSON and implement its record callback
+in the backend.
 
 ## Compute shaders
 
 Compute pipelines are built the same data-driven way: `Compute_Config` names one
 `.comp` shader, reflection supplies the workgroup size (`LocalSize`) and the
 descriptor/push-constant interface (`pipeline_registry_add_compute`). They are
-not declared in `frame_graph.json`; `Engine/Graphic/compute.odin` owns their
+not declared in `frame_graph.json`; `engine/graphics/backend/compute.odin` owns their
 submission and timeline synchronization (see `docs/gpu_physics.md`). The bench
 `gpu` stage runs `shader/compute_probe.comp` as an end-to-end plumbing check,
 `shader/physics_brute.comp` is the all-pairs gravity kernel (bench `gpu-force`)
@@ -69,7 +70,7 @@ buffers (recorded before the render pass, it is compute).
 
 ## Verify
 
-- `odin test tests -debug` runs the SPIR-V reflection unit tests, which read the
+- `odin test tests -collection:engine=engine -debug` runs the SPIR-V reflection unit tests, which read the
   engine shaders plus the committed fixture in `tests/fixtures/` (rebuild it with
   `tests/fixtures/build.sh` if the interface fixture changed).
 - Run the app with `VK_LAYER_KHRONOS_validation` enabled to catch pipeline and

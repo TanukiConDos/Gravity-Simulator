@@ -10,10 +10,11 @@
 //   odin run bench -o:speed -- gpu-force [n] [ticks] [samples]
 package main
 
-import ecs "../Engine/ecs"
+import ecs "engine:ecs"
 import foundation "../foundation"
-import graphic "../Engine/Graphic"
-import physic "../Engine/physic"
+import vk "engine:graphics/backend"
+import physics_gpu "engine:physics/gpu"
+import physics "engine:physics"
 import "core:fmt"
 import "core:log"
 import "core:os"
@@ -21,14 +22,14 @@ import "core:slice"
 import "core:time"
 
 // A world with the bench's deterministic bodies and the requested gravity
-// backend. `physic_init` needs any config; the brute-force path ignores the
+// backend. `physics_init` needs any config; the brute-force path ignores the
 // octree knobs.
-_gpu_force_world :: proc(n: int, solver: physic.Gravity_Solver) -> ^ecs.World {
+_gpu_force_world :: proc(n: int, solver: physics.Gravity_Solver) -> ^ecs.World {
 	w := ecs.world_create()
 	ecs.world_reserve(w, n)
 	spawn_bodies(w, n)
-	physic.physic_init(w, foundation.Config{algorithm = .BRUTE_FORCE, worker_threads = 1})
-	if solver.submit != nil {physic.physic_set_gravity_solver(w, solver)}
+	physics.physics_init(w, foundation.Config{algorithm = .BRUTE_FORCE, worker_threads = 1})
+	if solver.submit != nil {physics.physics_set_gravity_solver(w, solver)}
 	ecs.world_freeze(w)
 	return w
 }
@@ -37,9 +38,9 @@ _gpu_force_world :: proc(n: int, solver: physic.Gravity_Solver) -> ^ecs.World {
 // for the CPU solver (it integrates velocities inline) and the wait/readback for
 // a hooked backend.
 _gpu_force_step :: proc(w: ^ecs.World, dt: f32) {
-	physic.physic_system_begin(w, dt)
-	physic.physic_system_gravity(w, dt)
-	physic.physic_finish_gravity(w)
+	physics.physics_system_begin(w, dt)
+	physics.physics_system_gravity(w, dt)
+	physics.physics_finish_gravity(w)
 }
 
 // Median milliseconds of one solve. begin is included because the app pays it
@@ -58,18 +59,18 @@ _gpu_force_measure :: proc(w: ^ecs.World, ticks: int) -> f64 {
 // the solves leave their result (the gravity update) in `Velocity`, index by
 // index.
 _gpu_force_compare :: proc(approx_world, exact_world: ^ecs.World) -> CompareResult {
-	approx_view := physic.body_view(approx_world)
-	exact_view := physic.body_view(exact_world)
+	approx_view := physics.body_view(approx_world)
+	exact_view := physics.body_view(exact_world)
 	count := min(len(approx_view.bodies), len(exact_view.bodies))
 
-	approx := make([]physic.Vec3, count)
+	approx := make([]physics.Vec3, count)
 	defer delete(approx)
-	exact := make([]physic.Vec3, count)
+	exact := make([]physics.Vec3, count)
 	defer delete(exact)
 	for i in 0 ..< count {
 		entity := approx_view.bodies[i]
-		approx[i] = physic.Vec3(approx_view.velocity[entity])
-		exact[i] = physic.Vec3(exact_view.velocity[entity])
+		approx[i] = physics.Vec3(approx_view.velocity[entity])
+		exact[i] = physics.Vec3(exact_view.velocity[entity])
 	}
 	return compare_accel(approx, exact)
 }
@@ -77,7 +78,7 @@ _gpu_force_compare :: proc(approx_world, exact_world: ^ecs.World) -> CompareResu
 // Zeroes the velocities so the next solve's output is exactly `acc * dt` and the
 // accuracy metric is not diluted by the spawn velocities.
 _gpu_zero_velocities :: proc(w: ^ecs.World) {
-	view := physic.body_view(w)
+	view := physics.body_view(w)
 	for entity in view.bodies {view.velocity[entity] = 0}
 }
 
@@ -88,12 +89,12 @@ _gpu_zero_velocities :: proc(w: ^ecs.World) {
 // the renderer keeps the device busy. The GPU samples in each stage run before
 // the (much longer) CPU samples, each preceded by its own warm-up, because the
 // CPU measurement is long enough for the device to clock back down.
-_gpu_warm_clocks :: proc(solver: ^graphic.Gpu_Gravity, mode: foundation.Algorithm, n: int) {
+_gpu_warm_clocks :: proc(solver: ^physics_gpu.Gpu_Gravity, mode: foundation.Algorithm, n: int) {
 	w := ecs.world_create()
 	defer ecs.world_destroy(w)
 	ecs.world_reserve(w, n)
 	spawn_bodies(w, n)
-	physic.physic_init(
+	physics.physics_init(
 		w,
 		foundation.Config {
 			algorithm = mode,
@@ -103,15 +104,15 @@ _gpu_warm_clocks :: proc(solver: ^graphic.Gpu_Gravity, mode: foundation.Algorith
 			min_half_size = MIN_HALF_SIZE,
 		},
 	)
-	physic.physic_set_gravity_solver(w, graphic.gpu_gravity_backend(solver))
+	physics.physics_set_gravity_solver(w, physics_gpu.gpu_gravity_backend(solver))
 	ecs.world_freeze(w)
 
 	dt := f32(SIM_DT)
 	start := time.tick_now()
 	for time.tick_since(start) < 400 * time.Millisecond {
-		physic.physic_system_begin(w, dt)
-		physic.physic_system_gravity(w, dt)
-		physic.physic_finish_gravity(w)
+		physics.physics_system_begin(w, dt)
+		physics.physics_system_gravity(w, dt)
+		physics.physics_finish_gravity(w)
 	}
 }
 
@@ -131,18 +132,25 @@ gpu_force_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := graphic.gpu_gravity_init_headless(.BRUTE_FORCE, n)
-	if !created {
-		fmt.eprintfln("gpu-force: cannot create a headless GPU solver")
+	// The bench owns the headless compute context; the solver borrows it.
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {
+		fmt.eprintfln("gpu-force: cannot create a headless compute context")
 		os.exit(1)
 	}
-	defer graphic.gpu_gravity_destroy(solver)
-	info := graphic.gpu_gravity_info(solver)
+	defer vk.compute_destroy(compute)
+	solver, created := physics_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, .BRUTE_FORCE, n)
+	if !created {
+		fmt.eprintfln("gpu-force: cannot create the GPU solver")
+		os.exit(1)
+	}
+	defer physics_gpu.gpu_gravity_destroy(solver)
+	info := physics_gpu.gpu_gravity_info(solver)
 
 	ensure_workers(1)
 	cpu_world := _gpu_force_world(n, {})
 	defer ecs.world_destroy(cpu_world)
-	gpu_world := _gpu_force_world(n, graphic.gpu_gravity_backend(solver))
+	gpu_world := _gpu_force_world(n, physics_gpu.gpu_gravity_backend(solver))
 	defer ecs.world_destroy(gpu_world)
 
 	// Accuracy: one solve from rest on each backend, so the compared velocities

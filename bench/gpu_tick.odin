@@ -16,10 +16,11 @@
 //   odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]
 package main
 
-import ecs "../Engine/ecs"
+import ecs "engine:ecs"
 import foundation "../foundation"
-import graphic "../Engine/Graphic"
-import physic "../Engine/physic"
+import vk "engine:graphics/backend"
+import physics_gpu "engine:physics/gpu"
+import physics "engine:physics"
 import "core:fmt"
 import "core:log"
 import "core:os"
@@ -32,7 +33,7 @@ _gpu_tick_world :: proc(
 	theta: f32,
 	algorithm: foundation.Algorithm,
 	interval: f32,
-	solver: physic.Gravity_Solver,
+	solver: physics.Gravity_Solver,
 ) -> (
 	w: ^ecs.World,
 	s: ^ecs.Scheduler,
@@ -40,7 +41,7 @@ _gpu_tick_world :: proc(
 	w = ecs.world_create()
 	ecs.world_reserve(w, n)
 	spawn_bodies(w, n)
-	physic.physic_init(
+	physics.physics_init(
 		w,
 		foundation.Config {
 			algorithm = algorithm,
@@ -52,10 +53,10 @@ _gpu_tick_world :: proc(
 			auto_adjust = false,
 		},
 	)
-	if solver.submit != nil {physic.physic_set_gravity_solver(w, solver)}
+	if solver.submit != nil {physics.physics_set_gravity_solver(w, solver)}
 	ecs.world_freeze(w)
 	s = ecs.scheduler_create(foundation.default_job_system())
-	physic.physic_register_systems(s)
+	physics.physics_register_systems(s)
 	_ = ecs.scheduler_finalize(s)
 	return
 }
@@ -101,13 +102,20 @@ gpu_tick_run :: proc(args: []string) {
 		return
 	}
 
-	solver, created := graphic.gpu_gravity_init_headless(algorithm, n)
-	if !created {
-		fmt.eprintfln("gpu-tick: cannot create a headless GPU solver")
+	// The bench owns the headless compute context; the solver borrows it.
+	compute, compute_ok := vk.compute_init_headless()
+	if !compute_ok {
+		fmt.eprintfln("gpu-tick: cannot create a headless compute context")
 		os.exit(1)
 	}
-	defer graphic.gpu_gravity_destroy(solver)
-	info := graphic.gpu_gravity_info(solver)
+	defer vk.compute_destroy(compute)
+	solver, created := physics_gpu.gpu_gravity_init(vk.compute_handle(compute), nil, algorithm, n)
+	if !created {
+		fmt.eprintfln("gpu-tick: cannot create the GPU solver")
+		os.exit(1)
+	}
+	defer physics_gpu.gpu_gravity_destroy(solver)
+	info := physics_gpu.gpu_gravity_info(solver)
 
 	ensure_workers(REF_WORKERS)
 	// The tree rebuilds every tick for the octree sweep; the brute-force path
@@ -123,7 +131,7 @@ gpu_tick_run :: proc(args: []string) {
 		theta,
 		algorithm,
 		interval,
-		graphic.gpu_gravity_backend(solver),
+		physics_gpu.gpu_gravity_backend(solver),
 	)
 	defer ecs.world_destroy(gpu_world)
 	defer ecs.scheduler_destroy(gpu_scheduler)
@@ -177,7 +185,7 @@ _gpu_tick_measure_median :: proc(
 	w: ^ecs.World,
 	s: ^ecs.Scheduler,
 	ticks, samples: int,
-	solver: ^graphic.Gpu_Gravity = nil,
+	solver: ^physics_gpu.Gpu_Gravity = nil,
 	mode: foundation.Algorithm = .OCTREE,
 	warm_n: int = 0,
 ) -> f64 {
@@ -193,16 +201,16 @@ _gpu_tick_measure_median :: proc(
 
 @(private)
 compare_positions :: proc(a, b: ^ecs.World) -> CompareResult {
-	view_a := physic.body_view(a)
-	view_b := physic.body_view(b)
+	view_a := physics.body_view(a)
+	view_b := physics.body_view(b)
 	count := min(len(view_a.bodies), len(view_b.bodies))
-	pa := make([]physic.Vec3, count)
+	pa := make([]physics.Vec3, count)
 	defer delete(pa)
-	pb := make([]physic.Vec3, count)
+	pb := make([]physics.Vec3, count)
 	defer delete(pb)
 	for i in 0 ..< count {
-		pa[i] = physic.Vec3(view_a.position[view_a.bodies[i]])
-		pb[i] = physic.Vec3(view_b.position[view_b.bodies[i]])
+		pa[i] = physics.Vec3(view_a.position[view_a.bodies[i]])
+		pb[i] = physics.Vec3(view_b.position[view_b.bodies[i]])
 	}
 	return compare_accel(pa, pb)
 }

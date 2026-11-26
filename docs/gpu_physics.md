@@ -9,22 +9,22 @@ snapshot publishing, adaptive tuning).
 
 **M0 (compute plumbing), M1 (GPU brute-force gravity), M2 (GPU Barnes-Hut),
 M3 (GPU integration), M4 (GPU tree build) and M5 (direct rendering) are done.** The engine can create a
-compute device (headless or attached to the renderer's), build compute pipelines
+compute device (headless or attached to the graphics backend's), build compute pipelines
 from SPIR-V, run dispatch chains against storage buffers and synchronize them
 with a timeline semaphore. `gravity_backend = GPU` replaces either gravity solve
 with its compute path: the octree backend builds its tree on the GPU, traverses
 it, applies the velocity update (`vel += acc * dt`) and returns the collision
-contacts, while physic keeps collision resolution, the position update,
+contacts, while physics keeps collision resolution, the position update,
 selection, snapshot publishing and the adaptive controller. The renderer draws
 those GPU buffers directly instead of reading the CPU snapshot. All of it is
 verified by the bench and pinned by tests.
 
 ## Solve pipeline (M3)
 
-The `physic.Gravity_Solver` hook is asynchronous: a tick submits a solve early
+The `physics.Gravity_Solver` hook is asynchronous: a tick submits a solve early
 and applies its results only when a consumer needs them.
 
-1. `physic_system_gravity` calls `submit`, which packs, uploads, dispatches and
+1. `physics_system_gravity` calls `submit`, which packs, uploads, dispatches and
    submits without waiting. Results stay in the backend's buffers; the pools are
    untouched.
 2. The first consumer calls `finish`, which waits on the submission's timeline
@@ -32,25 +32,25 @@ and applies its results only when a consumer needs them.
    contacts it found. `finish` is idempotent.
 3. `finish_at_collision` picks that consumer:
    - the octree backend sets it: its traversal produces the contacts the narrow
-     phase resolves, so `physic.collision` finishes first;
+     phase resolves, so `physics.collision` finishes first;
    - the brute-force backend leaves it false: its serial collision pass reads
      positions and masses only, so the dispatch stays in flight across it and
-     `physic.integrate` finishes before the position update.
+     `physics.integrate` finishes before the position update.
 
 A failed `submit` (over capacity, no tree) falls back to the CPU solver in the
 same tick, exactly like a failing hook in M1. A failed `finish` (device loss, or
 the Barnes-Hut contact list exceeding its fixed capacity) is detected before the
-pools are touched, so `physic` uninstalls the hook and re-runs the CPU solver for
+pools are touched, so `physics` uninstalls the hook and re-runs the CPU solver for
 that tick.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant G as physic.gravity
+    participant G as physics.gravity
     participant S as Gpu_Gravity.submit
     participant Q as compute queue
-    participant C as physic.collision
-    participant I as physic.integrate
+    participant C as physics.collision
+    participant I as physics.integrate
     participant F as Gpu_Gravity.finish
 
     G->>S: submit(bodies, dt)
@@ -73,10 +73,39 @@ sequenceDiagram
     Note over S,F: submit or finish false → uninstall hook,<br/>run the CPU solver for this tick
 ```
 
+## Compute seam
+
+The solver never imports the graphics backend. It records work through the front's
+compute proxy (`engine/graphics/front/compute.odin`) using the plain handles of
+`engine/graphics/shared/compute.odin`:
+
+```odin
+// engine/physics/gpu (physics_gpu): imports graphic + gfx, no vk/vulkan
+compute  := graphic.renderer_compute(renderer)          // or a headless handle
+pipeline, ok := graphic.compute_pipeline_create(compute, "physics_brute", shader, []u32{0, 1})
+cmd      := graphic.compute_begin(compute)
+graphic.compute_upload(compute, cmd, host, device, bytes, write)
+graphic.compute_pass(compute, cmd, pipeline, binds, {groups = {n, 1, 1}}, &push, size_of(push))
+graphic.compute_readback(compute, cmd, device, 0, host, 0, bytes)
+value    := graphic.compute_submit(compute, cmd)
+graphic.compute_wait(compute, value)
+```
+
+`Binds` are `{binding, buffer, offset, size}`; a `Dispatch` with a non-nil
+`indirect` buffer records `vkCmdDispatchIndirect` (the tree build's per-level
+counts). The front owns the barrier/staging sequences; `vk.compute_*` in
+`backend/compute_api.odin` translates the handles and enums into Vulkan calls.
+
+The context is owned by whoever created it: the front creates it on demand for
+the app (`renderer_compute`, closed in `renderer_destroy`), the bench/tests create
+a headless one (`vk.compute_init_headless` + `vk.compute_handle`) and destroy it
+after the solver. `gpu_gravity_init(compute, world, mode, capacity)` borrows it
+and `gpu_gravity_destroy` never touches it.
+
 ## Backends
 
-`Engine/Graphic/gpu_physics.odin` owns the backend (device attachment, staging,
-pipeline and submission ring); `gpu_tree.odin` adds the octree-specific buffers
+`engine/physics/gpu/gpu_physics.odin` owns the compute consumer (staging, pipelines
+and submission ring); `gpu_tree.odin` adds the octree-specific buffers
 and traversal.
 
 ### Brute force (`physics_brute.comp`)
@@ -98,7 +127,7 @@ CPU brute-force softening (`r² >= 1e-6`).
 
 ### Barnes-Hut (`physics_tree.comp`)
 
-1. when physic rebuilt the tree (tracked through `PhysicState.rebuild_count`),
+1. when physics rebuilt the tree (tracked through `PhysicState.rebuild_count`),
    the nodes are widened into a std430 record and the tree's permuted body list
    (`order`) is uploaded. The body columns (position, mass, velocity, radius) are
    pool-indexed and uploaded every tick;
@@ -154,7 +183,7 @@ the parity test pins cell by cell.
    to the host for the tree metrics (`Physic_State.tree_info`). The tree itself
    never leaves the GPU.
 
-Physic keeps the rebuild decision (interval, adaptive drift) and calls the
+Physics keeps the rebuild decision (interval, adaptive drift) and calls the
 backend's `build_tree` hook; the CPU tree is only built when the backend fails
 and the run falls back to the CPU solver.
 
@@ -181,8 +210,8 @@ readback per level. Only the control block comes back to the host.
 
 ## Direct rendering (M5)
 
-The renderer never reads the CPU snapshot while a GPU backend owns the world.
-The solver publishes a *render view* for the renderer thread:
+The front never reads the CPU snapshot while a GPU backend owns the world.
+The solver publishes a *render view* for the graphics thread:
 
 - `bodies`, `radii`, `selected` and `live`, all CONCURRENT buffers the compute
   and graphics queues share. `live` maps the draw slot to the entity, so the
@@ -209,11 +238,11 @@ device snapshots and a per-set state machine:
   `release_value` (`vkGetSemaphoreCounterValue`, no host block) — by a
   `FREE -> WRITING` CAS. Upload the columns into that set and dispatch against
   it, then publish (`published_value`/`published_count`, then state
-  `PUBLISHED`) and free the previously published set unless the renderer claimed
-  it (`PUBLISHED -> FREE`; a `READING` set is left to the renderer). When no set
+  `PUBLISHED`) and free the previously published set unless the front claimed
+  it (`PUBLISHED -> FREE`; a `READING` set is left to the front). When no set
   is usable the solve still runs against the backend's working copy and simply
   skips the render view; physics never blocks.
-- Renderer, per frame: claim the published set (`PUBLISHED -> READING`), pack the
+- Backend, per frame: claim the published set (`PUBLISHED -> READING`), pack the
   instances from it and submit the frame waiting on its solve value. The set
   stays `READING` for the frames that read it; when a newer view is claimed the
   previous set is released by storing `release_value[set] = frame_value` **before**
@@ -228,7 +257,7 @@ zero and the sets cycle freely.
 Measured at 100k bodies: the per-frame instance work drops from 1.14 ms of CPU
 time (snapshot copy + host-visible instance fill) to 0.004 ms (the pack
 dispatch), and the solver's positions are one integration step behind the CPU
-snapshot - the renderer draws what the solve used. A CPU backend, or a GPU
+snapshot - the backend draws what the solve produced. A CPU backend, or a GPU
 backend that failed and was uninstalled, keeps the snapshot path unchanged.
 
 ```mermaid
@@ -236,8 +265,8 @@ stateDiagram-v2
     [*] --> FREE
     FREE --> WRITING: solver acquire<br/>(CAS, reader done)
     WRITING --> PUBLISHED: solver publish<br/>(published_value, published_count)
-    PUBLISHED --> READING: renderer claim<br/>(CAS)
-    READING --> FREE: renderer release<br/>(store release_value first)
+    PUBLISHED --> READING: front claim<br/>(CAS)
+    READING --> FREE: front release<br/>(store release_value first)
     PUBLISHED --> FREE: solver frees its<br/>previous, unclaimed set
 ```
 
@@ -252,15 +281,17 @@ flowchart LR
 ```
 
 Solver-side ownership: only `FREE` sets whose reader has completed are written;
-`PUBLISHED → READING` is the renderer's claim, and the renderer stores the frame
-timeline value on the set before releasing it `READING → FREE`, so the solver
-cannot acquire a set an in-flight frame still reads.
+`PUBLISHED → READING` is the renderer's claim (the front pumps the producer
+handle and the backend calls the producer's `claim` callback), and the front
+releases it with the backend's last frame timeline value before releasing
+`READING → FREE`, so the solver cannot acquire a set an in-flight frame still
+reads.
 
 ## Measurements
 
 Dev machine: RTX 4070 Ti SUPER, 16 CPU workers, `theta = 0.8`, depth 16.
 
-Solve-level, `odin run bench -o:speed -- gpu-force` (includes the GPU velocity
+Solve-level, `odin run bench -collection:engine=engine -o:speed -- gpu-force` (includes the GPU velocity
 update, so the CPU column includes its inline `vel += acc * dt`):
 
 | bodies | cpu ms/solve | gpu ms/solve | speedup | max rel. error |
@@ -269,7 +300,7 @@ update, so the CPU column includes its inline `vel += acc * dt`):
 | 4 096  |        34.22 |        0.125 |   275×  | 6.0e-07        |
 | 16 384 |       542.29 |        0.410 | 1 324×  | 1.5e-06        |
 
-Solve-level, `odin run bench -o:speed -- gpu-tree`:
+Solve-level, `odin run bench -collection:engine=engine -o:speed -- gpu-tree`:
 
 | bodies | tree | cpu ms/solve | gpu ms/solve | speedup |
 |-------:|------|-------------:|-------------:|--------:|
@@ -283,7 +314,7 @@ max ≈ 5.5e-06) and the contact sets match exactly. The "rebuilt each tick" row
 includes the CPU tree build (≈7 ms at 100k) plus the structure upload (≈12 MB at
 100k nodes), which only happens on rebuild.
 
-Full tick, `odin run bench -o:speed -- gpu-tick` (the whole PHYSICS phase:
+Full tick, `odin run bench -collection:engine=engine -o:speed -- gpu-tick` (the whole PHYSICS phase:
 begin, gravity, collision, integrate, select, publish, adapt; octree rows rebuild
 the tree every tick):
 
@@ -304,7 +335,7 @@ per-tick velocity readback plus, when the tree is cached, the traversal.
 The solve-level benches warm the GPU clocks before every GPU sample (see
 `_gpu_warm_clocks` in the bench): the device idles at ≈210 MHz and a short solve
 loop would otherwise report numbers several times too slow and far noisier. The
-app never sees that state because the renderer keeps the device busy.
+app never sees that state because the backend keeps the device busy.
 
 In the app (release build, shipped config: 10 000 bodies, rebuild every ~60
 ticks, 8 workers) the octree tick drops from ≈2.5 ms on CPU to ≈0.57 ms on GPU;
@@ -316,20 +347,20 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   queue family is preferred; otherwise a second queue from the graphics family;
   on single-queue families the compute queue aliases the graphics queue. The dev
   machine exposes a dedicated compute family, so the solver gets its own queue
-  handle; when compute would share the graphics handle, `gpu_gravity_init`
-  refuses and the CPU solver runs (the two threads would otherwise race on one
-  queue).
+  handle; when compute would share the graphics handle, `compute_attach` refuses
+  and `renderer_compute` returns a null handle, so the CPU solver runs (the two
+  threads would otherwise race on one queue).
 - **Timeline semaphores, not fences, for GPU work.** A compute context owns one
   timeline semaphore and a ring of command slots. A submission signals the next
   timeline value; the host waits with `vkWaitSemaphores` and later consumers
-  (the renderer, when it draws GPU-produced state) wait on a value in
+  (the backend, when it draws a GPU-produced stream) wait on a value in
   `vkQueueSubmit2`. Binary semaphores stay where the window system requires
   them: swapchain acquire and present.
 - **One submission at a time per compute context, whichever thread calls.**
   A context's slot ring and timeline counter are plain fields, so `compute_begin`
   takes a mutex and the matching `compute_submit` releases it; a slot reservation
   and its timeline advance become one atomic step. Submission is still *not*
-  pinned to one thread: `physic.integrate` is `.ANY`, so the scheduler may run a
+  pinned to one thread: `physics.integrate` is `.ANY`, so the scheduler may run a
   solver's `finish` (and its second readback submission) on a job worker while
   another thread enters the context. Before this, safety relied on the graph
   serialising the systems that call it.
@@ -340,7 +371,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   "nothing happened yet" (submit) and "results are unusable" (finish).
 - **Compute pipelines follow the data-driven pipeline.** Workgroup size comes
   from the shader's `LocalSize` execution mode; descriptor set layouts and push
-  constant ranges come from SPIR-V reflection (`Engine/Graphic/spirv`).
+  constant ranges come from SPIR-V reflection (`engine/graphics/spirv`).
   Storage buffers are bound through external push descriptors
   (`push_descriptors_bind_buffer`), so no descriptor pools are involved.
 - **f32, rewritten to avoid overflow.** The CPU computes `G * m1 * m2` in f64
@@ -372,7 +403,7 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   copies, buffer barriers, timestamp queries, timeline semaphore, headless device
   (`compute_init_headless`) and the bench probe.
 - **M1 — GPU brute-force gravity (done).** The `Gpu_Gravity` backend attached to
-  the renderer's device (headless in bench/tests), packed `vec4` body staging,
+  the front's compute context (headless in bench/tests), packed `vec4` body staging,
   the tiled `physics_brute.comp`, `gravity_backend` config with CPU fallback, the
   `gpu-force` bench stage and the CPU/GPU match test.
 - **M2 — GPU Barnes-Hut (done).** Tree upload on rebuild, the
@@ -388,12 +419,15 @@ at 2 000 bodies the brute-force tick drops from ≈10.8 ms to ≈2.6 ms.
   CPU (they need the positions the next dispatch consumes, so moving them to the
   GPU would not remove the readback).
 - **M4 — GPU tree build (done).** `tree_build.comp` (six passes in one
-  submission) rebuilds the octree on the GPU, produces the metrics physic needs
+  submission) rebuilds the octree on the GPU, produces the metrics physics needs
   as a small readback, and leaves the tree in the traversal's buffers. The CPU
   builder runs only as the fallback; `gpu-tree` compares the two structures and
   `test_gpu_tree_build_matches_cpu` pins them cell by cell.
 - **M5 — direct rendering (done).** The solver publishes a render view as one of
-  three vended device snapshots; the renderer claims the published set, packs the
+  three vended device snapshots; `main` installs the solver through the front
+  (`renderer_set_stream_producer`), the front holds the opaque handle and pumps
+  it, and the backend claims the published set through the producer's `claim`
+  callback and packs the
   per-frame instance data from it with a compute pass, and the frame submission
   waits on that set's solve value. A set is only written once the frame that last
   read it has completed (per-set `release_value` on the frame timeline), so
@@ -413,10 +447,10 @@ flowchart LR
 ## Bench
 
 ```
-odin run bench -o:speed -- gpu [elements] [dispatches] [samples]
-odin run bench -o:speed -- gpu-force [n] [ticks] [samples]
-odin run bench -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]
-odin run bench -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]
+odin run bench -collection:engine=engine -o:speed -- gpu [elements] [dispatches] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-force [n] [ticks] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-tree [n] [depth] [theta] [ticks] [samples]
+odin run bench -collection:engine=engine -o:speed -- gpu-tick [n] [depth] [theta] [ticks] [samples] [octree|brute]
 ```
 
 `gpu` creates a windowless compute context, runs the transfer → dispatch →

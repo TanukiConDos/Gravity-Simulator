@@ -1,0 +1,63 @@
+package graphic
+
+import gfx "engine:graphics/shared"
+import "core:math"
+import la "core:math/linalg"
+
+Camera :: struct {position: Vec3, target: Vec3, up: Vec3, fov: f32, near: f32, far: f32, aspect: f32}
+
+camera_create :: proc(aspect: f32) -> Camera {return Camera{position={0,0,-4500},target={0,0,0},up={0,1,0},fov=70,near=0.1,far=1e10,aspect=aspect}}
+
+// camera_uniforms packs the camera into the plain struct the backend uploads.
+// Nothing here knows about a frame, a buffer or a swapchain.
+camera_uniforms :: proc(self: ^Camera) -> gfx.Camera_Uniforms {
+	ubo: gfx.Camera_Uniforms
+	ubo.view = la.matrix4_look_at_f32(self.position, self.target, self.up)
+	ubo.proj = la.matrix4_perspective_f32(math.to_radians_f32(self.fov), self.aspect, self.near, self.far)
+	return ubo
+}
+
+// camera_set_aspect keeps the projection in sync with the framebuffer the
+// backend is presenting into. Invalid (minimized) sizes are ignored.
+camera_set_aspect :: proc(self: ^Camera, width, height: i32) {
+	if width <= 0 || height <= 0 {return}
+	self.aspect = f32(width) / f32(height)
+}
+
+@(private) _camera_forward :: proc(self: ^Camera) -> Vec3 {return la.normalize(self.target - self.position)}
+@(private) _camera_right :: proc(self: ^Camera) -> Vec3 {return la.normalize(la.cross(_camera_forward(self), self.up))}
+
+@(private) camera_move :: proc(self: ^Camera, dir: Vec3, amount: f32) {self.position += dir * amount; self.target += dir * amount}
+@(private) camera_move_forward :: proc(self: ^Camera, amount: f32) {camera_move(self, _camera_forward(self), amount)}
+@(private) camera_move_backward :: proc(self: ^Camera, amount: f32) {camera_move_forward(self, -amount)}
+@(private) camera_move_left :: proc(self: ^Camera, amount: f32) {camera_move(self, -_camera_right(self), amount)}
+@(private) camera_move_right :: proc(self: ^Camera, amount: f32) {camera_move_left(self, -amount)}
+@(private) camera_move_up :: proc(self: ^Camera, amount: f32) {camera_move(self, self.up, amount)}
+@(private) camera_move_down :: proc(self: ^Camera, amount: f32) {camera_move_up(self, -amount)}
+
+@(private)
+camera_rotate_yaw :: proc(self: ^Camera, radians: f32) {
+	forward := _camera_forward(self)
+	right := _camera_right(self)
+	rot := la.matrix3_rotate_f32(radians, la.cross(right, forward))
+	_set_forward(self, forward * rot)
+}
+
+@(private)
+camera_rotate_pitch :: proc(self: ^Camera, radians: f32) {
+	forward := _camera_forward(self)
+	rot := la.matrix3_rotate_f32(radians, _camera_right(self))
+	_set_forward(self, forward * rot)
+}
+
+@(private) _set_forward :: proc(self: ^Camera, forward: Vec3) {
+	new_forward := la.normalize(forward)
+	clamp := f32(0.995)
+	if la.abs(new_forward.y) > clamp {
+		s := f32(1); if new_forward.y < 0 {s = -1}
+		new_forward.y = s * clamp
+		new_forward = la.normalize(new_forward)
+	}
+	distance := la.length(self.target - self.position)
+	self.target = self.position + new_forward * distance
+}

@@ -2,7 +2,7 @@
 
 Config selects one algorithm (`algorithm`) used by both collision detection and gravity solving (BRUTE_FORCE or OCTREE). The OctTree implements Barnes-Hut with center-of-mass approximation and stores entity indices, so it does not dangle when pools grow.
 
-`gravity_backend` selects who runs the gravity solve: `CPU` (the built-in solver) or `GPU` (a compute backend implemented in `Engine/Graphic`, see `docs/gpu_physics.md`). With `BRUTE_FORCE` the GPU runs the tiled all-pairs kernel; with `OCTREE` it builds the tree on the GPU, walks it with the same collision fold and returns the contact pairs for the unchanged serial narrow phase. Physic still owns the rebuild decision and only falls back to the CPU builder when the GPU backend fails. Either way the backend owns the velocity update (`vel += acc * dt`), so physic integrates positions and resolves collisions for every backend. The hook is asynchronous: `physic.gravity` submits the solve, and the first consumer finishes it — collision for the octree fold, `physic.integrate` for the brute-force solve, which therefore overlaps the collision pass. A hook is only usable with **both** a `submit` and a `finish` callback: a half-specified hook is rejected before it submits, and a failed (or missing) finish uninstalls the hook — the CPU solver then runs for the current tick and the rest of the run. When it does, the CPU octree fallback rebuilds `state.tree` whenever it does not match the world (nil, different body count, or a different world revision), so it can never reuse a tree built for a different body set.
+`gravity_backend` selects who runs the gravity solve: `CPU` (the built-in solver) or `GPU` (a compute backend implemented in `engine/graphics/backend`, see `docs/gpu_physics.md`). With `BRUTE_FORCE` the GPU runs the tiled all-pairs kernel; with `OCTREE` it builds the tree on the GPU, walks it with the same collision fold and returns the contact pairs for the unchanged serial narrow phase. Physics still owns the rebuild decision and only falls back to the CPU builder when the GPU backend fails. Either way the backend owns the velocity update (`vel += acc * dt`), so physics integrates positions and resolves collisions for every backend. The hook is asynchronous: `physics.gravity` submits the solve, and the first consumer finishes it — collision for the octree fold, `physics.integrate` for the brute-force solve, which therefore overlaps the collision pass. A hook is only usable with **both** a `submit` and a `finish` callback: a half-specified hook is rejected before it submits, and a failed (or missing) finish uninstalls the hook — the CPU solver then runs for the current tick and the rest of the run. When it does, the CPU octree fallback rebuilds `state.tree` whenever it does not match the world (nil, different body count, or a different world revision), so it can never reuse a tree built for a different body set.
 
 Octree collision is **folded into the gravity traversal**: a node accepted by the opening angle is still descended into when its cell intersects the collision sphere (children marked `gravity_done` so the approximation is applied exactly once), so `theta` can never hide a contact and gravity results are bit-identical. The traversal appends the overlapping pairs, and the serial narrow phase then displaces each pair (resolution is order-dependent, so it cannot be parallelized without changing the result). Pairs are sorted before resolution so the outcome is deterministic regardless of scheduling.
 
@@ -19,20 +19,20 @@ Each tick publishes body positions and selection flags into the `RenderSnapshot`
 ## Tick pipeline
 
 One `PHYSICS` phase is one fixed step (`dt = (1/60) · time`). The systems run in
-the dependency order below; `physic.integrate` and `physic.select` share a wave
+the dependency order below; `physics.integrate` and `physics.select` share a wave
 because they touch disjoint columns.
 
 ```mermaid
 flowchart TD
     tick(["PHYSICS phase — dt = (1/60)·time"]) --> begin
 
-    subgraph begin["physic.begin"]
+    subgraph begin["physics.begin"]
         stamp["stamp tick_start"] --> zero["zero Acceleration"] --> ensure["OCTREE: ensure / rebuild tree"]
     end
 
     begin --> gravity
 
-    subgraph gravity["physic.gravity"]
+    subgraph gravity["physics.gravity"]
         gdir{"algorithm"}
     end
     gdir -->|"BRUTE_FORCE"| bf["GPU submit? else CPU all-pairs<br/>vel += acc·dt"]
@@ -41,23 +41,23 @@ flowchart TD
     bf --> collision
     ot --> collision
 
-    subgraph collision["physic.collision"]
+    subgraph collision["physics.collision"]
         cdir{"algorithm"}
     end
     cdir -->|"BRUTE_FORCE"| bfc["CPU O(N²) pair resolve"]
     cdir -->|"OCTREE"| otc["finish hooked solve (contacts)<br/>sort pairs → resolve"]
 
-    collision --> integrate["physic.integrate (.ANY)<br/>finish hooked solve<br/>pos += vel·dt"]
-    collision --> select["physic.select (.ANY)<br/>apply picked instance"]
-    integrate --> publish["physic.publish<br/>copy into RenderSnapshot"]
+    collision --> integrate["physics.integrate (.ANY)<br/>finish hooked solve<br/>pos += vel·dt"]
+    collision --> select["physics.select (.ANY)<br/>apply picked instance"]
+    integrate --> publish["physics.publish<br/>copy into RenderSnapshot"]
     select --> publish
-    publish --> adapt["physic.adapt<br/>adaptive controller"]
+    publish --> adapt["physics.adapt<br/>adaptive controller"]
 ```
 
-The hooked-solve rule: `physic.gravity` submits without waiting; the first
+The hooked-solve rule: `physics.gravity` submits without waiting; the first
 consumer calls `finish`. The octree fold sets `finish_at_collision`, so collision
 finishes it; the brute-force solve leaves it in flight across the collision pass
-and `physic.integrate` finishes it. A failed submit or finish uninstalls the hook
+and `physics.integrate` finishes it. A failed submit or finish uninstalls the hook
 and re-runs the CPU solver for that tick.
 
 ## Octree (Barnes-Hut)
@@ -113,13 +113,13 @@ flowchart TD
 
 ### Rebuild decision
 
-`physic.begin` decides whether the tree must be rebuilt (structural change,
+`physics.begin` decides whether the tree must be rebuilt (structural change,
 interval, or adaptive staleness). While a GPU `build_tree` hook is installed the
 build itself happens on the GPU and only the metrics come back.
 
 ```mermaid
 flowchart TD
-    ensure(["physic.begin — OCTREE"]) --> matches{"tree exists and matches<br/>body count + world revision?"}
+    ensure(["physics.begin — OCTREE"]) --> matches{"tree exists and matches<br/>body count + world revision?"}
     matches -->|"no"| stale
     matches -->|"yes"| interval["accumulate dt<br/>or auto_adjust staleness:<br/>max_disp &gt; 0.5 · leaf_half"]
     interval -->|"due"| stale["rebuild due"]
@@ -160,4 +160,4 @@ so the rebuild stays close enough for `theta` to matter.
 
 ## App flow
 
-On launch the app loads `config.json`, creates a `World`, spawns the initial bodies accordingly (random or from a scene file), calls `physic_init` and builds a `Scheduler` with the physics systems. With `gravity_backend = GPU` it then attaches the compute solver to the renderer's device (buffers pre-sized for the body count) and installs it as the gravity solver. The renderer is initialised against the same world. Two threads run until the window closes: physics runs the `PHYSICS` phase on a fixed step (flushing deferred structural changes after each step), graphics runs the `RENDER` phase, whose `graphic.input` and `graphic.render` systems update the camera and draw the frame. The **main thread pumps events** — blocking in `window_wait_events_timeout` (1/60 s) rather than busy-polling, since a tight `glfwPollEvents` loop burns a full core in the GLib/libdecor event machinery — and then calls `window_pump` to publish the input/framebuffer snapshot the render phase reads (GLFW is not threaded). Frame/tick timings are logged to the console once per second.
+On launch the app loads `config.json`, creates a `World`, spawns the initial bodies accordingly (random or from a scene file), calls `physics_init` and builds a `Scheduler` with the physics systems. With `gravity_backend = GPU` it then attaches the compute solver to the graphics backend's device (buffers pre-sized for the body count) and installs it as the gravity solver. The renderer is initialised against the same world. Two threads run until the window closes: physics runs the `PHYSICS` phase on a fixed step (flushing deferred structural changes after each step), graphics runs the `RENDER` phase, whose `graphic.input` and `graphic.render` systems update the camera and draw the frame. The **main thread pumps events** — blocking in `window_wait_events_timeout` (1/60 s) rather than busy-polling, since a tight `glfwPollEvents` loop burns a full core in the GLib/libdecor event machinery — and then calls `window_pump` to publish the input/framebuffer snapshot the render phase reads (GLFW is not threaded). Frame/tick timings are logged to the console once per second.
